@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Check, SkipForward, X, Sparkles, Loader2 } from 'lucide-react';
+import AIAssistant from '@/components/AIAssistant';
 import { cn } from '@/lib/cn';
 import { loadState, saveState } from '@/lib/store';
 import { MOCK_HUNTS } from '@/lib/mockHunts';
@@ -11,9 +12,9 @@ import type { Hunt, HuntProgress, Step } from '@/lib/types';
 import { emitEvent, syncProgress } from '@/lib/supabase/events';
 
 const STEP_TYPE_CONFIG = {
-  action: { label: 'Action', emoji: '⚡', bg: 'bg-[#1a0f00]', text: 'text-[#fb923c]', border: 'border-[#2a1800]' },
+  action:     { label: 'Action',     emoji: '⚡', bg: 'bg-[#1a0f00]', text: 'text-[#fb923c]', border: 'border-[#2a1800]' },
   reflection: { label: 'Reflection', emoji: '💭', bg: 'bg-[#0f0f2a]', text: 'text-[#818cf8]', border: 'border-[#1a1a3a]' },
-  discovery: { label: 'Discovery', emoji: '🔍', bg: 'bg-[#001a1a]', text: 'text-[#2dd4bf]', border: 'border-[#002a2a]' },
+  discovery:  { label: 'Discovery',  emoji: '🔍', bg: 'bg-[#001a1a]', text: 'text-[#2dd4bf]', border: 'border-[#002a2a]' },
 };
 
 type SheetState = 'hidden' | 'skip_confirm' | 'adapting' | 'adapted';
@@ -44,9 +45,7 @@ export default function ActiveHuntPage() {
       emitEvent('step_started', { missionId: huntId, stepId: found.steps[existing.currentStepIndex]?.id });
     } else {
       const fresh: HuntProgress = {
-        huntId,
-        currentStepIndex: 0,
-        completedSteps: [],
+        huntId, currentStepIndex: 0, completedSteps: [],
         startedAt: new Date().toISOString(),
       };
       setProgress(fresh);
@@ -74,15 +73,10 @@ export default function ActiveHuntPage() {
     if (!hunt || !progress) return;
     const updatedCompleted = [...progress.completedSteps, rawStep.id];
     const state = loadState();
-
     emitEvent('step_completed', { missionId: huntId, stepId: rawStep.id });
 
     if (isLastStep) {
-      const updatedProgress: HuntProgress = {
-        ...progress,
-        completedSteps: updatedCompleted,
-        completedAt: new Date().toISOString(),
-      };
+      const updatedProgress: HuntProgress = { ...progress, completedSteps: updatedCompleted, completedAt: new Date().toISOString() };
       const alreadyCompleted = state.completedHunts.some((c) => c.huntId === huntId);
       const newCompleted = alreadyCompleted
         ? state.completedHunts
@@ -91,11 +85,7 @@ export default function ActiveHuntPage() {
       syncProgress(huntId, updatedProgress);
       router.push(`/complete/${huntId}`);
     } else {
-      const updatedProgress: HuntProgress = {
-        ...progress,
-        currentStepIndex: progress.currentStepIndex + 1,
-        completedSteps: updatedCompleted,
-      };
+      const updatedProgress: HuntProgress = { ...progress, currentStepIndex: progress.currentStepIndex + 1, completedSteps: updatedCompleted };
       setProgress(updatedProgress);
       saveState({ ...state, progress: { ...state.progress, [huntId]: updatedProgress } });
       syncProgress(huntId, updatedProgress);
@@ -119,67 +109,61 @@ export default function ActiveHuntPage() {
   async function handleAdaptRequest() {
     if (!hunt) return;
     setSheet('adapting');
-
     try {
       const state = loadState();
       const res = await fetch('/api/adapt-step', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          huntTitle: hunt.title,
-          storyContext: hunt.story_context,
-          step: rawStep,
-          context: 'user_skipped',
+          huntTitle: hunt.title, storyContext: hunt.story_context,
+          step: rawStep, context: 'user_skipped',
           userInterests: state.user?.interests ?? [],
         }),
       });
-
       if (!res.ok) throw new Error('API error');
       const data = await res.json();
-
-      if (data.adaptedStep) {
-        setAdaptedStep(data.adaptedStep);
-        setSheet('adapted');
-      } else {
-        setSheet('skip_confirm');
-      }
-    } catch {
-      setSheet('skip_confirm');
-    }
+      if (data.adaptedStep) { setAdaptedStep(data.adaptedStep); setSheet('adapted'); }
+      else setSheet('skip_confirm');
+    } catch { setSheet('skip_confirm'); }
   }
 
-  function applyAdaptedStep() {
-    setIsAdaptedMode(true);
-    setSheet('hidden');
-  }
+  function applyAdaptedStep() { setIsAdaptedMode(true); setSheet('hidden'); }
 
   return (
-    <div className="min-h-screen bg-[#080c14] flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: '#070d0e' }}>
       <div className="max-w-[430px] mx-auto w-full flex flex-col min-h-screen">
         {/* Progress bar */}
-        <div className="h-1 bg-[#1c2a3a] w-full">
+        <div className="h-1 w-full" style={{ background: '#192428' }}>
           <motion.div
             className="h-full bg-accent"
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            style={{ boxShadow: '0 0 8px rgba(0,230,118,0.6)' }}
+            style={{ boxShadow: '0 0 8px rgba(39,224,125,.6)' }}
           />
         </div>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-10 pb-4">
-          <button onClick={() => router.back()} className="w-9 h-9 bg-[#111927] rounded-full flex items-center justify-center border border-[#1c2a3a]">
-            <ArrowLeft size={18} strokeWidth={2} className="text-[#e8f0fe]" />
+          <button
+            onClick={() => router.back()}
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ background: '#121d20', border: '1px solid rgba(255,255,255,.07)' }}
+          >
+            <ArrowLeft size={18} strokeWidth={2} style={{ color: '#e9eff0' }} />
           </button>
           <div className="text-center">
-            <p className="text-[13px] font-semibold text-[#7a8fa8]">
+            <p className="text-[13px] font-semibold" style={{ color: '#7d8b8e' }}>
               Step {progress.currentStepIndex + 1} of {hunt.steps.length}
             </p>
-            <p className="text-[11px] text-[#3d5068] mt-0.5 truncate max-w-[180px]">{hunt.title}</p>
+            <p className="text-[11px] mt-0.5 truncate max-w-[180px]" style={{ color: '#54625f' }}>{hunt.title}</p>
           </div>
-          <button onClick={() => router.push(`/hunt/${huntId}`)} className="w-9 h-9 bg-[#111927] rounded-full flex items-center justify-center border border-[#1c2a3a]">
-            <X size={16} strokeWidth={2} className="text-[#7a8fa8]" />
+          <button
+            onClick={() => router.push(`/hunt/${huntId}`)}
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ background: '#121d20', border: '1px solid rgba(255,255,255,.07)' }}
+          >
+            <X size={16} strokeWidth={2} style={{ color: '#7d8b8e' }} />
           </button>
         </div>
 
@@ -194,30 +178,35 @@ export default function ActiveHuntPage() {
               transition={{ duration: 0.28, ease: 'easeOut' }}
               className="flex flex-col flex-1"
             >
-              {/* Adapted banner */}
               {isAdaptedMode && (
-                <div className="flex items-center gap-2 bg-ai-light border border-[#0a3040] rounded-xl px-3 py-2 mb-4 self-start">
+                <div
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 mb-4 self-start"
+                  style={{ background: '#001a22', border: '1px solid #0a3040' }}
+                >
                   <Sparkles size={13} className="text-ai" strokeWidth={2} />
                   <span className="text-[12px] font-semibold text-ai">AI-adapted for you</span>
                 </div>
               )}
 
-              {/* Step type badge */}
               <div className={cn('inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6 self-start border', typeConfig.bg, typeConfig.text, typeConfig.border)}>
                 <span className="text-base">{typeConfig.emoji}</span>
                 <span className="text-xs font-bold uppercase tracking-wider">{typeConfig.label}</span>
               </div>
 
-              {/* Main instruction */}
               <div className="flex-1">
-                <p className="text-[22px] font-bold text-[#e8f0fe] leading-snug mb-6">
+                <p className="text-[22px] font-bold leading-snug mb-6" style={{ color: '#e9eff0' }}>
                   {currentStep.instruction}
                 </p>
-                <div className="bg-[#111927] rounded-xl p-4 border border-[#1c2a3a]">
-                  <p className="text-[11px] font-bold text-[#3d5068] uppercase tracking-wider mb-1">
-                    {isAdaptedMode ? "Easier version — done when" : "You're done when"}
+                <div
+                  className="rounded-xl p-4"
+                  style={{ background: '#121d20', border: '1px solid rgba(255,255,255,.07)' }}
+                >
+                  <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: '#54625f' }}>
+                    {isAdaptedMode ? 'Easier version — done when' : "You're done when"}
                   </p>
-                  <p className="text-[14px] text-[#7a8fa8] leading-relaxed">{currentStep.success_criteria}</p>
+                  <p className="text-[14px] leading-relaxed" style={{ color: '#7d8b8e' }}>
+                    {currentStep.success_criteria}
+                  </p>
                 </div>
               </div>
 
@@ -226,12 +215,12 @@ export default function ActiveHuntPage() {
                 {hunt.steps.map((_, i) => (
                   <div
                     key={i}
-                    className={cn(
-                      'rounded-full transition-all duration-300',
-                      i < progress.currentStepIndex ? 'w-2 h-2 bg-accent'
-                      : i === progress.currentStepIndex ? 'w-5 h-2 bg-accent'
-                      : 'w-2 h-2 bg-[#1c2a3a]'
-                    )}
+                    className={cn('rounded-full transition-all duration-300')}
+                    style={{
+                      width: i === progress.currentStepIndex ? 20 : 8,
+                      height: 8,
+                      background: i <= progress.currentStepIndex ? '#27e07d' : '#192428',
+                    }}
                   />
                 ))}
               </div>
@@ -244,19 +233,36 @@ export default function ActiveHuntPage() {
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={completeStep}
-            className="w-full h-14 bg-accent text-[#060a0e] rounded-2xl font-bold text-base shadow-[0_4px_24px_rgba(0,230,118,0.4)] flex items-center justify-center gap-2"
+            className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2"
+            style={{
+              background: 'linear-gradient(180deg,#3ee888,#19c268)',
+              color: '#04130b',
+              boxShadow: '0 4px 24px rgba(39,224,125,.4)',
+            }}
           >
             <Check size={20} strokeWidth={2.5} />
             {isLastStep ? 'Complete Hunt' : 'Mark as Done'}
           </motion.button>
 
-          <button
-            onClick={() => setSheet('skip_confirm')}
-            className="flex items-center justify-center gap-1.5 py-2 text-[#3d5068] text-sm font-medium"
-          >
-            <SkipForward size={14} strokeWidth={2} />
-            {isAdaptedMode ? 'Still too hard — skip' : 'Skip this step'}
-          </button>
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => setSheet('skip_confirm')}
+              className="flex items-center justify-center gap-1.5 py-2 text-sm font-medium"
+              style={{ color: '#54625f' }}
+            >
+              <SkipForward size={14} strokeWidth={2} />
+              {isAdaptedMode ? 'Still too hard — skip' : 'Skip this step'}
+            </button>
+            <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,.07)' }} />
+            <AIAssistant
+              context={{
+                huntTitle:       hunt.title,
+                huntStory:       hunt.story_context,
+                stepInstruction: currentStep.instruction,
+                stepType:        currentStep.type,
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -265,42 +271,47 @@ export default function ActiveHuntPage() {
         {sheet !== 'hidden' && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/60 z-40"
               onClick={() => sheet === 'skip_confirm' && setSheet('hidden')}
             />
             <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f1824] border-t border-[#1c2a3a] rounded-t-3xl px-5 pt-6 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]"
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 pt-6 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]"
+              style={{ background: '#0e1719', borderTop: '1px solid rgba(255,255,255,.07)' }}
             >
               <div className="max-w-[430px] mx-auto">
-                <div className="w-10 h-1 bg-[#1c2a3a] rounded-full mx-auto mb-6" />
+                <div className="w-10 h-1 rounded-full mx-auto mb-6" style={{ background: 'rgba(255,255,255,.1)' }} />
 
-                {/* Skip confirm */}
                 {sheet === 'skip_confirm' && (
                   <>
-                    <h3 className="text-xl font-bold text-[#e8f0fe] mb-1">This step feeling tough?</h3>
-                    <p className="text-[#7a8fa8] text-sm mb-6">
+                    <h3 className="text-xl font-bold mb-1" style={{ color: '#e9eff0' }}>This step feeling tough?</h3>
+                    <p className="text-sm mb-6" style={{ color: '#7d8b8e' }}>
                       Let AI adapt it into an easier version, or skip entirely.
                     </p>
                     <div className="flex flex-col gap-2.5">
                       <button
                         onClick={handleAdaptRequest}
-                        className="w-full h-13 bg-ai text-[#060a0e] rounded-2xl font-semibold flex items-center justify-center gap-2 py-3.5 shadow-[0_4px_20px_rgba(34,211,238,0.3)]"
+                        className="w-full rounded-2xl font-semibold flex items-center justify-center gap-2 py-3.5 text-ai"
+                        style={{ background: '#001a22', border: '1px solid #0a3040', boxShadow: '0 4px 20px rgba(34,211,238,.2)' }}
                       >
                         <Sparkles size={16} strokeWidth={2} />
                         Make it easier for me
                       </button>
                       <div className="flex gap-2.5">
-                        <button onClick={() => setSheet('hidden')} className="flex-1 h-12 bg-[#162030] rounded-2xl font-semibold text-[#e8f0fe] border border-[#1c2a3a]">
+                        <button
+                          onClick={() => setSheet('hidden')}
+                          className="flex-1 h-12 rounded-2xl font-semibold"
+                          style={{ background: '#17262a', border: '1px solid rgba(255,255,255,.07)', color: '#e9eff0' }}
+                        >
                           Cancel
                         </button>
-                        <button onClick={skipStep} className="flex-1 h-12 bg-[#e8f0fe] rounded-2xl font-semibold text-[#080c14]">
+                        <button
+                          onClick={skipStep}
+                          className="flex-1 h-12 rounded-2xl font-semibold"
+                          style={{ background: '#e9eff0', color: '#070d0e' }}
+                        >
                           Skip entirely
                         </button>
                       </div>
@@ -308,39 +319,45 @@ export default function ActiveHuntPage() {
                   </>
                 )}
 
-                {/* Adapting loading */}
                 {sheet === 'adapting' && (
                   <div className="flex flex-col items-center py-6 gap-4">
                     <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
                       <Loader2 size={32} className="text-ai" strokeWidth={2} />
                     </motion.div>
                     <div className="text-center">
-                      <p className="font-bold text-[#e8f0fe] text-lg mb-1">Adapting your step…</p>
-                      <p className="text-[#7a8fa8] text-sm">Creating an easier version just for you.</p>
+                      <p className="font-bold text-lg mb-1" style={{ color: '#e9eff0' }}>Adapting your step…</p>
+                      <p className="text-sm" style={{ color: '#7d8b8e' }}>Creating an easier version just for you.</p>
                     </div>
                   </div>
                 )}
 
-                {/* Adapted step ready */}
                 {sheet === 'adapted' && adaptedStep && (
                   <>
                     <div className="flex items-center gap-2 mb-4">
                       <Sparkles size={16} className="text-ai" strokeWidth={2} />
                       <p className="text-[13px] font-bold text-ai uppercase tracking-wide">Easier version ready</p>
                     </div>
-                    <div className="bg-ai-light border border-[#0a3040] rounded-2xl p-4 mb-5">
-                      <p className="text-[15px] font-semibold text-[#e8f0fe] leading-snug mb-2">
+                    <div
+                      className="rounded-2xl p-4 mb-5"
+                      style={{ background: '#001a22', border: '1px solid #0a3040' }}
+                    >
+                      <p className="text-[15px] font-semibold leading-snug mb-2" style={{ color: '#e9eff0' }}>
                         {adaptedStep.instruction}
                       </p>
-                      <p className="text-[12px] text-[#7a8fa8]">{adaptedStep.success_criteria}</p>
+                      <p className="text-[12px]" style={{ color: '#7d8b8e' }}>{adaptedStep.success_criteria}</p>
                     </div>
                     <div className="flex gap-2.5">
-                      <button onClick={skipStep} className="flex-1 h-12 bg-[#162030] rounded-2xl font-semibold text-[#7a8fa8] text-sm border border-[#1c2a3a]">
+                      <button
+                        onClick={skipStep}
+                        className="flex-1 h-12 rounded-2xl font-semibold text-sm"
+                        style={{ background: '#17262a', border: '1px solid rgba(255,255,255,.07)', color: '#7d8b8e' }}
+                      >
                         Skip anyway
                       </button>
                       <button
                         onClick={applyAdaptedStep}
-                        className="flex-[2] h-12 bg-ai text-[#060a0e] rounded-2xl font-bold shadow-[0_4px_20px_rgba(34,211,238,0.3)]"
+                        className="flex-[2] h-12 rounded-2xl font-bold text-ai"
+                        style={{ background: '#001a22', border: '1px solid #0a3040', boxShadow: '0 4px 20px rgba(34,211,238,.2)' }}
                       >
                         Try this version
                       </button>

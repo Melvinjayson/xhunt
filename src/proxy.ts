@@ -1,6 +1,12 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+const CONSUMER_PROTECTED = [
+  '/home', '/missions', '/active', '/profile',
+  '/timeline', '/live', '/upgrade', '/explore',
+  '/hunt', '/complete',
+];
+
 export async function proxy(request: NextRequest) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.next();
@@ -27,18 +33,21 @@ export async function proxy(request: NextRequest) {
     }
   );
 
+  // Refresh session — required for server components to read auth state
   const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
 
-  const requiresAuth = pathname.startsWith('/admin') || pathname.startsWith('/onboard');
+  const isAdminRoute    = pathname.startsWith('/admin') || pathname.startsWith('/onboard');
+  const isConsumerRoute = CONSUMER_PROTECTED.some(p => pathname === p || pathname.startsWith(p + '/'));
 
-  if (requiresAuth && !user) {
+  if ((isAdminRoute || isConsumerRoute) && !user) {
     const loginUrl = new URL('/auth/login', request.url);
     loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
+  // Redirect authenticated users away from auth pages
   if (user && (pathname === '/auth/login' || pathname === '/auth/signup')) {
     return NextResponse.redirect(new URL('/home', request.url));
   }
@@ -48,6 +57,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|api/stripe/webhook|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

@@ -15,6 +15,16 @@ export interface DbTenant {
   updated_at: string;
 }
 
+export type SubscriptionTier = 'free' | 'trial' | 'pro';
+
+export interface DbRateLimitConfig {
+  tier: SubscriptionTier;
+  ai_requests_per_day: number;
+  can_access_premium_missions: boolean;
+  model_id: string;
+  updated_at: string;
+}
+
 export interface DbUserProfile {
   id: string;
   tenant_id: string | null;
@@ -24,6 +34,17 @@ export interface DbUserProfile {
   interests: string[];
   goals: string[];
   onboarding_complete: boolean;
+  // ── Freemium ──────────────────────────────────────────────
+  subscription_tier: SubscriptionTier;
+  trial_started_at: string | null;
+  trial_ends_at: string | null;
+  ai_requests_today: number;
+  ai_requests_reset_at: string;
+  // ── Stripe ────────────────────────────────────────────────
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_subscription_status: string | null;
+  // ──────────────────────────────────────────────────────────
   created_at: string;
   updated_at: string;
 }
@@ -137,6 +158,45 @@ export interface DbMissionApproval {
 }
 
 // ── Phase 2 ───────────────────────────────────────────────────────────────────
+
+// ── Timeline ──────────────────────────────────────────────────────────────────
+
+export type PostType   = 'completion' | 'moment' | 'highlight';
+export type LiveStatus = 'scheduled' | 'live' | 'ended';
+
+export interface DbExperiencePost {
+  id:             string;
+  user_id:        string;
+  mission_id:     string | null;
+  tenant_id:      string | null;
+  post_type:      PostType;
+  caption:        string | null;
+  media_url:      string | null;
+  metadata:       Record<string, unknown>;
+  reaction_count: number;
+  is_public:      boolean;
+  created_at:     string;
+}
+
+export interface DbLiveSession {
+  id:                 string;
+  host_id:            string;
+  mission_id:         string | null;
+  tenant_id:          string | null;
+  title:              string;
+  description:        string | null;
+  status:             LiveStatus;
+  current_step_index: number;
+  total_steps:        number;
+  viewer_count:       number;
+  is_pro_only:        boolean;
+  started_at:         string | null;
+  ended_at:           string | null;
+  scheduled_for:      string | null;
+  created_at:         string;
+}
+
+// ── Knowledge Graph ───────────────────────────────────────────────────────────
 
 export type KgNodeType = 'user' | 'skill' | 'mission' | 'outcome' | 'reward' | 'organization' | 'industry';
 export type KgRelationship = 'completes' | 'requires' | 'develops' | 'unlocks' | 'leads_to' | 'similar_to';

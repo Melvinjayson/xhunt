@@ -116,6 +116,7 @@ export default function MissionDetailPage() {
       tags: mission.tags,
       reward: mission.reward,
       status: mission.status,
+      is_public: mission.is_public,
       steps,
       updated_at: new Date().toISOString(),
     }).eq('id', missionId);
@@ -211,8 +212,13 @@ export default function MissionDetailPage() {
   async function changeStatus(newStatus: MissionStatus) {
     if (!mission) return;
     setGovLoading(true);
-    await supabase.from('missions').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', missionId);
-    setMission((prev) => prev ? { ...prev, status: newStatus } : prev);
+    const goPublic = newStatus === 'active' || newStatus === 'published';
+    await supabase.from('missions').update({
+      status: newStatus,
+      ...(goPublic ? { is_public: true } : {}),
+      updated_at: new Date().toISOString(),
+    }).eq('id', missionId);
+    setMission((prev) => prev ? { ...prev, status: newStatus, ...(goPublic ? { is_public: true } : {}) } : prev);
     setSaved(false);
     setGovLoading(false);
   }
@@ -308,6 +314,24 @@ export default function MissionDetailPage() {
             <label className="text-[12px] font-semibold text-[#7a8fa8] uppercase tracking-wider mb-1.5 block">Tags (comma-separated)</label>
             <input value={mission.tags.join(', ')} onChange={(e) => updateField('tags', e.target.value.split(',').map((t) => t.trim()).filter(Boolean))}
               className="w-full h-11 bg-[#0f1824] border border-[#1c2a3a] rounded-xl px-4 text-[#e8f0fe] text-sm focus:outline-none focus:border-accent transition-colors" />
+          </div>
+          <div className="flex items-center justify-between bg-[#0f1824] border border-[#1c2a3a] rounded-xl px-4 py-3">
+            <div>
+              <p className="text-[13px] font-semibold text-[#e8f0fe]">Visible in consumer app</p>
+              <p className="text-[11px] text-[#3d5068] mt-0.5">When on, this mission appears in participants' home feed</p>
+            </div>
+            <button
+              onClick={() => updateField('is_public', !mission.is_public)}
+              className={cn(
+                'relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0',
+                mission.is_public ? 'bg-accent' : 'bg-[#1c2a3a]'
+              )}
+            >
+              <span className={cn(
+                'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
+                mission.is_public ? 'translate-x-5' : 'translate-x-0'
+              )} />
+            </button>
           </div>
         </div>
       </div>

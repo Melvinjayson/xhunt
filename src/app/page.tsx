@@ -93,7 +93,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080c14] flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: '#070d0e' }}>
       <div className="max-w-[430px] mx-auto w-full min-h-screen flex flex-col">
         {/* Step indicator */}
         {step < 3 && (
@@ -103,7 +103,7 @@ export default function OnboardingPage() {
                 key={s}
                 className={cn(
                   'h-1.5 rounded-full transition-all duration-300',
-                  s === step ? 'w-8 bg-accent' : s < step ? 'w-3 bg-accent/40' : 'w-3 bg-[#1c2a3a]'
+                  s === step ? 'w-8 bg-accent' : s < step ? 'w-3 bg-accent/40' : 'w-3 bg-[rgba(255,255,255,.07)]'
                 )}
               />
             ))}
@@ -123,16 +123,16 @@ export default function OnboardingPage() {
               >
                 {/* Logo */}
                 <div className="flex items-center gap-2 mb-10 mt-2">
-                  <div className="w-9 h-9 bg-accent rounded-xl flex items-center justify-center shadow-[0_0_16px_rgba(0,230,118,0.4)]">
-                    <span className="text-[#060a0e] font-black text-lg">X</span>
+                  <div className="w-9 h-9 bg-accent rounded-xl flex items-center justify-center shadow-[0_0_16px_rgba(39,224,125,.4)]">
+                    <span className="text-[#04130b] font-black text-lg">X</span>
                   </div>
-                  <span className="text-xl font-bold text-[#e8f0fe]">hunt</span>
+                  <span className="text-xl font-bold text-[#e9eff0]">hunt</span>
                 </div>
 
-                <h1 className="text-[28px] font-bold text-[#e8f0fe] leading-tight mb-2">
+                <h1 className="text-[28px] font-bold text-[#e9eff0] leading-tight mb-2">
                   What excites you?
                 </h1>
-                <p className="text-[#7a8fa8] text-base mb-8">
+                <p className="text-[#7d8b8e] text-base mb-8">
                   Select everything that sparks something in you.
                 </p>
 
@@ -148,21 +148,21 @@ export default function OnboardingPage() {
                           'relative flex flex-col items-start gap-2 p-4 rounded-2xl border-2 text-left transition-all duration-200',
                           active
                             ? 'border-accent bg-accent-light'
-                            : 'border-[#1c2a3a] bg-[#111927]'
+                            : 'border-[rgba(255,255,255,.07)] bg-[#121d20]'
                         )}
                       >
                         <span className="text-2xl">{interest.emoji}</span>
                         <span
                           className={cn(
                             'text-[13px] font-semibold',
-                            active ? 'text-accent' : 'text-[#e8f0fe]'
+                            active ? 'text-accent' : 'text-[#e9eff0]'
                           )}
                         >
                           {interest.label}
                         </span>
                         {active && (
                           <div className="absolute top-3 right-3 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
-                            <Check size={11} strokeWidth={3} className="text-[#060a0e]" />
+                            <Check size={11} strokeWidth={3} className="text-[#04130b]" />
                           </div>
                         )}
                       </motion.button>
@@ -178,8 +178,8 @@ export default function OnboardingPage() {
                     className={cn(
                       'w-full h-14 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition-all duration-200',
                       interests.length > 0
-                        ? 'bg-accent text-[#060a0e] shadow-[0_4px_24px_rgba(0,230,118,0.4)]'
-                        : 'bg-[#111927] text-[#3d5068] cursor-not-allowed border border-[#1c2a3a]'
+                        ? 'bg-accent text-[#04130b] shadow-[0_4px_24px_rgba(39,224,125,.4)]'
+                        : 'bg-[#121d20] text-[#54625f] cursor-not-allowed border border-[rgba(255,255,255,.07)]'
                     )}
                   >
                     Continue
@@ -200,15 +200,15 @@ export default function OnboardingPage() {
               >
                 <button
                   onClick={() => setStep(1)}
-                  className="text-[#7a8fa8] text-sm font-medium mb-8 text-left flex items-center gap-1"
+                  className="text-[#7d8b8e] text-sm font-medium mb-8 text-left flex items-center gap-1"
                 >
                   ← Back
                 </button>
 
-                <h1 className="text-[28px] font-bold text-[#e8f0fe] leading-tight mb-2">
+                <h1 className="text-[28px] font-bold text-[#e9eff0] leading-tight mb-2">
                   What brings you here?
                 </h1>
-                <p className="text-[#7a8fa8] text-base mb-8">
+                <p className="text-[#7d8b8e] text-base mb-8">
                   Your primary goal shapes every Hunt we create for you.
                 </p>
 
@@ -224,7 +224,7 @@ export default function OnboardingPage() {
                           'flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200',
                           active
                             ? 'border-accent bg-accent-light'
-                            : 'border-[#1c2a3a] bg-[#111927]'
+                            : 'border-[rgba(255,255,255,.07)] bg-[#121d20]'
                         )}
                       >
                         <span className="text-2xl">{g.emoji}</span>
@@ -232,20 +232,20 @@ export default function OnboardingPage() {
                           <p
                             className={cn(
                               'text-[15px] font-semibold',
-                              active ? 'text-accent' : 'text-[#e8f0fe]'
+                              active ? 'text-accent' : 'text-[#e9eff0]'
                             )}
                           >
                             {g.label}
                           </p>
-                          <p className="text-[13px] text-[#7a8fa8] mt-0.5">{g.desc}</p>
+                          <p className="text-[13px] text-[#7d8b8e] mt-0.5">{g.desc}</p>
                         </div>
                         <div
                           className={cn(
                             'w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all',
-                            active ? 'border-accent bg-accent' : 'border-[#3d5068]'
+                            active ? 'border-accent bg-accent' : 'border-[#54625f]'
                           )}
                         >
-                          {active && <div className="w-2 h-2 bg-[#060a0e] rounded-full" />}
+                          {active && <div className="w-2 h-2 bg-[#04130b] rounded-full" />}
                         </div>
                       </motion.button>
                     );
@@ -260,8 +260,8 @@ export default function OnboardingPage() {
                     className={cn(
                       'w-full h-14 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition-all duration-200',
                       goal
-                        ? 'bg-accent text-[#060a0e] shadow-[0_4px_24px_rgba(0,230,118,0.4)]'
-                        : 'bg-[#111927] text-[#3d5068] cursor-not-allowed border border-[#1c2a3a]'
+                        ? 'bg-accent text-[#04130b] shadow-[0_4px_24px_rgba(39,224,125,.4)]'
+                        : 'bg-[#121d20] text-[#54625f] cursor-not-allowed border border-[rgba(255,255,255,.07)]'
                     )}
                   >
                     Create My Hunts
@@ -289,10 +289,10 @@ export default function OnboardingPage() {
                   </motion.div>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-[#e8f0fe] mb-2">
+                  <h2 className="text-2xl font-bold text-[#e9eff0] mb-2">
                     Building your hunts…
                   </h2>
-                  <p className="text-[#7a8fa8] text-base max-w-[260px] mx-auto">
+                  <p className="text-[#7d8b8e] text-base max-w-[260px] mx-auto">
                     Our AI is crafting personalized experiences just for you.
                   </p>
                 </div>

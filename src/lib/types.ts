@@ -18,6 +18,12 @@ export interface Hunt {
   reward: string;
   tags: string[];
   createdAt?: string;
+  /** Populated when fetched from Supabase — identifies the hosting organisation */
+  tenantName?: string;
+  tenantLogo?: string | null;
+  tenantSlug?: string;
+  /** True when a platform admin has approved this mission */
+  isVerified?: boolean;
 }
 
 export interface HuntProgress {

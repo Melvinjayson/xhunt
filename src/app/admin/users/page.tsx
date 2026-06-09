@@ -18,6 +18,7 @@ const ROLE_OPTIONS = ['participant', 'analyst', 'mission_creator', 'tenant_admin
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<DbUserProfile[]>([]);
+  const [completedCounts, setCompletedCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
@@ -36,13 +37,27 @@ export default function AdminUsersPage() {
 
       if (!profile?.tenant_id) return;
 
-      const { data } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('tenant_id', profile.tenant_id)
-        .order('created_at', { ascending: false });
+      const [usersRes, progressRes] = await Promise.all([
+        supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('tenant_id', profile.tenant_id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('mission_progress')
+          .select('user_id')
+          .eq('tenant_id', profile.tenant_id)
+          .not('completed_at', 'is', null),
+      ]);
 
-      setUsers(data ?? []);
+      setUsers(usersRes.data ?? []);
+
+      const counts: Record<string, number> = {};
+      for (const row of (progressRes.data ?? [])) {
+        counts[row.user_id] = (counts[row.user_id] ?? 0) + 1;
+      }
+      setCompletedCounts(counts);
+
       setLoading(false);
     }
     load();
@@ -54,8 +69,6 @@ export default function AdminUsersPage() {
     setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: role as DbUserProfile['role'] } : u));
     setUpdating(null);
   }
-
-  const completedCounts: Record<string, number> = {};
 
   return (
     <div className="p-8">

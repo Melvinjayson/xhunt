@@ -129,31 +129,53 @@ export function emitRewardClaimed(missionId: string, reward: string): void {
   })();
 }
 
+/**
+ * Fetch all public, live missions across every tenant.
+ * RLS allows reading missions where is_public = true (migration 001, policy
+ * "tenant_read_missions"). Migration 005 adds a matching policy for tenants
+ * so the LEFT JOIN on tenants returns name/logo for sponsor display, and a
+ * policy on mission_approvals for the "Verified" badge.
+ */
 export async function fetchSupabaseMissions(): Promise<import('../types').Hunt[] | null> {
   if (!isConfigured()) return null;
   try {
     const { createClient } = await import('./client');
     const sb = createClient();
+
     const { data } = await sb
       .from('missions')
-      .select('*')
+      .select(`
+        *,
+        tenant:tenants!tenant_id ( name, slug, logo_url ),
+        approvals:mission_approvals!mission_id ( status )
+      `)
       .in('status', ['active', 'published'])
       .eq('is_public', true)
       .order('created_at', { ascending: false });
 
     if (!data || data.length === 0) return null;
 
-    return data.map((m) => ({
-      id: m.id,
-      title: m.title,
-      story_context: m.story_context ?? '',
-      difficulty: m.difficulty,
-      estimated_time: m.estimated_time ?? '',
-      steps: (m.steps as import('../types').Step[]) ?? [],
-      reward: m.reward,
-      tags: m.tags ?? [],
-      createdAt: m.created_at,
-    }));
+    return data.map((m) => {
+      const tenant = m.tenant as { name?: string; slug?: string; logo_url?: string | null } | null;
+      const approvals = (m.approvals as Array<{ status: string }>) ?? [];
+      const isVerified = approvals.some((a) => a.status === 'approved');
+
+      return {
+        id: m.id,
+        title: m.title,
+        story_context: m.story_context ?? '',
+        difficulty: m.difficulty,
+        estimated_time: m.estimated_time ?? '',
+        steps: (m.steps as import('../types').Step[]) ?? [],
+        reward: m.reward,
+        tags: m.tags ?? [],
+        createdAt: m.created_at,
+        tenantName: tenant?.name,
+        tenantLogo: tenant?.logo_url ?? null,
+        tenantSlug: tenant?.slug,
+        isVerified,
+      };
+    });
   } catch {
     return null;
   }

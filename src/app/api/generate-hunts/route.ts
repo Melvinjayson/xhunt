@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest } from 'next/server';
 import { MOCK_HUNTS } from '@/lib/mockHunts';
 import { validateHuntsArray } from '@/lib/schemas';
+import groq from '@/lib/groq';
 
 const HUNT_SCHEMA_EXAMPLE = `{
   "id": "unique-kebab-slug",
@@ -25,18 +25,16 @@ export async function POST(req: NextRequest) {
   try {
     const { interests, goals } = await req.json();
 
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!process.env.GROQ_API_KEY) {
       const shuffled = [...MOCK_HUNTS].sort(() => Math.random() - 0.5);
       return Response.json({ hunts: shuffled.slice(0, 6) });
     }
 
-    const client = new Anthropic();
-
     const prompt = `You are the Hunt Generation Engine for X-hunt — an AI-native experience platform that transforms real-world engagement into guided, narrative-driven missions.
 
 Generate exactly 4 personalized Hunts for a user with:
-- Interests: ${interests.join(', ')}
-- Goals: ${goals.join(', ')}
+- Interests: ${(interests as string[]).join(', ')}
+- Goals: ${(goals as string[]).join(', ')}
 
 RULES (non-negotiable):
 1. Return ONLY a raw JSON array. No markdown. No explanation. No code fences.
@@ -52,35 +50,28 @@ ${HUNT_SCHEMA_EXAMPLE}
 
 Generate hunts that feel emotionally alive — narratively rich, not generic checklists. Each should have a distinct voice and setting.`;
 
-    const message = await client.messages.create({
-      model: 'claude-opus-4-5',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 4500,
+      temperature: 0.85,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
-      return Response.json({ hunts: MOCK_HUNTS.slice(0, 4) });
-    }
-
-    // Strip any markdown fences the model might add despite instructions
-    const raw = content.text
+    const raw = (completion.choices[0]?.message?.content ?? '')
       .trim()
       .replace(/^```(?:json)?\n?/, '')
       .replace(/\n?```$/, '');
 
     let parsed: unknown;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      console.error('JSON parse failed, falling back to mock hunts');
+    try { parsed = JSON.parse(raw); }
+    catch {
+      console.error('[generate-hunts] JSON parse failed, using mock hunts');
       return Response.json({ hunts: MOCK_HUNTS.slice(0, 4) });
     }
 
-    // Zod validate — filters out any malformed hunts
-    const rawArray = Array.isArray(parsed) ? parsed : (parsed as { hunts?: unknown[] })?.hunts ?? [];
+    const rawArray = Array.isArray(parsed) ? parsed : ((parsed as { hunts?: unknown[] })?.hunts ?? []);
     const validHunts = validateHuntsArray(
-      rawArray.map((h: unknown, i: number) => ({
+      (rawArray as unknown[]).map((h, i) => ({
         ...(h as object),
         id: (h as { id?: string }).id || `hunt-ai-${Date.now()}-${i}`,
         createdAt: new Date().toISOString(),
@@ -88,15 +79,12 @@ Generate hunts that feel emotionally alive — narratively rich, not generic che
     );
 
     if (validHunts.length === 0) {
-      console.error('No valid hunts after Zod validation, falling back to mock');
       return Response.json({ hunts: MOCK_HUNTS.slice(0, 4) });
     }
 
-    // Merge AI hunts with 2 curated ones for variety
-    const combined = [...validHunts, ...MOCK_HUNTS.slice(0, 2)];
-    return Response.json({ hunts: combined });
+    return Response.json({ hunts: [...validHunts, ...MOCK_HUNTS.slice(0, 2)] });
   } catch (err) {
-    console.error('Hunt generation error:', err);
+    console.error('[generate-hunts]', err);
     return Response.json({ hunts: MOCK_HUNTS });
   }
 }

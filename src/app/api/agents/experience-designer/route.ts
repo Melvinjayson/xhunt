@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { AGENT_SYSTEM_PROMPTS } from '@/lib/agents/prompts';
 import type { ExperienceDesignerInput, ExperienceDesignerOutput } from '@/lib/agents/types';
+import { requireTenantAgent } from '@/lib/agents/auth';
 
 const client = new Anthropic();
 
 export async function POST(req: NextRequest) {
+  const auth = await requireTenantAgent();
+  if (!auth.ok) return auth.response;
+
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 503 });
   }

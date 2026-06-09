@@ -1,28 +1,43 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Primary accent — neon green */
-  --color-accent: #00e676;
-  --color-accent-dark: #00b857;
-  --color-accent-light: #00251a;
+  /* ── Primary accent (Xhunt green) ── */
+  --color-accent:       #27e07d;
+  --color-accent-dark:  #15b866;
+  --color-accent-light: #0b2318;
 
-  /* AI / secondary — cyan */
-  --color-ai: #22d3ee;
-  --color-ai-dark: #0891b2;
+  /* ── AI / secondary (cyan) ── */
+  --color-ai:       #22d3ee;
+  --color-ai-dark:  #0891b2;
   --color-ai-light: #001a22;
 
-  /* Backgrounds */
-  --color-muted: #080c14;
-  --color-surface: #0f1824;
-  --color-card: #111927;
+  /* ── Backgrounds ── */
+  --color-muted:   #070d0e;
+  --color-surface: #0e1719;
+  --color-card:    #121d20;
+  --color-elev:    #17262a;
 
-  /* Borders */
-  --color-border: #1c2a3a;
+  /* ── Borders ── */
+  --color-border:   #192428;
+  --color-border-2: #1e2e32;
 
-  /* Status */
-  --color-success: #00e676;
-  --color-warning: #fbbf24;
-  --color-error: #ff5252;
+  /* ── Text ── */
+  --color-txt:      #e9eff0;
+  --color-txt-dim:  #7d8b8e;
+  --color-txt-faint:#54625f;
+
+  /* ── Status ── */
+  --color-success: #27e07d;
+  --color-warning: #f7931a;
+  --color-error:   #ef5b6b;
+}
+
+/* Semi-transparent border token (for inline use) */
+:root {
+  --line:    rgba(255, 255, 255, .07);
+  --line-2:  rgba(255, 255, 255, .12);
+  --glow-green: rgba(39, 224, 125, .32);
+  --glow-ai: rgba(34, 211, 238, .28);
 }
 
 *,
@@ -39,11 +54,14 @@ html {
 body {
   min-height: 100vh;
   min-height: -webkit-fill-available;
-  background-color: #080c14;
+  background-color: #070d0e;
+  font-family: var(--font-onest), var(--font-inter), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
-  color: #e8f0fe;
+  color: #e9eff0;
+  letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
 }
 
 ::-webkit-scrollbar {
