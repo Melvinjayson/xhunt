@@ -1,12 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Onest } from 'next/font/google';
+import { Onest } from 'next/font/google';
 import './globals.css';
-
-const inter = Onest({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
-  variable: '--font-inter',
-});
 
 const onest = Onest({
   subsets: ['latin'],
@@ -55,15 +49,14 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width:           'device-width',
   initialScale:    1,
-  maximumScale:    1,
-  userScalable:    false,
-  themeColor:      '#27e07d',
+  maximumScale:    5,
+  themeColor:      '#22FFAA',
   colorScheme:     'dark',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${onest.variable}`}>
+    <html lang="en" className={onest.variable}>
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />

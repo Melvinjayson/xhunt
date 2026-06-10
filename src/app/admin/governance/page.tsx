@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  ShieldCheck, Clock, CheckCircle2, XCircle, AlertCircle,
-  FileText, User, Calendar, ChevronDown, ChevronUp
+  ShieldCheck, Clock, CheckCircle2, XCircle,
+  FileText, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { DbMissionApproval, DbAuditLog, DbMission } from '@/lib/supabase/types';
@@ -22,7 +22,7 @@ const STATUS_CONFIG = {
 
 const ACTION_COLORS: Record<string, string> = {
   'mission.create':   'text-accent',
-  'mission.update':   'text-[#22d3ee]',
+  'mission.update':   'text-[#6D5DFD]',
   'mission.delete':   'text-[#ff5252]',
   'mission.publish':  'text-[#fbbf24]',
   'approval.approve': 'text-accent',
@@ -40,8 +40,6 @@ export default function AdminGovernancePage() {
   const [activeTab, setActiveTab] = useState<'approvals' | 'audit'>('approvals');
 
   const supabase = createClient();
-
-  useEffect(() => { loadData(); }, []);
 
   async function loadData() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -68,6 +66,8 @@ export default function AdminGovernancePage() {
     setAuditLogs(auditRes.data ?? []);
     setLoading(false);
   }
+
+  useEffect(() => { void loadData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function processApproval(id: string, status: 'approved' | 'rejected') {
     setProcessingId(id);
@@ -120,7 +120,7 @@ export default function AdminGovernancePage() {
           { label: 'Pending Review', value: pending.length, color: 'text-[#fbbf24] bg-[#2a1a00]' },
           { label: 'Approved',       value: approvals.filter((a) => a.status === 'approved').length, color: 'text-accent bg-accent-light' },
           { label: 'Rejected',       value: approvals.filter((a) => a.status === 'rejected').length, color: 'text-[#ff5252] bg-[#2a0a0a]' },
-          { label: 'Audit Events',   value: auditLogs.length, color: 'text-[#22d3ee] bg-[#001a22]' },
+          { label: 'Audit Events',   value: auditLogs.length, color: 'text-[#6D5DFD] bg-[#001a22]' },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-[#111927] border border-[#1c2a3a] rounded-xl px-5 py-4">
             <p className={cn('text-[22px] font-bold', color.split(' ')[0])}>{value}</p>
@@ -287,7 +287,7 @@ function ApprovalCard({
 
       {approval.notes && (
         <p className="text-[12px] text-[#7a8fa8] bg-[#0f1824] rounded-lg px-3 py-2 mb-3 italic">
-          "{approval.notes}"
+          &ldquo;{approval.notes}&rdquo;
         </p>
       )}
 

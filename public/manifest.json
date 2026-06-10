@@ -4,8 +4,8 @@
   "description": "AI-powered mission experiences — discover, explore, and level up in the real world.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#070d0e",
-  "theme_color": "#27e07d",
+  "background_color": "#050816",
+  "theme_color": "#22FFAA",
   "orientation": "portrait-primary",
   "categories": ["games", "lifestyle", "social"],
   "icons": [

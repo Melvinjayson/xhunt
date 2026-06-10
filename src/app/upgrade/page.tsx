@@ -16,17 +16,17 @@ interface TierInfo {
 }
 
 const T = {
-  bg:    '#070d0e',
-  panel: '#0e1719',
-  elev:  '#17262a',
-  card:  '#121d20',
+  bg:    '#050816',
+  panel: '#07101F',
+  elev:  '#0D1530',
+  card:  '#0A1226',
   line:  'rgba(255,255,255,.07)',
-  txt:   '#e9eff0',
-  muted: '#7d8b8e',
-  dim:   '#54625f',
-  green: '#27e07d',
-  ai:    '#22d3ee',
-  amber: '#f7931a',
+  txt:   '#F0F4FF',
+  muted: '#8B9CC0',
+  dim:   '#4A5578',
+  green: '#22FFAA',
+  ai:    '#6D5DFD',
+  amber: '#FFB84D',
 } as const;
 
 const FREE_FEATURES  = ['Access to standard missions', 'Basic Hunt generation', 'Progress tracking'];
@@ -36,14 +36,7 @@ const PRO_FEATURES   = ['Everything in Trial', 'AI Mission Guide (500 req/day)',
 function FeatureRow({ text, included }: { text: string; included: boolean }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-      <div
-        style={{
-          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-          background: included ? 'rgba(39,224,125,.15)' : 'rgba(255,255,255,.04)',
-          border: `1px solid ${included ? 'rgba(39,224,125,.3)' : T.line}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}
-      >
+      <div style={{ width: 20, height: 20, borderRadius: '50%', flexShrink: 0, background: included ? 'rgba(34,255,170,.15)' : 'rgba(255,255,255,.04)', border: `1px solid ${included ? 'rgba(34,255,170,.3)' : T.line}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {included && <Check size={11} strokeWidth={3} style={{ color: T.green }} />}
       </div>
       <span style={{ fontSize: 13, color: included ? T.txt : T.dim }}>{text}</span>
@@ -52,8 +45,8 @@ function FeatureRow({ text, included }: { text: string; included: boolean }) {
 }
 
 function UpgradePageInner() {
-  const router      = useRouter();
-  const params      = useSearchParams();
+  const router       = useRouter();
+  const params       = useSearchParams();
   const justUpgraded = params.get('success') === '1';
   const [tierInfo, setTierInfo]   = useState<TierInfo | null>(null);
   const [loading, setLoading]     = useState(true);
@@ -70,41 +63,25 @@ function UpgradePageInner() {
   }, []);
 
   async function handleUpgrade() {
-    setUpgrading(true);
-    setError('');
+    setUpgrading(true); setError('');
     try {
-      const res = await fetch('/api/stripe/checkout', { method: 'POST' });
+      const res  = await fetch('/api/stripe/checkout', { method: 'POST' });
       const data = await res.json() as { url?: string; error?: string };
-      if (!res.ok) {
-        if (res.status === 401) { router.push('/auth/login?next=/upgrade'); return; }
-        setError(data.error ?? 'Something went wrong.');
-        return;
-      }
+      if (!res.ok) { if (res.status === 401) { router.push('/auth/login?next=/upgrade'); return; } setError(data.error ?? 'Something went wrong.'); return; }
       if (data.url) window.location.href = data.url;
-    } catch {
-      setError('Network error — please try again.');
-    } finally {
-      setUpgrading(false);
-    }
+    } catch { setError('Network error — please try again.'); }
+    finally { setUpgrading(false); }
   }
 
   async function startTrial() {
-    setStarting(true);
-    setError('');
+    setStarting(true); setError('');
     try {
-      const res = await fetch('/api/trial/start', { method: 'POST' });
+      const res  = await fetch('/api/trial/start', { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 401) { router.push('/auth/login?next=/upgrade'); return; }
-        setError((data as { error?: string }).error ?? 'Something went wrong.');
-        return;
-      }
+      if (!res.ok) { if (res.status === 401) { router.push('/auth/login?next=/upgrade'); return; } setError((data as { error?: string }).error ?? 'Something went wrong.'); return; }
       setTierInfo((prev) => prev ? { ...prev, tier: 'trial', isTrialActive: true, trialDaysLeft: 14, canUseAI: true } : prev);
-    } catch {
-      setError('Network error — please try again.');
-    } finally {
-      setStarting(false);
-    }
+    } catch { setError('Network error — please try again.'); }
+    finally { setStarting(false); }
   }
 
   const isPro   = tierInfo?.tier === 'pro';
@@ -112,7 +89,7 @@ function UpgradePageInner() {
   const isFree  = !isTrial && !isPro;
 
   return (
-    <div style={{ minHeight: '100vh', background: `radial-gradient(800px 600px at 50% 0%, rgba(39,224,125,.07), transparent 60%), ${T.bg}`, color: T.txt, fontFamily: 'var(--font-onest), system-ui' }}>
+    <div style={{ minHeight: '100vh', background: `radial-gradient(800px 600px at 50% 0%, rgba(34,255,170,.07), transparent 60%), ${T.bg}`, color: T.txt, fontFamily: 'var(--font-onest), system-ui' }}>
       <div style={{ maxWidth: 430, margin: '0 auto', padding: '0 20px 80px' }}>
 
         {/* Header */}
@@ -126,8 +103,8 @@ function UpgradePageInner() {
         {/* Stripe success banner */}
         {justUpgraded && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-            style={{ borderRadius: 18, padding: '16px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(39,224,125,.08)', border: '1px solid rgba(39,224,125,.2)' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(39,224,125,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            style={{ borderRadius: 18, padding: '16px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(34,255,170,.08)', border: '1px solid rgba(34,255,170,.2)' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(34,255,170,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Check size={18} style={{ color: T.green }} strokeWidth={2.5} />
             </div>
             <div>
@@ -139,28 +116,17 @@ function UpgradePageInner() {
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
-            <Loader2 size={28} style={{ color: T.green }} className="animate-spin" strokeWidth={2} />
+            <Loader2 size={28} style={{ color: T.green, animation: 'spin 0.9s linear infinite' }} strokeWidth={2} />
           </div>
         ) : (
           <>
             {/* Current plan badge */}
             {tierInfo && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                style={{
-                  borderRadius: 18, padding: '16px 18px', marginBottom: 24,
-                  background: isTrial ? 'rgba(34,211,238,.07)' : isPro ? 'rgba(39,224,125,.07)' : T.card,
-                  border: `1px solid ${isTrial ? 'rgba(34,211,238,.18)' : isPro ? 'rgba(39,224,125,.18)' : T.line}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                }}
-              >
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                style={{ borderRadius: 18, padding: '16px 18px', marginBottom: 24, background: isTrial ? 'rgba(109,93,253,.07)' : isPro ? 'rgba(34,255,170,.07)' : T.card, border: `1px solid ${isTrial ? 'rgba(109,93,253,.18)' : isPro ? 'rgba(34,255,170,.18)' : T.line}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <p style={{ margin: '0 0 3px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: isTrial ? T.ai : isPro ? T.green : T.dim }}>
-                    Current Plan
-                  </p>
-                  <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: T.txt }}>
-                    {isPro ? 'Pro' : isTrial ? `Trial — ${tierInfo.trialDaysLeft}d left` : 'Free'}
-                  </p>
+                  <p style={{ margin: '0 0 3px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: isTrial ? T.ai : isPro ? T.green : T.dim }}>Current Plan</p>
+                  <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: T.txt }}>{isPro ? 'Pro' : isTrial ? `Trial — ${tierInfo.trialDaysLeft}d left` : 'Free'}</p>
                   {isTrial && tierInfo.trialEndsAt && (
                     <p style={{ margin: '3px 0 0', fontSize: 11, color: T.dim, display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Clock size={10} strokeWidth={2} />
@@ -168,35 +134,25 @@ function UpgradePageInner() {
                     </p>
                   )}
                 </div>
-                <div style={{ width: 42, height: 42, borderRadius: 14, background: isTrial ? 'rgba(34,211,238,.1)' : isPro ? 'rgba(39,224,125,.1)' : 'rgba(255,255,255,.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {isPro ? <Star size={20} style={{ color: T.green }} strokeWidth={1.8} /> :
-                   isTrial ? <Sparkles size={20} style={{ color: T.ai }} strokeWidth={1.8} /> :
-                   <Zap size={20} style={{ color: T.dim }} strokeWidth={1.8} />}
+                <div style={{ width: 42, height: 42, borderRadius: 14, background: isTrial ? 'rgba(109,93,253,.1)' : isPro ? 'rgba(34,255,170,.1)' : 'rgba(255,255,255,.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {isPro ? <Star size={20} style={{ color: T.green }} strokeWidth={1.8} /> : isTrial ? <Sparkles size={20} style={{ color: T.ai }} strokeWidth={1.8} /> : <Zap size={20} style={{ color: T.dim }} strokeWidth={1.8} />}
                 </div>
               </motion.div>
             )}
 
-            {/* Trial success state */}
+            {/* Trial active state */}
             {isTrial && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                style={{ borderRadius: 18, padding: '20px 18px', marginBottom: 24, background: 'rgba(34,211,238,.06)', border: '1px solid rgba(34,211,238,.18)', textAlign: 'center' }}
-              >
-                <div style={{ width: 52, height: 52, borderRadius: 18, background: 'rgba(34,211,238,.12)', margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                style={{ borderRadius: 18, padding: '20px 18px', marginBottom: 24, background: 'rgba(109,93,253,.06)', border: '1px solid rgba(109,93,253,.18)', textAlign: 'center' }}>
+                <div style={{ width: 52, height: 52, borderRadius: 18, background: 'rgba(109,93,253,.12)', margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Sparkles size={24} style={{ color: T.ai }} strokeWidth={2} />
                 </div>
                 <p style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800, color: T.txt }}>Trial Active</p>
                 <p style={{ margin: 0, fontSize: 13, color: T.muted, lineHeight: 1.6 }}>
                   You have {tierInfo?.trialDaysLeft} days of full AI access and premium missions. Enjoy every step!
                 </p>
-                <button
-                  onClick={() => router.push('/missions')}
-                  style={{
-                    marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6,
-                    height: 42, padding: '0 20px', borderRadius: 999, border: 0, cursor: 'pointer',
-                    background: 'rgba(34,211,238,.12)', color: T.ai, fontSize: 13, fontWeight: 700,
-                  }}
-                >
+                <button onClick={() => router.push('/missions')}
+                  style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6, height: 42, padding: '0 20px', borderRadius: 999, border: 0, cursor: 'pointer', background: 'rgba(109,93,253,.12)', color: T.ai, fontSize: 13, fontWeight: 700, fontFamily: 'inherit' }}>
                   Browse Missions <ArrowRight size={14} strokeWidth={2.5} />
                 </button>
               </motion.div>
@@ -220,43 +176,29 @@ function UpgradePageInner() {
                 <FeatureRow text="Verified & sponsored missions" included={false} />
               </motion.div>
 
-              {/* Trial / Start Trial */}
+              {/* Trial */}
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                style={{ borderRadius: 20, overflow: 'hidden', border: `1px solid ${isTrial ? 'rgba(34,211,238,.3)' : 'rgba(34,211,238,.15)'}` }}>
-                <div style={{ height: 3, background: 'linear-gradient(90deg,#22d3ee,rgba(34,211,238,0))' }} />
-                <div style={{ padding: '18px 18px 20px', background: 'rgba(34,211,238,.03)' }}>
+                style={{ borderRadius: 20, overflow: 'hidden', border: `1px solid ${isTrial ? 'rgba(109,93,253,.3)' : 'rgba(109,93,253,.15)'}` }}>
+                <div style={{ height: 3, background: 'linear-gradient(90deg,#6D5DFD,rgba(109,93,253,0))' }} />
+                <div style={{ padding: '18px 18px 20px', background: 'rgba(109,93,253,.03)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                     <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: T.txt }}>Trial</p>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: T.ai, background: 'rgba(34,211,238,.12)', padding: '3px 10px', borderRadius: 999 }}>14 DAYS FREE</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: T.ai, background: 'rgba(109,93,253,.12)', padding: '3px 10px', borderRadius: 999 }}>14 DAYS FREE</span>
                   </div>
                   <p style={{ margin: '0 0 16px', fontSize: 11, color: T.dim }}>Then $12/mo — cancel anytime</p>
                   {TRIAL_FEATURES.map((f) => <FeatureRow key={f} text={f} included />)}
 
-                  {error && (
-                    <p style={{ fontSize: 12, color: '#ef5b6b', margin: '10px 0 0' }}>{error}</p>
-                  )}
+                  {error && <p style={{ fontSize: 12, color: '#FF5C7A', margin: '10px 0 0' }}>{error}</p>}
 
                   {!isTrial && !isPro && (
-                    <motion.button
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => void startTrial()}
-                      disabled={starting || !!tierInfo?.hasUsedTrial}
-                      style={{
-                        width: '100%', height: 48, borderRadius: 999, cursor: tierInfo?.hasUsedTrial ? 'not-allowed' : 'pointer',
-                        marginTop: 16, fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
-                        background: tierInfo?.hasUsedTrial ? T.elev : 'rgba(34,211,238,.15)',
-                        color: tierInfo?.hasUsedTrial ? T.dim : T.ai,
-                        border: `1px solid ${tierInfo?.hasUsedTrial ? T.line : 'rgba(34,211,238,.25)'}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                      }}
-                    >
-                      {starting ? <Loader2 size={17} strokeWidth={2} className="animate-spin" /> :
-                       tierInfo?.hasUsedTrial ? 'Trial already used' : 'Start Free Trial'}
+                    <motion.button whileTap={{ scale: 0.98 }} onClick={() => void startTrial()} disabled={starting || !!tierInfo?.hasUsedTrial}
+                      style={{ width: '100%', height: 48, borderRadius: 999, cursor: tierInfo?.hasUsedTrial ? 'not-allowed' : 'pointer', marginTop: 16, fontFamily: 'inherit', fontSize: 14, fontWeight: 700, background: tierInfo?.hasUsedTrial ? T.elev : 'rgba(109,93,253,.15)', color: tierInfo?.hasUsedTrial ? T.dim : T.ai, border: `1px solid ${tierInfo?.hasUsedTrial ? T.line : 'rgba(109,93,253,.25)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                      {starting ? <Loader2 size={17} strokeWidth={2} style={{ animation: 'spin 0.9s linear infinite' }} /> : tierInfo?.hasUsedTrial ? 'Trial already used' : 'Start Free Trial'}
                       {!starting && !tierInfo?.hasUsedTrial && <ArrowRight size={15} strokeWidth={2.5} />}
                     </motion.button>
                   )}
                   {isTrial && (
-                    <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 12, background: 'rgba(34,211,238,.08)', border: '1px solid rgba(34,211,238,.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 12, background: 'rgba(109,93,253,.08)', border: '1px solid rgba(109,93,253,.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Check size={15} style={{ color: T.ai }} strokeWidth={2.5} />
                       <span style={{ fontSize: 13, fontWeight: 600, color: T.ai }}>Active — {tierInfo?.trialDaysLeft} days remaining</span>
                     </div>
@@ -266,9 +208,9 @@ function UpgradePageInner() {
 
               {/* Pro */}
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                style={{ borderRadius: 20, overflow: 'hidden', border: `1px solid ${isPro ? 'rgba(39,224,125,.3)' : 'rgba(39,224,125,.15)'}` }}>
-                <div style={{ height: 3, background: 'linear-gradient(90deg,#27e07d,rgba(39,224,125,0))' }} />
-                <div style={{ padding: '18px 18px 20px', background: 'rgba(39,224,125,.02)' }}>
+                style={{ borderRadius: 20, overflow: 'hidden', border: `1px solid ${isPro ? 'rgba(34,255,170,.3)' : 'rgba(34,255,170,.15)'}` }}>
+                <div style={{ height: 3, background: 'linear-gradient(90deg,#22FFAA,rgba(34,255,170,0))' }} />
+                <div style={{ padding: '18px 18px 20px', background: 'rgba(34,255,170,.02)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                     <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: T.txt }}>Pro</p>
                     <div style={{ textAlign: 'right' }}>
@@ -279,26 +221,12 @@ function UpgradePageInner() {
                   {PRO_FEATURES.map((f) => <FeatureRow key={f} text={f} included />)}
 
                   {!isPro ? (
-                    <motion.button
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => void handleUpgrade()}
-                      disabled={upgrading}
-                      style={{
-                        width: '100%', height: 50, borderRadius: 999, border: 0, cursor: upgrading ? 'default' : 'pointer',
-                        marginTop: 16, fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
-                        background: 'linear-gradient(180deg,#3ee888,#19c268)',
-                        color: '#04130b', boxShadow: '0 4px 20px rgba(39,224,125,.3)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                        opacity: upgrading ? 0.7 : 1,
-                      }}
-                    >
-                      {upgrading
-                        ? <Loader2 size={17} strokeWidth={2} className="animate-spin" />
-                        : <><Shield size={16} strokeWidth={2.5} />Upgrade to Pro</>
-                      }
+                    <motion.button whileTap={{ scale: 0.98 }} onClick={() => void handleUpgrade()} disabled={upgrading}
+                      style={{ width: '100%', height: 50, borderRadius: 999, border: 0, cursor: upgrading ? 'default' : 'pointer', marginTop: 16, fontFamily: 'inherit', fontSize: 14, fontWeight: 700, background: T.green, color: '#050816', boxShadow: '0 4px 20px rgba(34,255,170,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: upgrading ? 0.7 : 1 }}>
+                      {upgrading ? <Loader2 size={17} strokeWidth={2} style={{ animation: 'spin 0.9s linear infinite' }} /> : <><Shield size={16} strokeWidth={2.5} />Upgrade to Pro</>}
                     </motion.button>
                   ) : (
-                    <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 12, background: 'rgba(39,224,125,.08)', border: '1px solid rgba(39,224,125,.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 12, background: 'rgba(34,255,170,.08)', border: '1px solid rgba(34,255,170,.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Check size={15} style={{ color: T.green }} strokeWidth={2.5} />
                       <span style={{ fontSize: 13, fontWeight: 600, color: T.green }}>Active Pro plan</span>
                     </div>
@@ -320,8 +248,8 @@ function UpgradePageInner() {
 export default function UpgradePage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: '100vh', background: '#070d0e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 28, height: 28, border: '2px solid #27e07d', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.9s linear infinite' }} />
+      <div style={{ minHeight: '100vh', background: '#050816', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 28, height: 28, border: '2px solid #22FFAA', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.9s linear infinite' }} />
       </div>
     }>
       <UpgradePageInner />

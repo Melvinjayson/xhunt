@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { motion } from 'framer-motion';
 import { Target, Users, CheckCircle2, Trophy, Plus, ArrowRight, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
@@ -16,7 +16,6 @@ const DIFFICULTY_COLORS = {
 };
 
 export default function AdminOverviewPage() {
-  const router = useRouter();
   const [missions, setMissions] = useState<DbMission[]>([]);
   const [tenant, setTenant] = useState<DbTenant | null>(null);
   const [totalUsers, setTotalUsers] = useState(0);
@@ -58,7 +57,7 @@ export default function AdminOverviewPage() {
 
   const stats = [
     { label: 'Active Missions', value: activeMissions, icon: Target, color: 'text-accent', bg: 'bg-accent/10' },
-    { label: 'Total Users', value: totalUsers, icon: Users, color: 'text-[#22d3ee]', bg: 'bg-[#001a22]' },
+    { label: 'Total Users', value: totalUsers, icon: Users, color: 'text-[#6D5DFD]', bg: 'bg-[#001a22]' },
     { label: 'Completions', value: completions, icon: CheckCircle2, color: 'text-[#00e676]', bg: 'bg-[#002918]' },
     { label: 'Missions Created', value: missions.length, icon: Trophy, color: 'text-[#fbbf24]', bg: 'bg-[#2a1a00]' },
   ];

@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
   const candidates = missions.filter((m) => !completedMissionIds.has(m.id) && m.id !== currentMissionId);
 
   // If we have a current mission, use KG edges to boost related missions
-  let kgBoost: Map<string, number> = new Map();
+  const kgBoost: Map<string, number> = new Map();
   if (currentMissionId) {
     const { data: edges } = await supabase
       .from('kg_edges')

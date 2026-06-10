@@ -32,10 +32,6 @@ export default function AdminMissionsPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    loadMissions();
-  }, []);
-
   async function loadMissions() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -57,6 +53,8 @@ export default function AdminMissionsPage() {
     setMissions(data ?? []);
     setLoading(false);
   }
+
+  useEffect(() => { void loadMissions(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function seedMissions() {
     if (!confirm('Seed 6 starter missions from the X-hunt template library? This only works once (skipped if missions already exist).')) return;

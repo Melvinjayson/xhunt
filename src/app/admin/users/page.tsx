@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Crown, Target, ChevronDown, Shield } from 'lucide-react';
+import { Users, ChevronDown, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { DbUserProfile } from '@/lib/supabase/types';
 import { cn } from '@/lib/cn';
@@ -9,7 +9,7 @@ import { cn } from '@/lib/cn';
 const ROLE_BADGE: Record<string, string> = {
   platform_admin: 'text-[#fbbf24] bg-[#2a1a00]',
   tenant_admin: 'text-accent bg-accent-light',
-  mission_creator: 'text-[#22d3ee] bg-ai-light',
+  mission_creator: 'text-[#6D5DFD] bg-ai-light',
   analyst: 'text-[#818cf8] bg-[#0f0f2a]',
   participant: 'text-[#7a8fa8] bg-[#162030]',
 };

@@ -37,7 +37,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [interests, setInterests] = useState<string[]>([]);
   const [goal, setGoal] = useState<string>('');
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [, setIsGenerating] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#070d0e' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#050816' }}>
       <div className="max-w-[430px] mx-auto w-full min-h-screen flex flex-col">
         {/* Step indicator */}
         {step < 3 && (
@@ -122,11 +122,8 @@ export default function OnboardingPage() {
                 className="flex flex-col flex-1"
               >
                 {/* Logo */}
-                <div className="flex items-center gap-2 mb-10 mt-2">
-                  <div className="w-9 h-9 bg-accent rounded-xl flex items-center justify-center shadow-[0_0_16px_rgba(39,224,125,.4)]">
-                    <span className="text-[#04130b] font-black text-lg">X</span>
-                  </div>
-                  <span className="text-xl font-bold text-[#e9eff0]">hunt</span>
+                <div className="mb-10 mt-2">
+                  <img src="/logo-wordmark.png" alt="X-Hunt" className="h-8 w-auto object-contain" />
                 </div>
 
                 <h1 className="text-[28px] font-bold text-[#e9eff0] leading-tight mb-2">
@@ -162,7 +159,7 @@ export default function OnboardingPage() {
                         </span>
                         {active && (
                           <div className="absolute top-3 right-3 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
-                            <Check size={11} strokeWidth={3} className="text-[#04130b]" />
+                            <Check size={11} strokeWidth={3} className="text-[#050816]" />
                           </div>
                         )}
                       </motion.button>
@@ -178,7 +175,7 @@ export default function OnboardingPage() {
                     className={cn(
                       'w-full h-14 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition-all duration-200',
                       interests.length > 0
-                        ? 'bg-accent text-[#04130b] shadow-[0_4px_24px_rgba(39,224,125,.4)]'
+                        ? 'bg-accent text-[#050816] shadow-[0_4px_24px_rgba(34,255,170,.4)]'
                         : 'bg-[#121d20] text-[#54625f] cursor-not-allowed border border-[rgba(255,255,255,.07)]'
                     )}
                   >
@@ -245,7 +242,7 @@ export default function OnboardingPage() {
                             active ? 'border-accent bg-accent' : 'border-[#54625f]'
                           )}
                         >
-                          {active && <div className="w-2 h-2 bg-[#04130b] rounded-full" />}
+                          {active && <div className="w-2 h-2 bg-[#050816] rounded-full" />}
                         </div>
                       </motion.button>
                     );
@@ -260,7 +257,7 @@ export default function OnboardingPage() {
                     className={cn(
                       'w-full h-14 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition-all duration-200',
                       goal
-                        ? 'bg-accent text-[#04130b] shadow-[0_4px_24px_rgba(39,224,125,.4)]'
+                        ? 'bg-accent text-[#050816] shadow-[0_4px_24px_rgba(34,255,170,.4)]'
                         : 'bg-[#121d20] text-[#54625f] cursor-not-allowed border border-[rgba(255,255,255,.07)]'
                     )}
                   >
@@ -280,7 +277,7 @@ export default function OnboardingPage() {
                 exit="exit"
                 className="flex flex-col items-center justify-center flex-1 text-center gap-6"
               >
-                <div className="w-20 h-20 bg-ai-light rounded-full flex items-center justify-center shadow-[0_0_32px_rgba(34,211,238,0.2)]">
+                <div className="w-20 h-20 bg-ai-light rounded-full flex items-center justify-center shadow-[0_0_32px_rgba(109,93,253,0.2)]">
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}

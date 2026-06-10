@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, Target, Zap, RefreshCw, Loader2, Trophy,
-  CheckCircle2, Users, Activity, ArrowUpRight
+  CheckCircle2, Activity, ArrowUpRight
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { DbMissionScore, DbMission, DbOutcomeEvent } from '@/lib/supabase/types';
@@ -17,7 +17,7 @@ interface ScoredMission {
 
 const MEI_BAND = (mei: number) => {
   if (mei >= 75) return { label: 'Excellent', color: 'text-accent', bg: 'bg-accent-light', bar: 'bg-accent' };
-  if (mei >= 50) return { label: 'Good', color: 'text-[#22d3ee]', bg: 'bg-[#001a22]', bar: 'bg-[#22d3ee]' };
+  if (mei >= 50) return { label: 'Good', color: 'text-[#6D5DFD]', bg: 'bg-[#001a22]', bar: 'bg-[#6D5DFD]' };
   if (mei >= 25) return { label: 'Developing', color: 'text-[#fbbf24]', bg: 'bg-[#2a1a00]', bar: 'bg-[#fbbf24]' };
   return { label: 'Early', color: 'text-[#7a8fa8]', bg: 'bg-[#162030]', bar: 'bg-[#3d5068]' };
 };
@@ -51,8 +51,6 @@ export default function AdminOutcomesPage() {
 
   const supabase = createClient();
 
-  useEffect(() => { loadData(); }, []);
-
   async function loadData() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -85,6 +83,8 @@ export default function AdminOutcomesPage() {
     setOutcomes(outcomesRes.data ?? []);
     setLoading(false);
   }
+
+  useEffect(() => { void loadData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function computeMEI() {
     setComputing(true);
@@ -124,7 +124,7 @@ export default function AdminOutcomesPage() {
       <div className="grid grid-cols-4 gap-4 mb-8">
         {[
           { label: 'Average MEI', value: avgMEI, icon: Activity, color: 'text-accent', bg: 'bg-accent-light' },
-          { label: 'Scored Missions', value: scored.length, icon: Target, color: 'text-[#22d3ee]', bg: 'bg-[#001a22]' },
+          { label: 'Scored Missions', value: scored.length, icon: Target, color: 'text-[#6D5DFD]', bg: 'bg-[#001a22]' },
           { label: 'Outcome Events', value: outcomes.length, icon: CheckCircle2, color: 'text-[#818cf8]', bg: 'bg-[#0f0f2a]' },
           { label: 'Top MEI', value: topMission ? Math.round(topMission.score.mei) : '—', icon: Trophy, color: 'text-[#fbbf24]', bg: 'bg-[#2a1a00]' },
         ].map(({ label, value, icon: Icon, color, bg }) => (
@@ -157,7 +157,7 @@ export default function AdminOutcomesPage() {
                 <div className="py-16 text-center">
                   <Activity size={32} className="text-[#3d5068] mx-auto mb-3" strokeWidth={1.5} />
                   <p className="text-[#7a8fa8] font-medium mb-1">No scores yet</p>
-                  <p className="text-[#3d5068] text-sm">Click "Compute MEI" to score all missions.</p>
+                  <p className="text-[#3d5068] text-sm">Click &ldquo;Compute MEI&rdquo; to score all missions.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-[#1c2a3a]">
@@ -195,7 +195,7 @@ export default function AdminOutcomesPage() {
                           <div className="px-6 pb-4 bg-[#0a1020] border-t border-[#1c2a3a]">
                             <div className="grid grid-cols-2 gap-4 py-4">
                               <ScoreBar label="Completion" value={s.completion_score} color="bg-accent" />
-                              <ScoreBar label="Engagement" value={s.engagement_score} color="bg-[#22d3ee]" />
+                              <ScoreBar label="Engagement" value={s.engagement_score} color="bg-[#6D5DFD]" />
                               <ScoreBar label="Retention" value={s.retention_score} color="bg-[#818cf8]" />
                               <ScoreBar label="Outcome" value={s.outcome_score} color="bg-[#fbbf24]" />
                             </div>
@@ -237,7 +237,7 @@ export default function AdminOutcomesPage() {
                 <p className="text-[28px] font-black text-accent leading-none mb-3">{Math.round(topMission.score.mei)}</p>
                 <div className="flex flex-col gap-2">
                   <ScoreBar label="Completion" value={topMission.score.completion_score} color="bg-accent" />
-                  <ScoreBar label="Engagement" value={topMission.score.engagement_score} color="bg-[#22d3ee]" />
+                  <ScoreBar label="Engagement" value={topMission.score.engagement_score} color="bg-[#6D5DFD]" />
                   <ScoreBar label="Retention" value={topMission.score.retention_score} color="bg-[#818cf8]" />
                 </div>
               </div>

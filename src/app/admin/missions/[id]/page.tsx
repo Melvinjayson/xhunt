@@ -25,7 +25,7 @@ type AgentPanel = 'behavioral' | 'designer' | null;
 const STATUS_CONFIG: Record<MissionStatus, { color: string; bg: string; border: string; description: string }> = {
   draft:     { color: 'text-[#fbbf24]', bg: 'bg-[#2a1a00]',  border: 'border-[#3a2800]',   description: 'Work in progress — not visible to participants' },
   active:    { color: 'text-accent',    bg: 'bg-accent/10',  border: 'border-accent/20',   description: 'Live — accessible to linked audience segments' },
-  published: { color: 'text-[#22d3ee]', bg: 'bg-[#001a22]',  border: 'border-[#003040]',   description: 'Publicly available to all eligible participants' },
+  published: { color: 'text-[#6D5DFD]', bg: 'bg-[#001a22]',  border: 'border-[#003040]',   description: 'Publicly available to all eligible participants' },
   paused:    { color: 'text-[#7a8fa8]', bg: 'bg-[#162030]',  border: 'border-[#1c2a3a]',   description: 'Temporarily paused — no new participants admitted' },
   archived:  { color: 'text-[#3d5068]', bg: 'bg-[#0f1824]',  border: 'border-[#1c2a3a]',   description: 'Archived — read only, no longer active' },
 };
@@ -190,11 +190,11 @@ export default function MissionDetailPage() {
   }
 
   function toggleSegment(id: string) {
-    setLinkedSegments((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setLinkedSegments((prev) => { const n = new Set(prev); if (n.has(id)) { n.delete(id); } else { n.add(id); } return n; });
   }
 
   function toggleReward(id: string) {
-    setLinkedRewards((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setLinkedRewards((prev) => { const n = new Set(prev); if (n.has(id)) { n.delete(id); } else { n.add(id); } return n; });
   }
 
   async function submitForReview() {
@@ -254,7 +254,7 @@ export default function MissionDetailPage() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
           { label: 'Completions', value: completions, icon: CheckCircle2, color: 'text-accent' },
-          { label: 'Steps', value: steps.length, icon: BarChart3, color: 'text-[#22d3ee]' },
+          { label: 'Steps', value: steps.length, icon: BarChart3, color: 'text-[#6D5DFD]' },
           { label: 'Duration', value: mission.estimated_time ?? '—', icon: Clock, color: 'text-[#fbbf24]' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-[#111927] border border-[#1c2a3a] rounded-2xl p-4 flex items-center gap-3">
@@ -318,7 +318,7 @@ export default function MissionDetailPage() {
           <div className="flex items-center justify-between bg-[#0f1824] border border-[#1c2a3a] rounded-xl px-4 py-3">
             <div>
               <p className="text-[13px] font-semibold text-[#e8f0fe]">Visible in consumer app</p>
-              <p className="text-[11px] text-[#3d5068] mt-0.5">When on, this mission appears in participants' home feed</p>
+              <p className="text-[11px] text-[#3d5068] mt-0.5">When on, this mission appears in participants&apos; home feed</p>
             </div>
             <button
               onClick={() => updateField('is_public', !mission.is_public)}

@@ -1,90 +1,61 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, User, Loader2, AlertCircle, Check } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function SignupPage() {
-  const router = useRouter();
+  const [name, setName]               = useState('');
+  const [email, setEmail]             = useState('');
+  const [password, setPassword]       = useState('');
+  const [showPassword, setShowPw]     = useState(false);
+  const [loading, setLoading]         = useState(false);
+  const [googleLoading, setGoogleLoad] = useState(false);
+  const [error, setError]             = useState('');
+  const [success, setSuccess]         = useState(false);
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-
-  const supabase = createClient();
-
+  const supabase       = createClient();
   const passwordStrong = password.length >= 8;
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     if (!email || !password || !name) return;
-    setLoading(true);
-    setError('');
-
+    setLoading(true); setError('');
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: name },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboard`,
-      },
+      email, password,
+      options: { data: { full_name: name }, emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboard` },
     });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
-
-    setSuccess(true);
-    setLoading(false);
+    if (error) { setError(error.message); setLoading(false); return; }
+    setSuccess(true); setLoading(false);
   }
 
   async function handleGoogleSignup() {
-    setGoogleLoading(true);
-    setError('');
-
+    setGoogleLoad(true); setError('');
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/onboard`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/onboard` },
     });
-
-    if (error) {
-      setError(error.message);
-      setGoogleLoading(false);
-    }
+    if (error) { setError(error.message); setGoogleLoad(false); }
   }
+
+  const inputBase: React.CSSProperties = { width: '100%', height: 48, background: '#0A1226', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, color: '#F0F4FF', fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', paddingLeft: 44, paddingRight: 16 };
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#080c14] flex items-center justify-center px-5">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-[400px] text-center"
-        >
-          <div className="w-16 h-16 bg-[#002918] rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check size={28} className="text-accent" strokeWidth={2.5} />
+      <div style={{ minHeight: '100vh', background: '#050816', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px' }}>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ width: '100%', maxWidth: 400, textAlign: 'center' }}>
+          <div style={{ width: 64, height: 64, background: 'rgba(34,255,170,.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', border: '1px solid rgba(34,255,170,.2)' }}>
+            <Check size={28} style={{ color: '#22FFAA' }} strokeWidth={2.5} />
           </div>
-          <h2 className="text-2xl font-bold text-[#e8f0fe] mb-2">Check your email</h2>
-          <p className="text-[#7a8fa8] text-sm leading-relaxed">
-            We sent a confirmation link to <strong className="text-[#e8f0fe]">{email}</strong>.
-            Click it to activate your account.
+          <h2 style={{ fontSize: 24, fontWeight: 800, color: '#F0F4FF', margin: '0 0 8px' }}>Check your email</h2>
+          <p style={{ fontSize: 14, color: '#8B9CC0', lineHeight: 1.6 }}>
+            We sent a confirmation link to <strong style={{ color: '#F0F4FF' }}>{email}</strong>. Click it to activate your account.
           </p>
-          <Link
-            href="/auth/login"
-            className="inline-flex items-center justify-center mt-6 px-6 h-11 bg-[#111927] border border-[#1c2a3a] rounded-xl text-sm font-semibold text-[#e8f0fe] hover:border-[#2a3f58] transition-colors"
-          >
+          <Link href="/auth/login"
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginTop: 24, padding: '0 24px', height: 44, background: '#0A1226', border: '1px solid rgba(255,255,255,.08)', borderRadius: 14, fontSize: 14, fontWeight: 600, color: '#F0F4FF', textDecoration: 'none' }}>
             Back to login
           </Link>
         </motion.div>
@@ -93,111 +64,71 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080c14] flex items-center justify-center px-5">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="w-full max-w-[400px]"
-      >
+    <div style={{ minHeight: '100vh', background: '#050816', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px' }}>
+      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut' as const }}
+        style={{ width: '100%', maxWidth: 400 }}>
+
         {/* Logo */}
-        <div className="flex items-center gap-2 mb-10">
-          <div className="w-9 h-9 bg-accent rounded-xl flex items-center justify-center shadow-[0_0_16px_rgba(0,230,118,0.4)]">
-            <span className="text-[#060a0e] font-black text-lg">X</span>
-          </div>
-          <span className="text-xl font-bold text-[#e8f0fe]">hunt</span>
+        <div style={{ marginBottom: 40 }}>
+          <img src="/logo-wordmark.png" alt="X-Hunt" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
         </div>
 
-        <h1 className="text-[26px] font-bold text-[#e8f0fe] mb-1">Create your workspace</h1>
-        <p className="text-[#7a8fa8] text-sm mb-8">Start building missions for your organization</p>
+        <h1 style={{ fontSize: 26, fontWeight: 800, color: '#F0F4FF', margin: '0 0 6px', letterSpacing: '-.02em' }}>Create your workspace</h1>
+        <p style={{ fontSize: 14, color: '#8B9CC0', margin: '0 0 28px' }}>Start building missions for your organization</p>
 
         {error && (
-          <div className="flex items-center gap-2 bg-[#2a0a0a] border border-[#ff5252]/30 rounded-xl px-4 py-3 mb-5">
-            <AlertCircle size={15} className="text-[#ff5252] flex-shrink-0" strokeWidth={2} />
-            <p className="text-[13px] text-[#ff5252]">{error}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,92,122,.1)', border: '1px solid rgba(255,92,122,.3)', borderRadius: 14, padding: '10px 14px', marginBottom: 18 }}>
+            <AlertCircle size={15} style={{ color: '#FF5C7A', flexShrink: 0 }} strokeWidth={2} />
+            <p style={{ fontSize: 13, color: '#FF5C7A', margin: 0 }}>{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSignup} className="flex flex-col gap-3 mb-5">
-          <div className="relative">
-            <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#3d5068]" strokeWidth={2} />
-            <input
-              type="text"
-              placeholder="Full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full h-12 bg-[#111927] border border-[#1c2a3a] rounded-xl pl-11 pr-4 text-[#e8f0fe] placeholder-[#3d5068] text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
-            />
+        <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+          <div style={{ position: 'relative' }}>
+            <User size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#4A5578' }} strokeWidth={2} />
+            <input type="text" placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} required style={inputBase}
+              onFocus={e => { e.target.style.borderColor = 'rgba(34,255,170,.35)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.08)'; }} />
           </div>
 
-          <div className="relative">
-            <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#3d5068]" strokeWidth={2} />
-            <input
-              type="email"
-              placeholder="Work email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full h-12 bg-[#111927] border border-[#1c2a3a] rounded-xl pl-11 pr-4 text-[#e8f0fe] placeholder-[#3d5068] text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
-            />
+          <div style={{ position: 'relative' }}>
+            <Mail size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#4A5578' }} strokeWidth={2} />
+            <input type="email" placeholder="Work email" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputBase}
+              onFocus={e => { e.target.style.borderColor = 'rgba(34,255,170,.35)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.08)'; }} />
           </div>
 
-          <div className="relative">
-            <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#3d5068]" strokeWidth={2} />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Password (min 8 chars)"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className="w-full h-12 bg-[#111927] border border-[#1c2a3a] rounded-xl pl-11 pr-11 text-[#e8f0fe] placeholder-[#3d5068] text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#3d5068] hover:text-[#7a8fa8] transition-colors"
-            >
+          <div style={{ position: 'relative' }}>
+            <Lock size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#4A5578' }} strokeWidth={2} />
+            <input type={showPassword ? 'text' : 'password'} placeholder="Password (min 8 chars)" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8}
+              style={{ ...inputBase, paddingRight: 44 }}
+              onFocus={e => { e.target.style.borderColor = 'rgba(34,255,170,.35)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.08)'; }} />
+            <button type="button" onClick={() => setShowPw(!showPassword)}
+              style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#4A5578', padding: 2 }}>
               {showPassword ? <EyeOff size={16} strokeWidth={2} /> : <Eye size={16} strokeWidth={2} />}
             </button>
           </div>
 
           {password.length > 0 && (
-            <div className="flex items-center gap-2 px-1">
-              <div className={`h-1 flex-1 rounded-full transition-colors ${passwordStrong ? 'bg-accent' : 'bg-[#1c2a3a]'}`} />
-              <span className={`text-[11px] font-medium ${passwordStrong ? 'text-accent' : 'text-[#3d5068]'}`}>
-                {passwordStrong ? 'Strong' : 'Too short'}
-              </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px' }}>
+              <div style={{ height: 3, flex: 1, borderRadius: 999, background: passwordStrong ? '#22FFAA' : 'rgba(255,255,255,.08)', transition: 'background .2s' }} />
+              <span style={{ fontSize: 11, fontWeight: 600, color: passwordStrong ? '#22FFAA' : '#4A5578' }}>{passwordStrong ? 'Strong' : 'Too short'}</span>
             </div>
           )}
 
-          <motion.button
-            type="submit"
-            disabled={loading || !email || !password || !name || !passwordStrong}
-            whileTap={{ scale: 0.98 }}
-            className="w-full h-12 bg-accent text-[#060a0e] rounded-xl font-bold text-sm shadow-[0_4px_20px_rgba(0,230,118,0.35)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-1"
-          >
-            {loading ? <Loader2 size={18} strokeWidth={2} className="animate-spin" /> : 'Create account'}
+          <motion.button type="submit" disabled={loading || !email || !password || !name || !passwordStrong} whileTap={{ scale: 0.98 }}
+            style={{ width: '100%', height: 48, background: '#22FFAA', color: '#050816', borderRadius: 14, border: 'none', fontWeight: 800, fontSize: 15, cursor: loading || !email || !password || !name || !passwordStrong ? 'not-allowed' : 'pointer', opacity: loading || !email || !password || !name || !passwordStrong ? 0.55 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 20px rgba(34,255,170,0.35)', marginTop: 4, fontFamily: 'inherit' }}>
+            {loading ? <Loader2 size={18} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} /> : 'Create account'}
           </motion.button>
         </form>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="flex-1 h-px bg-[#1c2a3a]" />
-          <span className="text-[12px] text-[#3d5068] font-medium">or</span>
-          <div className="flex-1 h-px bg-[#1c2a3a]" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }} />
+          <span style={{ fontSize: 12, color: '#4A5578', fontWeight: 500 }}>or</span>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }} />
         </div>
 
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          onClick={handleGoogleSignup}
-          disabled={googleLoading}
-          className="w-full h-12 bg-[#111927] border border-[#1c2a3a] rounded-xl font-semibold text-[#e8f0fe] text-sm flex items-center justify-center gap-3 hover:border-[#2a3f58] transition-colors disabled:opacity-50"
-        >
-          {googleLoading ? (
-            <Loader2 size={18} strokeWidth={2} className="animate-spin" />
-          ) : (
+        <motion.button whileTap={{ scale: 0.98 }} onClick={handleGoogleSignup} disabled={googleLoading}
+          style={{ width: '100%', height: 48, background: '#0A1226', border: '1px solid rgba(255,255,255,.08)', borderRadius: 14, fontWeight: 600, color: '#F0F4FF', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: googleLoading ? 'wait' : 'pointer', opacity: googleLoading ? 0.55 : 1, fontFamily: 'inherit' }}>
+          {googleLoading ? <Loader2 size={18} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} /> : (
             <>
               <svg width="18" height="18" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -210,11 +141,9 @@ export default function SignupPage() {
           )}
         </motion.button>
 
-        <p className="text-center text-[#7a8fa8] text-sm mt-6">
+        <p style={{ textAlign: 'center', fontSize: 14, color: '#8B9CC0', marginTop: 24 }}>
           Already have an account?{' '}
-          <Link href="/auth/login" className="text-accent font-semibold hover:text-accent-dark transition-colors">
-            Sign in
-          </Link>
+          <Link href="/auth/login" style={{ color: '#22FFAA', fontWeight: 700, textDecoration: 'none' }}>Sign in</Link>
         </p>
       </motion.div>
     </div>

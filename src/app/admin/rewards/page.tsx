@@ -13,7 +13,7 @@ import { cn } from '@/lib/cn';
 const REWARD_TYPE_CONFIG: Record<RewardType, { label: string; icon: React.ElementType; color: string; bg: string }> = {
   points:     { label: 'Points',     icon: Star,   color: 'text-[#fbbf24]', bg: 'bg-[#2a1a00]' },
   badge:      { label: 'Badge',      icon: Award,  color: 'text-[#818cf8]', bg: 'bg-[#0f0f2a]' },
-  coupon:     { label: 'Coupon',     icon: Ticket, color: 'text-[#22d3ee]', bg: 'bg-[#001a22]' },
+  coupon:     { label: 'Coupon',     icon: Ticket, color: 'text-[#6D5DFD]', bg: 'bg-[#001a22]' },
   experience: { label: 'Experience', icon: Zap,    color: 'text-accent',    bg: 'bg-accent-light' },
   benefit:    { label: 'Benefit',    icon: Gift,   color: 'text-[#f472b6]', bg: 'bg-[#2a0a1a]' },
 };
@@ -139,8 +139,6 @@ export default function AdminRewardsPage() {
 
   const supabase = createClient();
 
-  useEffect(() => { loadRewards(); }, []);
-
   async function loadRewards() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -150,6 +148,8 @@ export default function AdminRewardsPage() {
     setRewards(data ?? []);
     setLoading(false);
   }
+
+  useEffect(() => { void loadRewards(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function openCreate() { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); }
   function openEdit(r: DbRewardConfig) {

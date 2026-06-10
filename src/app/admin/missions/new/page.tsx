@@ -222,7 +222,7 @@ export default function NewMissionPage() {
             className={cn(
               'flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-all duration-150',
               mode === m
-                ? m === 'ai' ? 'bg-ai text-[#060a0e] shadow-[0_4px_16px_rgba(34,211,238,0.3)]' : 'bg-accent text-[#060a0e] shadow-[0_4px_16px_rgba(0,230,118,0.3)]'
+                ? m === 'ai' ? 'bg-ai text-[#060a0e] shadow-[0_4px_16px_rgba(109,93,253,0.3)]' : 'bg-accent text-[#060a0e] shadow-[0_4px_16px_rgba(0,230,118,0.3)]'
                 : 'bg-[#111927] text-[#7a8fa8] border border-[#1c2a3a]'
             )}
           >
@@ -300,7 +300,7 @@ export default function NewMissionPage() {
             whileTap={{ scale: 0.97 }}
             onClick={handleAiGenerate}
             disabled={aiGenerating || !aiReady}
-            className="flex items-center gap-2 h-10 px-5 bg-ai text-[#060a0e] rounded-xl font-semibold text-sm shadow-[0_4px_16px_rgba(34,211,238,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 h-10 px-5 bg-ai text-[#060a0e] rounded-xl font-semibold text-sm shadow-[0_4px_16px_rgba(109,93,253,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {aiGenerating ? (
               <><Loader2 size={15} strokeWidth={2} className="animate-spin" /> Architecting…</>

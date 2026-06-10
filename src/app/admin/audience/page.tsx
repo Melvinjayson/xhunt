@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Tag, Globe, X, Save, Loader2, Trash2, ChevronDown } from 'lucide-react';
+import { Plus, Users, Tag, X, Save, Loader2, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { DbAudienceSegment, AudienceFilters } from '@/lib/supabase/types';
-import { cn } from '@/lib/cn';
 
 const INTEREST_SUGGESTIONS = ['Technology', 'Sustainability', 'Finance', 'Health', 'Education', 'Travel', 'Food', 'Sports'];
 const GEO_SUGGESTIONS = ['Global', 'EMEA', 'North America', 'APAC', 'Ireland', 'United Kingdom', 'United States'];
@@ -96,8 +95,6 @@ export default function AdminAudiencePage() {
 
   const supabase = createClient();
 
-  useEffect(() => { loadSegments(); }, []);
-
   async function loadSegments() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -111,6 +108,8 @@ export default function AdminAudiencePage() {
     setSegments(data ?? []);
     setLoading(false);
   }
+
+  useEffect(() => { void loadSegments(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function openCreate() {
     setEditing(null);
@@ -218,7 +217,7 @@ export default function AdminAudiencePage() {
                   <span key={t} className="text-[10px] px-2 py-0.5 bg-accent-light text-accent rounded-full">{t}</span>
                 ))}
                 {(seg.filters.geography ?? []).map((t) => (
-                  <span key={t} className="text-[10px] px-2 py-0.5 bg-[#001a22] text-[#22d3ee] rounded-full">{t}</span>
+                  <span key={t} className="text-[10px] px-2 py-0.5 bg-[#001a22] text-[#6D5DFD] rounded-full">{t}</span>
                 ))}
                 {(seg.filters.tags ?? []).map((t) => (
                   <span key={t} className="text-[10px] px-2 py-0.5 bg-[#162030] text-[#7a8fa8] rounded-full">{t}</span>

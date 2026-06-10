@@ -252,3 +252,113 @@ export interface DbOutcomeRoadmap {
   roadmap: Record<string, unknown>;
   created_at: string;
 }
+
+// ── Outcomes Intelligence & Validation ────────────────────────────────────────
+
+export type ValidationStatus = 'pending' | 'under_review' | 'approved' | 'rejected' | 'requires_evidence';
+export type ValidationType = 'self_reported' | 'peer_verified' | 'automated' | 'manager_verified';
+export type EvidenceType = 'screenshot' | 'document' | 'url' | 'metric' | 'attestation' | 'certificate';
+
+export interface ValidationEvidence {
+  type: EvidenceType;
+  label: string;
+  url?: string;
+  value?: string;
+  submitted_at: string;
+}
+
+export interface DbOutcomeValidation {
+  id: string;
+  tenant_id: string;
+  mission_id: string | null;
+  user_id: string | null;
+  outcome_event_id: string | null;
+  status: ValidationStatus;
+  validation_type: ValidationType;
+  evidence: ValidationEvidence[];
+  reviewer_id: string | null;
+  reviewer_notes: string | null;
+  confidence_score: number | null;
+  submitted_at: string;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Escrow Services ───────────────────────────────────────────────────────────
+
+export type EscrowStatus = 'created' | 'funded' | 'locked' | 'partially_released' | 'fully_released' | 'disputed' | 'refunded';
+export type EscrowReleaseCondition = 'mei_threshold' | 'outcome_count' | 'manual_approval' | 'deadline_based' | 'hybrid';
+
+export interface DbEscrowAccount {
+  id: string;
+  tenant_id: string;
+  mission_id: string | null;
+  stripe_payment_intent_id: string | null;
+  amount_cents: number;
+  currency: string;
+  status: EscrowStatus;
+  release_condition: EscrowReleaseCondition;
+  release_config: Record<string, unknown>;
+  funded_at: string | null;
+  released_at: string | null;
+  released_amount_cents: number;
+  dispute_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbEscrowTransaction {
+  id: string;
+  escrow_id: string;
+  tenant_id: string;
+  transaction_type: 'fund' | 'release' | 'refund' | 'dispute_hold';
+  amount_cents: number;
+  stripe_transfer_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+// ── Revenue Manager ───────────────────────────────────────────────────────────
+
+export type RevenueCategory = 'subscription' | 'mission_fee' | 'outcome_bonus' | 'escrow_release' | 'api_usage' | 'professional_services';
+export type InvoiceStatus = 'draft' | 'open' | 'paid' | 'void' | 'uncollectible';
+
+export interface InvoiceLineItem {
+  description: string;
+  quantity: number;
+  unit_price_cents: number;
+  amount_cents: number;
+  category: RevenueCategory;
+}
+
+export interface DbRevenueRecord {
+  id: string;
+  tenant_id: string;
+  mission_id: string | null;
+  escrow_id: string | null;
+  stripe_payment_intent_id: string | null;
+  category: RevenueCategory;
+  amount_cents: number;
+  currency: string;
+  description: string;
+  period_start: string | null;
+  period_end: string | null;
+  recognized_at: string;
+  created_at: string;
+}
+
+export interface DbInvoice {
+  id: string;
+  tenant_id: string;
+  stripe_invoice_id: string | null;
+  invoice_number: string;
+  status: InvoiceStatus;
+  amount_cents: number;
+  currency: string;
+  line_items: InvoiceLineItem[];
+  issued_at: string;
+  due_at: string | null;
+  paid_at: string | null;
+  created_at: string;
+}

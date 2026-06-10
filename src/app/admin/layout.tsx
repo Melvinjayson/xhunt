@@ -39,14 +39,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!authorized) {
     return (
-      <div className="min-h-screen bg-[#080c14] flex items-center justify-center">
+      <div className="min-h-screen bg-[#050816] flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#080c14]">
+    <div className="flex min-h-screen bg-[#050816]">
       <AdminSidebar />
       <main className="flex-1 min-w-0 overflow-auto">
         {children}

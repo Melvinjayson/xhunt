@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Target, Users, BarChart3, Settings, LogOut,
-  UserSquare2, Gift, ShieldCheck, Bot, TrendingUp, Network
+  UserSquare2, Gift, ShieldCheck, Bot, TrendingUp, Network,
+  CheckCircle2, DollarSign, Lock
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { createClient } from '@/lib/supabase/client';
@@ -21,10 +23,18 @@ const NAV_GROUPS = [
     label: 'Intelligence',
     items: [
       { href: '/admin/agents', icon: Bot, label: 'AI Agents', exact: false },
-      { href: '/admin/outcomes', icon: TrendingUp, label: 'Outcomes', exact: false },
+      { href: '/admin/outcomes', icon: TrendingUp, label: 'Outcomes', exact: true },
+      { href: '/admin/outcomes/validation', icon: CheckCircle2, label: 'Validation', exact: false },
       { href: '/admin/knowledge-graph', icon: Network, label: 'Knowledge Graph', exact: false },
       { href: '/admin/analytics', icon: BarChart3, label: 'Analytics', exact: false },
       { href: '/admin/governance', icon: ShieldCheck, label: 'Governance', exact: false },
+    ],
+  },
+  {
+    label: 'Finance',
+    items: [
+      { href: '/admin/revenue', icon: DollarSign, label: 'Revenue', exact: false },
+      { href: '/admin/escrow', icon: Lock, label: 'Escrow', exact: false },
     ],
   },
   {
@@ -51,14 +61,12 @@ export default function AdminSidebar() {
   return (
     <aside className="w-60 flex-shrink-0 bg-[#0a1020] border-r border-[#1c2a3a] flex flex-col min-h-screen sticky top-0">
       {/* Logo */}
-      <div className="px-5 py-6 border-b border-[#1c2a3a]">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center shadow-[0_0_12px_rgba(0,230,118,0.35)]">
-            <span className="text-[#060a0e] font-black text-base">X</span>
-          </div>
+      <div className="px-5 py-5 border-b border-[#1c2a3a]">
+        <div className="flex items-center gap-2.5">
+          <Image src="/logo-mark.png" alt="X-Hunt" width={32} height={32} className="w-8 h-8 object-contain" priority />
           <div>
-            <span className="text-[15px] font-bold text-[#e8f0fe]">hunt</span>
-            <span className="ml-1.5 text-[10px] font-semibold text-[#3d5068] uppercase tracking-wider">Admin</span>
+            <p className="text-[14px] font-bold text-[#e8f0fe] leading-none">X-Hunt</p>
+            <p className="text-[10px] font-semibold text-[#3d5068] uppercase tracking-wider mt-0.5">Admin</p>
           </div>
         </div>
       </div>

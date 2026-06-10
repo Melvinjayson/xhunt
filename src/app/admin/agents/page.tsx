@@ -29,7 +29,7 @@ const AGENTS: AgentDef[] = [
     tagline: 'Converts goals into missions',
     description: 'Takes an organizational goal and produces a complete mission blueprint — steps, difficulty, rewards, and rationale.',
     icon: Target,
-    color: 'text-[#22d3ee]',
+    color: 'text-[#6D5DFD]',
     bg: 'bg-[#001a22]',
     border: 'border-[#0a3040]',
     endpoint: '/api/agents/mission-architect',

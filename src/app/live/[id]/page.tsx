@@ -4,25 +4,25 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Eye, Users, Play, Radio,
+  ArrowLeft, Eye, Play,
   ChevronRight, CheckSquare, Lightbulb,
-  X, Flame, Lock,
+  Lock,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
 const T = {
-  bg:       '#070d0e',
-  panel:    '#0e1719',
+  bg:       '#050816',
+  panel:    '#07101F',
   elev:     '#17262a',
   line:     'rgba(255,255,255,.07)',
   line2:    'rgba(255,255,255,.12)',
   txt:      '#e9eff0',
   muted:    '#7d8b8e',
   dim:      '#54625f',
-  green:    '#27e07d',
-  red:      '#ef5b6b',
-  amber:    '#f7931a',
+  green:    '#22FFAA',
+  red:      '#FF5C7A',
+  amber:    '#FFB84D',
   live:     '#ff3b30',
   liveGlow: 'rgba(255,59,48,.18)',
 } as const;
@@ -60,14 +60,10 @@ interface SessionData {
 }
 
 const STEP_TYPE_META = {
-  action:      { icon: <Play size={14} fill="currentColor" />,        color: '#27e07d', label: 'Action'      },
-  reflection:  { icon: <Lightbulb size={14} />,                        color: '#22d3ee', label: 'Reflection'  },
-  discovery:   { icon: <CheckSquare size={14} />,                      color: '#f7931a', label: 'Discovery'   },
+  action:      { icon: <Play size={14} fill="currentColor" />,        color: '#22FFAA', label: 'Action'      },
+  reflection:  { icon: <Lightbulb size={14} />,                        color: '#6D5DFD', label: 'Reflection'  },
+  discovery:   { icon: <CheckSquare size={14} />,                      color: '#FFB84D', label: 'Discovery'   },
 } as const;
-
-function initials(name: string) {
-  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-}
 
 export default function LiveSessionPage() {
   const { id } = useParams<{ id: string }>();
@@ -77,7 +73,6 @@ export default function LiveSessionPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [tier, setTier] = useState<string>('free');
-  const [showUpgrade, setShowUpgrade] = useState(false);
   const [hostBusy, setHostBusy] = useState(false);
 
   const supabase = createClient();
@@ -175,7 +170,7 @@ export default function LiveSessionPage() {
       <main style={{ background: T.bg, minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
         <div style={{ fontSize: '2rem', marginBottom: 16 }}>📡</div>
         <div style={{ fontSize: 16, fontWeight: 700, color: T.txt, marginBottom: 8 }}>Session not found</div>
-        <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>This live session may have ended or doesn't exist.</p>
+        <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>This live session may have ended or doesn&apos;t exist.</p>
         <Link href="/timeline" style={{ color: T.green, fontSize: 14, fontWeight: 600 }}>← Back to Timeline</Link>
       </main>
     );
@@ -196,8 +191,8 @@ export default function LiveSessionPage() {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '12px 24px', borderRadius: 14, textDecoration: 'none',
-            background: 'linear-gradient(135deg,#27e07d,#22d3ee)',
-            color: '#070d0e', fontWeight: 700, fontSize: 15, marginBottom: 12,
+            background: 'linear-gradient(135deg,#22FFAA,#6D5DFD)',
+            color: '#050816', fontWeight: 700, fontSize: 15, marginBottom: 12,
           }}
         >
           <Lock size={16} /> Upgrade to Pro
@@ -372,7 +367,7 @@ export default function LiveSessionPage() {
                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 padding: '12px', borderRadius: 12, border: 'none', cursor: 'pointer',
                 background: (hostBusy || session.current_step_index + 1 >= session.total_steps) ? T.elev : T.green,
-                color: (hostBusy || session.current_step_index + 1 >= session.total_steps) ? T.dim : '#070d0e',
+                color: (hostBusy || session.current_step_index + 1 >= session.total_steps) ? T.dim : '#050816',
                 fontWeight: 700, fontSize: 14,
               }}
             >
@@ -398,10 +393,10 @@ export default function LiveSessionPage() {
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               padding: '14px', borderRadius: 14, textDecoration: 'none',
-              background: T.green, color: '#070d0e', fontWeight: 700, fontSize: 15, marginBottom: 10,
+              background: T.green, color: '#050816', fontWeight: 700, fontSize: 15, marginBottom: 10,
             }}
           >
-            <Play size={16} fill="#070d0e" /> Start This Mission
+            <Play size={16} fill="#050816" /> Start This Mission
           </Link>
         )}
 

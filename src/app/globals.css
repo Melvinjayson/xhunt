@@ -1,43 +1,51 @@
 @import 'tailwindcss';
 
 @theme {
-  /* ── Primary accent (Xhunt green) ── */
-  --color-accent:       #27e07d;
-  --color-accent-dark:  #15b866;
-  --color-accent-light: #0b2318;
+  /* ── Mission Green (primary) ── */
+  --color-accent:       #22FFAA;
+  --color-accent-dark:  #00E696;
+  --color-accent-light: #051A0F;
 
-  /* ── AI / secondary (cyan) ── */
-  --color-ai:       #22d3ee;
-  --color-ai-dark:  #0891b2;
-  --color-ai-light: #001a22;
+  /* ── Intelligence Purple (AI) ── */
+  --color-ai:       #6D5DFD;
+  --color-ai-dark:  #5448D9;
+  --color-ai-light: #0D0B2A;
 
-  /* ── Backgrounds ── */
-  --color-muted:   #070d0e;
-  --color-surface: #0e1719;
-  --color-card:    #121d20;
-  --color-elev:    #17262a;
+  /* ── Deep Space Backgrounds ── */
+  --color-muted:   #050816;
+  --color-surface: #07101F;
+  --color-card:    #0A1226;
+  --color-elev:    #0D1530;
 
   /* ── Borders ── */
-  --color-border:   #192428;
-  --color-border-2: #1e2e32;
+  --color-border:   #0F1D35;
+  --color-border-2: #162440;
 
   /* ── Text ── */
-  --color-txt:      #e9eff0;
-  --color-txt-dim:  #7d8b8e;
-  --color-txt-faint:#54625f;
+  --color-txt:      #F0F4FF;
+  --color-txt-dim:  #8B9CC0;
+  --color-txt-faint:#4A5578;
 
   /* ── Status ── */
-  --color-success: #27e07d;
-  --color-warning: #f7931a;
-  --color-error:   #ef5b6b;
+  --color-success: #22FFAA;
+  --color-warning: #FFB84D;
+  --color-error:   #FF5C7A;
 }
 
-/* Semi-transparent border token (for inline use) */
 :root {
-  --line:    rgba(255, 255, 255, .07);
-  --line-2:  rgba(255, 255, 255, .12);
-  --glow-green: rgba(39, 224, 125, .32);
-  --glow-ai: rgba(34, 211, 238, .28);
+  /* XGlass surface tokens */
+  --xglass-bg:     rgba(255, 255, 255, 0.04);
+  --xglass-border: rgba(255, 255, 255, 0.08);
+  --xglass-shadow: 0 0 40px rgba(34, 255, 170, 0.06);
+
+  /* Glow tokens */
+  --glow-accent: rgba(34, 255, 170, 0.28);
+  --glow-ai:     rgba(109, 93, 253, 0.28);
+  --glow-warn:   rgba(255, 184, 77, 0.28);
+
+  /* Line tokens */
+  --line:   rgba(255, 255, 255, 0.07);
+  --line-2: rgba(255, 255, 255, 0.12);
 }
 
 *,
@@ -54,12 +62,12 @@ html {
 body {
   min-height: 100vh;
   min-height: -webkit-fill-available;
-  background-color: #070d0e;
+  background-color: #050816;
   font-family: var(--font-onest), var(--font-inter), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
-  color: #e9eff0;
+  color: #F0F4FF;
   letter-spacing: -.01em;
   font-variant-numeric: tabular-nums;
 }
@@ -71,4 +79,21 @@ body {
 
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* XGlass utility */
+.xglass {
+  background: var(--xglass-bg);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--xglass-border);
+  box-shadow: var(--xglass-shadow);
+}
+
+/* Breathing glow animation */
+@keyframes breathe {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1;   }
+}
+.breathe {
+  animation: breathe 3s ease-in-out infinite;
 }

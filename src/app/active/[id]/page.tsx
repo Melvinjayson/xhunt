@@ -12,9 +12,9 @@ import type { Hunt, HuntProgress, Step } from '@/lib/types';
 import { emitEvent, syncProgress } from '@/lib/supabase/events';
 
 const STEP_TYPE_CONFIG = {
-  action:     { label: 'Action',     emoji: '⚡', bg: 'bg-[#1a0f00]', text: 'text-[#fb923c]', border: 'border-[#2a1800]' },
-  reflection: { label: 'Reflection', emoji: '💭', bg: 'bg-[#0f0f2a]', text: 'text-[#818cf8]', border: 'border-[#1a1a3a]' },
-  discovery:  { label: 'Discovery',  emoji: '🔍', bg: 'bg-[#001a1a]', text: 'text-[#2dd4bf]', border: 'border-[#002a2a]' },
+  action:     { label: 'Action',     emoji: '⚡', bg: 'bg-[rgba(255,184,77,0.08)]',  text: 'text-[#FFB84D]', border: 'border-[rgba(255,184,77,0.18)]'  },
+  reflection: { label: 'Reflection', emoji: '💭', bg: 'bg-[rgba(109,93,253,0.08)]',  text: 'text-[#6D5DFD]', border: 'border-[rgba(109,93,253,0.18)]'  },
+  discovery:  { label: 'Discovery',  emoji: '🔍', bg: 'bg-[rgba(34,255,170,0.08)]',  text: 'text-[#22FFAA]', border: 'border-[rgba(34,255,170,0.15)]'  },
 };
 
 type SheetState = 'hidden' | 'skip_confirm' | 'adapting' | 'adapted';
@@ -130,16 +130,16 @@ export default function ActiveHuntPage() {
   function applyAdaptedStep() { setIsAdaptedMode(true); setSheet('hidden'); }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#070d0e' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#050816' }}>
       <div className="max-w-[430px] mx-auto w-full flex flex-col min-h-screen">
         {/* Progress bar */}
-        <div className="h-1 w-full" style={{ background: '#192428' }}>
+        <div className="h-1 w-full" style={{ background: '#0D1530' }}>
           <motion.div
             className="h-full bg-accent"
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            style={{ boxShadow: '0 0 8px rgba(39,224,125,.6)' }}
+            style={{ boxShadow: '0 0 8px rgba(34,255,170,.6)' }}
           />
         </div>
 
@@ -148,22 +148,22 @@ export default function ActiveHuntPage() {
           <button
             onClick={() => router.back()}
             className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: '#121d20', border: '1px solid rgba(255,255,255,.07)' }}
+            style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,.07)' }}
           >
-            <ArrowLeft size={18} strokeWidth={2} style={{ color: '#e9eff0' }} />
+            <ArrowLeft size={18} strokeWidth={2} style={{ color: '#F0F4FF' }} />
           </button>
           <div className="text-center">
-            <p className="text-[13px] font-semibold" style={{ color: '#7d8b8e' }}>
+            <p className="text-[13px] font-semibold" style={{ color: '#8B9CC0' }}>
               Step {progress.currentStepIndex + 1} of {hunt.steps.length}
             </p>
-            <p className="text-[11px] mt-0.5 truncate max-w-[180px]" style={{ color: '#54625f' }}>{hunt.title}</p>
+            <p className="text-[11px] mt-0.5 truncate max-w-[180px]" style={{ color: '#4A5578' }}>{hunt.title}</p>
           </div>
           <button
             onClick={() => router.push(`/hunt/${huntId}`)}
             className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: '#121d20', border: '1px solid rgba(255,255,255,.07)' }}
+            style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,.07)' }}
           >
-            <X size={16} strokeWidth={2} style={{ color: '#7d8b8e' }} />
+            <X size={16} strokeWidth={2} style={{ color: '#8B9CC0' }} />
           </button>
         </div>
 
@@ -181,7 +181,7 @@ export default function ActiveHuntPage() {
               {isAdaptedMode && (
                 <div
                   className="flex items-center gap-2 rounded-xl px-3 py-2 mb-4 self-start"
-                  style={{ background: '#001a22', border: '1px solid #0a3040' }}
+                  style={{ background: 'rgba(109,93,253,.08)', border: '1px solid rgba(109,93,253,.2)' }}
                 >
                   <Sparkles size={13} className="text-ai" strokeWidth={2} />
                   <span className="text-[12px] font-semibold text-ai">AI-adapted for you</span>
@@ -194,17 +194,17 @@ export default function ActiveHuntPage() {
               </div>
 
               <div className="flex-1">
-                <p className="text-[22px] font-bold leading-snug mb-6" style={{ color: '#e9eff0' }}>
+                <p className="text-[22px] font-bold leading-snug mb-6" style={{ color: '#F0F4FF' }}>
                   {currentStep.instruction}
                 </p>
                 <div
                   className="rounded-xl p-4"
-                  style={{ background: '#121d20', border: '1px solid rgba(255,255,255,.07)' }}
+                  style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,.07)' }}
                 >
-                  <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: '#54625f' }}>
+                  <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: '#4A5578' }}>
                     {isAdaptedMode ? 'Easier version — done when' : "You're done when"}
                   </p>
-                  <p className="text-[14px] leading-relaxed" style={{ color: '#7d8b8e' }}>
+                  <p className="text-[14px] leading-relaxed" style={{ color: '#8B9CC0' }}>
                     {currentStep.success_criteria}
                   </p>
                 </div>
@@ -219,7 +219,7 @@ export default function ActiveHuntPage() {
                     style={{
                       width: i === progress.currentStepIndex ? 20 : 8,
                       height: 8,
-                      background: i <= progress.currentStepIndex ? '#27e07d' : '#192428',
+                      background: i <= progress.currentStepIndex ? '#22FFAA' : '#0D1530',
                     }}
                   />
                 ))}
@@ -235,9 +235,9 @@ export default function ActiveHuntPage() {
             onClick={completeStep}
             className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2"
             style={{
-              background: 'linear-gradient(180deg,#3ee888,#19c268)',
-              color: '#04130b',
-              boxShadow: '0 4px 24px rgba(39,224,125,.4)',
+              background: '#22FFAA',
+              color: '#050816',
+              boxShadow: '0 4px 24px rgba(34,255,170,.4)',
             }}
           >
             <Check size={20} strokeWidth={2.5} />
@@ -248,7 +248,7 @@ export default function ActiveHuntPage() {
             <button
               onClick={() => setSheet('skip_confirm')}
               className="flex items-center justify-center gap-1.5 py-2 text-sm font-medium"
-              style={{ color: '#54625f' }}
+              style={{ color: '#4A5578' }}
             >
               <SkipForward size={14} strokeWidth={2} />
               {isAdaptedMode ? 'Still too hard — skip' : 'Skip this step'}
@@ -279,22 +279,22 @@ export default function ActiveHuntPage() {
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
               className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 pt-6 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]"
-              style={{ background: '#0e1719', borderTop: '1px solid rgba(255,255,255,.07)' }}
+              style={{ background: '#07101F', borderTop: '1px solid rgba(255,255,255,.07)' }}
             >
               <div className="max-w-[430px] mx-auto">
                 <div className="w-10 h-1 rounded-full mx-auto mb-6" style={{ background: 'rgba(255,255,255,.1)' }} />
 
                 {sheet === 'skip_confirm' && (
                   <>
-                    <h3 className="text-xl font-bold mb-1" style={{ color: '#e9eff0' }}>This step feeling tough?</h3>
-                    <p className="text-sm mb-6" style={{ color: '#7d8b8e' }}>
+                    <h3 className="text-xl font-bold mb-1" style={{ color: '#F0F4FF' }}>This step feeling tough?</h3>
+                    <p className="text-sm mb-6" style={{ color: '#8B9CC0' }}>
                       Let AI adapt it into an easier version, or skip entirely.
                     </p>
                     <div className="flex flex-col gap-2.5">
                       <button
                         onClick={handleAdaptRequest}
                         className="w-full rounded-2xl font-semibold flex items-center justify-center gap-2 py-3.5 text-ai"
-                        style={{ background: '#001a22', border: '1px solid #0a3040', boxShadow: '0 4px 20px rgba(34,211,238,.2)' }}
+                        style={{ background: 'rgba(109,93,253,.08)', border: '1px solid rgba(109,93,253,.25)', boxShadow: '0 4px 20px rgba(109,93,253,.2)' }}
                       >
                         <Sparkles size={16} strokeWidth={2} />
                         Make it easier for me
@@ -303,14 +303,14 @@ export default function ActiveHuntPage() {
                         <button
                           onClick={() => setSheet('hidden')}
                           className="flex-1 h-12 rounded-2xl font-semibold"
-                          style={{ background: '#17262a', border: '1px solid rgba(255,255,255,.07)', color: '#e9eff0' }}
+                          style={{ background: '#0D1530', border: '1px solid rgba(255,255,255,.07)', color: '#F0F4FF' }}
                         >
                           Cancel
                         </button>
                         <button
                           onClick={skipStep}
                           className="flex-1 h-12 rounded-2xl font-semibold"
-                          style={{ background: '#e9eff0', color: '#070d0e' }}
+                          style={{ background: '#F0F4FF', color: '#050816' }}
                         >
                           Skip entirely
                         </button>
@@ -325,8 +325,8 @@ export default function ActiveHuntPage() {
                       <Loader2 size={32} className="text-ai" strokeWidth={2} />
                     </motion.div>
                     <div className="text-center">
-                      <p className="font-bold text-lg mb-1" style={{ color: '#e9eff0' }}>Adapting your step…</p>
-                      <p className="text-sm" style={{ color: '#7d8b8e' }}>Creating an easier version just for you.</p>
+                      <p className="font-bold text-lg mb-1" style={{ color: '#F0F4FF' }}>Adapting your step…</p>
+                      <p className="text-sm" style={{ color: '#8B9CC0' }}>Creating an easier version just for you.</p>
                     </div>
                   </div>
                 )}
@@ -339,25 +339,25 @@ export default function ActiveHuntPage() {
                     </div>
                     <div
                       className="rounded-2xl p-4 mb-5"
-                      style={{ background: '#001a22', border: '1px solid #0a3040' }}
+                      style={{ background: 'rgba(109,93,253,.08)', border: '1px solid rgba(109,93,253,.2)' }}
                     >
-                      <p className="text-[15px] font-semibold leading-snug mb-2" style={{ color: '#e9eff0' }}>
+                      <p className="text-[15px] font-semibold leading-snug mb-2" style={{ color: '#F0F4FF' }}>
                         {adaptedStep.instruction}
                       </p>
-                      <p className="text-[12px]" style={{ color: '#7d8b8e' }}>{adaptedStep.success_criteria}</p>
+                      <p className="text-[12px]" style={{ color: '#8B9CC0' }}>{adaptedStep.success_criteria}</p>
                     </div>
                     <div className="flex gap-2.5">
                       <button
                         onClick={skipStep}
                         className="flex-1 h-12 rounded-2xl font-semibold text-sm"
-                        style={{ background: '#17262a', border: '1px solid rgba(255,255,255,.07)', color: '#7d8b8e' }}
+                        style={{ background: '#0D1530', border: '1px solid rgba(255,255,255,.07)', color: '#8B9CC0' }}
                       >
                         Skip anyway
                       </button>
                       <button
                         onClick={applyAdaptedStep}
                         className="flex-[2] h-12 rounded-2xl font-bold text-ai"
-                        style={{ background: '#001a22', border: '1px solid #0a3040', boxShadow: '0 4px 20px rgba(34,211,238,.2)' }}
+                        style={{ background: 'rgba(109,93,253,.12)', border: '1px solid rgba(109,93,253,.25)', boxShadow: '0 4px 20px rgba(109,93,253,.2)' }}
                       >
                         Try this version
                       </button>

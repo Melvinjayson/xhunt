@@ -10,12 +10,19 @@ import type { Hunt } from '@/lib/types';
 import { cn } from '@/lib/cn';
 import { emitEvent, emitRewardClaimed } from '@/lib/supabase/events';
 
-const CONFETTI_COLORS = ['#27e07d', '#22d3ee', '#f7931a', '#a78bfa', '#f472b6', '#60a5fa'];
+const CONFETTI_COLORS = ['#22FFAA', '#6D5DFD', '#FFB84D', '#a78bfa', '#f472b6', '#60a5fa'];
+
+const CONFETTI_PIECES = Array.from({ length: 40 }, () => ({
+  color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+  dir: Math.random() > 0.5 ? 1 : -1,
+  offsetX: (Math.random() - 0.5) * 100,
+  dur: 2.5 + Math.random(),
+}));
 
 const DIFFICULTY_COLOR: Record<string, string> = {
-  easy:   '#27e07d',
-  medium: '#f7931a',
-  hard:   '#ef5b6b',
+  easy:   '#22FFAA',
+  medium: '#FFB84D',
+  hard:   '#FF5C7A',
 };
 
 interface Recommendation {
@@ -28,20 +35,19 @@ interface Recommendation {
   reason: string;
 }
 
-function ConfettiPiece({ delay, x }: { delay: number; x: number }) {
-  const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+function ConfettiPiece({ delay, x, piece }: { delay: number; x: number; piece: { color: string; dir: number; offsetX: number; dur: number } }) {
   return (
     <motion.div
       className="absolute top-0 w-2 h-3 rounded-sm"
-      style={{ left: `${x}%`, backgroundColor: color }}
+      style={{ left: `${x}%`, backgroundColor: piece.color }}
       initial={{ y: -20, opacity: 1, rotate: 0 }}
       animate={{
         y: ['0%', '120vh'],
         opacity: [1, 1, 0],
-        rotate: [0, 360 * (Math.random() > 0.5 ? 1 : -1)],
-        x: [(Math.random() - 0.5) * 100],
+        rotate: [0, 360 * piece.dir],
+        x: [piece.offsetX],
       }}
-      transition={{ duration: 2.5 + Math.random(), delay, ease: 'easeIn' }}
+      transition={{ duration: piece.dur, delay, ease: 'easeIn' }}
     />
   );
 }
@@ -128,11 +134,11 @@ export default function CompletePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden" style={{ background: '#070d0e' }}>
+    <div className="min-h-screen flex flex-col overflow-hidden" style={{ background: '#050816' }}>
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-          {Array.from({ length: 40 }).map((_, i) => (
-            <ConfettiPiece key={i} delay={i * 0.04} x={(i / 40) * 100} />
+          {CONFETTI_PIECES.map((piece, i) => (
+            <ConfettiPiece key={i} delay={i * 0.04} x={(i / 40) * 100} piece={piece} />
           ))}
         </div>
       )}
@@ -147,7 +153,7 @@ export default function CompletePage() {
         >
           <div
             className={cn('w-24 h-24 rounded-full bg-gradient-to-br flex items-center justify-center mb-6', gradient)}
-            style={{ boxShadow: '0 0 40px rgba(39,224,125,.3)' }}
+            style={{ boxShadow: '0 0 40px rgba(34,255,170,.3)' }}
           >
             <span className="text-4xl">🏆</span>
           </div>
@@ -158,8 +164,8 @@ export default function CompletePage() {
             className="text-center"
           >
             <p className="font-bold text-sm uppercase tracking-widest mb-2 text-accent">Mission Complete!</p>
-            <h1 className="text-[26px] font-bold leading-tight mb-2" style={{ color: '#e9eff0' }}>{hunt.title}</h1>
-            <p className="text-sm" style={{ color: '#7d8b8e' }}>{completionDate}</p>
+            <h1 className="text-[26px] font-bold leading-tight mb-2" style={{ color: '#F0F4FF' }}>{hunt.title}</h1>
+            <p className="text-sm" style={{ color: '#8B9CC0' }}>{completionDate}</p>
           </motion.div>
         </motion.div>
 
@@ -168,19 +174,19 @@ export default function CompletePage() {
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.65, duration: 0.4 }}
           className="rounded-2xl p-5 mb-6"
-          style={{ background: '#18120a', border: '1px solid rgba(247,147,26,.15)' }}
+          style={{ background: 'rgba(255,184,77,.06)', border: '1px solid rgba(255,184,77,.18)' }}
         >
-          <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: '#f7931a' }}>Your Reward</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: '#FFB84D' }}>Your Reward</p>
           <div className="flex items-center gap-4">
             <div
               className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(247,147,26,.12)' }}
+              style={{ background: 'rgba(255,184,77,.12)' }}
             >
-              <Trophy size={28} style={{ color: '#f7931a' }} strokeWidth={1.8} />
+              <Trophy size={28} style={{ color: '#FFB84D' }} strokeWidth={1.8} />
             </div>
             <div>
-              <p className="text-[17px] font-bold leading-snug" style={{ color: '#e9eff0' }}>{hunt.reward}</p>
-              <p className="text-[13px] mt-0.5" style={{ color: '#7d8b8e' }}>Added to your profile</p>
+              <p className="text-[17px] font-bold leading-snug" style={{ color: '#F0F4FF' }}>{hunt.reward}</p>
+              <p className="text-[13px] mt-0.5" style={{ color: '#8B9CC0' }}>Added to your profile</p>
             </div>
           </div>
         </motion.div>
@@ -192,13 +198,13 @@ export default function CompletePage() {
           className="grid grid-cols-2 gap-3 mb-8"
         >
           {[
-            { value: stepsCompleted, label: 'Steps Completed', color: '#27e07d' },
-            { value: hunt.estimated_time, label: 'Time Well Spent', color: '#e9eff0' },
+            { value: stepsCompleted, label: 'Steps Completed', color: '#22FFAA' },
+            { value: hunt.estimated_time, label: 'Time Well Spent', color: '#F0F4FF' },
           ].map((s) => (
             <div
               key={s.label}
               className="rounded-2xl p-4 text-center"
-              style={{ background: '#121d20', border: '1px solid rgba(255,255,255,.07)' }}
+              style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,.07)' }}
             >
               <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
               <p className="text-[12px] font-medium mt-1" style={{ color: '#7d8b8e' }}>{s.label}</p>
@@ -215,7 +221,7 @@ export default function CompletePage() {
           >
             <div className="flex items-center gap-2 mb-4">
               <Sparkles size={15} className="text-ai" strokeWidth={2} />
-              <h2 className="text-[15px] font-bold" style={{ color: '#e9eff0' }}>What&apos;s next for you</h2>
+              <h2 className="text-[15px] font-bold" style={{ color: '#F0F4FF' }}>What&apos;s next for you</h2>
             </div>
             <div className="flex flex-col gap-3">
               {recommendations.map((rec) => (
@@ -223,20 +229,20 @@ export default function CompletePage() {
                   key={rec.id}
                   onClick={() => router.push(`/hunt/${rec.id}`)}
                   className="rounded-2xl p-4 text-left transition-colors group"
-                  style={{ background: '#121d20', border: '1px solid rgba(255,255,255,.07)' }}
+                  style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,.07)' }}
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <p
                       className="text-[14px] font-semibold leading-snug group-hover:text-accent transition-colors"
-                      style={{ color: '#e9eff0' }}
+                      style={{ color: '#F0F4FF' }}
                     >
                       {rec.title}
                     </p>
-                    <ArrowRight size={15} style={{ color: '#54625f' }} className="group-hover:text-accent transition-colors flex-shrink-0 mt-0.5" strokeWidth={2} />
+                    <ArrowRight size={15} style={{ color: '#4A5578' }} className="group-hover:text-accent transition-colors flex-shrink-0 mt-0.5" strokeWidth={2} />
                   </div>
                   <div className="flex items-center gap-3">
                     {rec.estimated_time && (
-                      <span className="flex items-center gap-1 text-[11px]" style={{ color: '#7d8b8e' }}>
+                      <span className="flex items-center gap-1 text-[11px]" style={{ color: '#8B9CC0' }}>
                         <Clock size={10} strokeWidth={2} />{rec.estimated_time}
                       </span>
                     )}
@@ -249,7 +255,7 @@ export default function CompletePage() {
                     </span>
                     <span
                       className="ml-auto text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ color: '#54625f', background: '#17262a' }}
+                      style={{ color: '#4A5578', background: 'rgba(255,255,255,.06)' }}
                     >
                       {rec.reason}
                     </span>
@@ -273,9 +279,9 @@ export default function CompletePage() {
             disabled={sharing || shared}
             className="w-full h-14 rounded-2xl font-semibold flex items-center justify-center gap-2"
             style={{
-              background: shared ? 'rgba(39,224,125,.1)' : '#121d20',
-              border: shared ? '1px solid rgba(39,224,125,.3)' : '1px solid rgba(255,255,255,.07)',
-              color: shared ? '#27e07d' : '#e9eff0',
+              background: shared ? 'rgba(34,255,170,.1)' : '#0A1226',
+              border: shared ? '1px solid rgba(34,255,170,.3)' : '1px solid rgba(255,255,255,.07)',
+              color: shared ? '#22FFAA' : '#F0F4FF',
             }}
           >
             {shared ? <CheckCircle2 size={18} strokeWidth={2} /> : <Radio size={18} strokeWidth={2} />}
@@ -288,7 +294,7 @@ export default function CompletePage() {
               whileTap={{ scale: 0.98 }}
               onClick={handleShare}
               className="w-full h-14 rounded-2xl font-semibold flex items-center justify-center gap-2"
-              style={{ background: '#121d20', border: '1px solid rgba(255,255,255,.07)', color: '#e9eff0' }}
+              style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,.07)', color: '#F0F4FF' }}
             >
               <Share2 size={18} strokeWidth={2} />
               Share Achievement
@@ -300,9 +306,9 @@ export default function CompletePage() {
             onClick={() => router.push('/home')}
             className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2"
             style={{
-              background: 'linear-gradient(180deg,#3ee888,#19c268)',
-              color: '#04130b',
-              boxShadow: '0 4px 24px rgba(39,224,125,.4)',
+              background: '#22FFAA',
+              color: '#050816',
+              boxShadow: '0 4px 24px rgba(34,255,170,.4)',
             }}
           >
             <Home size={18} strokeWidth={2} />

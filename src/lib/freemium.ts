@@ -43,7 +43,7 @@ export async function getUserTierInfo(userId: string): Promise<TierInfo> {
 
   if (tier === 'trial' && trialEndsAt && trialEndsAt < now) {
     tier = 'free';
-    void sb.from('user_profiles').update({ subscription_tier: 'free' }).eq('id', userId);
+    await sb.from('user_profiles').update({ subscription_tier: 'free' }).eq('id', userId);
   }
 
   const isTrialActive = tier === 'trial' && trialEndsAt !== null && trialEndsAt > now;

@@ -104,7 +104,7 @@ export default function AdminAnalyticsPage() {
   }
 
   const topMetrics = [
-    { label: 'Total Users', value: totalUsers, icon: Users, color: 'text-[#22d3ee]', bg: 'bg-[#001a22]' },
+    { label: 'Total Users', value: totalUsers, icon: Users, color: 'text-[#6D5DFD]', bg: 'bg-[#001a22]' },
     { label: 'Total Attempts', value: totalAttempts, icon: Target, color: 'text-[#fbbf24]', bg: 'bg-[#2a1a00]' },
     { label: 'Completions', value: totalCompletions, icon: CheckCircle2, color: 'text-accent', bg: 'bg-accent/10' },
     { label: 'Completion Rate', value: `${overallRate}%`, icon: TrendingUp, color: 'text-[#818cf8]', bg: 'bg-[#0f0f2a]' },
@@ -187,7 +187,7 @@ export default function AdminAnalyticsPage() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
           { icon: Zap, color: 'text-[#fbbf24]', bg: 'bg-[#2a1a00]', title: 'Highest Completion', body: stats.length > 0 ? `${stats[0].mission.title} — ${stats[0].completionRate}% rate` : 'No data yet' },
-          { icon: Clock, color: 'text-[#22d3ee]', bg: 'bg-[#001a22]', title: 'Most Attempted', body: stats.length > 0 ? `${[...stats].sort((a,b)=>b.attempts-a.attempts)[0].mission.title} — ${[...stats].sort((a,b)=>b.attempts-a.attempts)[0].attempts} starts` : 'No data yet' },
+          { icon: Clock, color: 'text-[#6D5DFD]', bg: 'bg-[#001a22]', title: 'Most Attempted', body: stats.length > 0 ? `${[...stats].sort((a,b)=>b.attempts-a.attempts)[0].mission.title} — ${[...stats].sort((a,b)=>b.attempts-a.attempts)[0].attempts} starts` : 'No data yet' },
           { icon: Award, color: 'text-accent', bg: 'bg-accent/10', title: 'Overall Engagement', body: totalAttempts > 0 ? `${overallRate}% of starts reach completion across all missions` : 'Launch missions to track engagement' },
         ].map(({ icon: Icon, color, bg, title, body }) => (
           <div key={title} className="bg-[#111927] border border-[#1c2a3a] rounded-2xl p-5">
