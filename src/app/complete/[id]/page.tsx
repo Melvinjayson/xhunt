@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Trophy, Share2, ArrowRight, Home, Clock, Zap, Sparkles, Radio, CheckCircle2 } from 'lucide-react';
 import { loadState } from '@/lib/store';
-import { MOCK_HUNTS, getTagGradient } from '@/lib/mockHunts';
+import { getTagGradient } from '@/lib/mockHunts';
 import type { Hunt } from '@/lib/types';
 import { cn } from '@/lib/cn';
 import { emitEvent, emitRewardClaimed } from '@/lib/supabase/events';
@@ -68,7 +68,7 @@ export default function CompletePage() {
 
   useEffect(() => {
     const state = loadState();
-    const allHunts = state.hunts.length > 0 ? [...state.hunts, ...MOCK_HUNTS] : MOCK_HUNTS;
+    const allHunts = state.hunts;
     const found = allHunts.find((h) => h.id === huntId);
 
     if (found) {

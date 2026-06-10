@@ -7,7 +7,7 @@ import { ArrowLeft, Check, SkipForward, X, Sparkles, Loader2 } from 'lucide-reac
 import AIAssistant from '@/components/AIAssistant';
 import { cn } from '@/lib/cn';
 import { loadState, saveState } from '@/lib/store';
-import { MOCK_HUNTS } from '@/lib/mockHunts';
+
 import type { Hunt, HuntProgress, Step } from '@/lib/types';
 import { emitEvent, syncProgress } from '@/lib/supabase/events';
 
@@ -33,7 +33,7 @@ export default function ActiveHuntPage() {
 
   useEffect(() => {
     const state = loadState();
-    const allHunts = state.hunts.length > 0 ? [...state.hunts, ...MOCK_HUNTS] : MOCK_HUNTS;
+    const allHunts = state.hunts;
     const found = allHunts.find((h) => h.id === huntId);
     if (!found) return;
     setHunt(found);

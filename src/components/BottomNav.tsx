@@ -2,78 +2,101 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, Target, Gift, User } from 'lucide-react';
+import { Home, Compass, Target, Activity, User } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { href: '/home',     icon: Home,   label: 'Home'     },
-  { href: '/explore',  icon: Search, label: 'Explore'  },
-  { href: '/missions', icon: Target, label: 'Missions', center: true },
-  { href: '/timeline', icon: Gift,   label: 'Rewards'  },
-  { href: '/profile',  icon: User,   label: 'Profile'  },
+  { href: '/home',     icon: Home,     label: 'Home'     },
+  { href: '/explore',  icon: Compass,  label: 'Explore'  },
+  { href: '/missions', icon: Target,   label: 'Missions', center: true },
+  { href: '/timeline', icon: Activity, label: 'Feed'     },
+  { href: '/profile',  icon: User,     label: 'Profile'  },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav
-      style={{
+    <>
+      {/* Desktop padding injection */}
+      <style>{`
+        @media (min-width: 768px) {
+          .consumer-app { padding-left: 72px !important; padding-bottom: 24px !important; }
+        }
+      `}</style>
+
+      {/* ─── Mobile bottom bar ─── */}
+      <nav className="md:hidden" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-        background: 'rgba(5,8,22,0.88)',
+        background: 'rgba(5,8,22,0.92)',
         backdropFilter: 'blur(24px)',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-      }}
-    >
-      <div style={{ maxWidth: 430, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '10px 8px 10px' }}>
-        {NAV_ITEMS.map(({ href, icon: Icon, label, center }) => {
-          const active = pathname === href || pathname.startsWith(href + '/');
-
-          if (center) {
-            return (
+      }}>
+        <div style={{ maxWidth: 500, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '10px 8px 10px' }}>
+          {NAV_ITEMS.map(({ href, icon: Icon, label, center }) => {
+            const active = pathname === href || pathname.startsWith(href + '/');
+            if (center) return (
               <Link key={href} href={href} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-                <div
-                  style={{
-                    width: 52, height: 52, borderRadius: '50%',
-                    background: active ? '#22FFAA' : '#0A1226',
-                    border: active ? 'none' : '1px solid rgba(34,255,170,0.25)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: active ? '0 0 28px rgba(34,255,170,0.45)' : '0 0 14px rgba(34,255,170,0.12)',
-                    marginTop: -18,
-                    transition: 'all .2s ease',
-                  }}
-                >
+                <div style={{
+                  width: 52, height: 52, borderRadius: '50%',
+                  background: active ? '#22FFAA' : '#0A1226',
+                  border: active ? 'none' : '1px solid rgba(34,255,170,0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: active ? '0 0 28px rgba(34,255,170,0.45)' : '0 0 14px rgba(34,255,170,0.12)',
+                  marginTop: -18, transition: 'all .2s',
+                }}>
                   <Icon size={22} strokeWidth={active ? 2.5 : 1.8} style={{ color: active ? '#050816' : '#22FFAA' }} />
                 </div>
-                <span style={{ fontSize: 9.5, fontWeight: 600, color: active ? '#22FFAA' : '#4A5578', letterSpacing: '.02em' }}>
-                  {label}
-                </span>
+                <span style={{ fontSize: 9.5, fontWeight: 600, color: active ? '#22FFAA' : '#4A5578', letterSpacing: '.02em' }}>{label}</span>
               </Link>
             );
-          }
+            return (
+              <Link key={href} href={href} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '2px 10px', borderRadius: 14, position: 'relative' }}>
+                {active && <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', width: 24, height: 2, borderRadius: 2, background: '#22FFAA', boxShadow: '0 0 8px rgba(34,255,170,0.7)' }} />}
+                <Icon size={20} strokeWidth={active ? 2.2 : 1.7} style={{ color: active ? '#22FFAA' : '#4A5578', transition: 'color .15s' }} />
+                <span style={{ fontSize: 9.5, fontWeight: 600, color: active ? '#22FFAA' : '#4A5578', letterSpacing: '.02em' }}>{label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
 
-          return (
-            <Link
-              key={href}
-              href={href}
-              style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '2px 10px', borderRadius: 14, position: 'relative' }}
-            >
-              {active && (
-                <div style={{
-                  position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)',
-                  width: 24, height: 2, borderRadius: 2,
-                  background: '#22FFAA',
-                  boxShadow: '0 0 8px rgba(34,255,170,0.7)',
-                }} />
-              )}
-              <Icon size={20} strokeWidth={active ? 2.2 : 1.7} style={{ color: active ? '#22FFAA' : '#4A5578', transition: 'color .15s' }} />
-              <span style={{ fontSize: 9.5, fontWeight: 600, color: active ? '#22FFAA' : '#4A5578', letterSpacing: '.02em' }}>
-                {label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+      {/* ─── Desktop left sidebar ─── */}
+      <nav className="hidden md:flex" style={{
+        position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 50,
+        width: 68, flexDirection: 'column',
+        background: 'rgba(5,8,22,0.96)',
+        backdropFilter: 'blur(24px)',
+        borderRight: '1px solid rgba(255,255,255,0.07)',
+      }}>
+        {/* Logo */}
+        <Link href="/home" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 64, borderBottom: '1px solid rgba(255,255,255,.06)', textDecoration: 'none', flexShrink: 0 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-mark.png" alt="X-Hunt" style={{ width: 28, height: 28, objectFit: 'contain' }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <span style={{ fontSize: 18, fontWeight: 900, color: '#22FFAA', display: 'none' }} aria-hidden>X</span>
+        </Link>
+
+        {/* Nav items */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '12px 0' }}>
+          {NAV_ITEMS.map(({ href, icon: Icon, label, center }) => {
+            const active = pathname === href || pathname.startsWith(href + '/');
+            return (
+              <Link key={href} href={href} title={label} style={{
+                textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                width: 52, padding: '10px 0', borderRadius: 14, position: 'relative',
+                background: active ? (center ? '#22FFAA' : 'rgba(34,255,170,.08)') : 'transparent',
+                border: active && !center ? '1px solid rgba(34,255,170,.2)' : '1px solid transparent',
+                transition: 'all .15s',
+              }}>
+                <Icon size={center ? 20 : 18} strokeWidth={active ? 2.4 : 1.7}
+                  style={{ color: active ? (center ? '#050816' : '#22FFAA') : '#4A5578', transition: 'color .15s' }} />
+                <span style={{ fontSize: 8.5, fontWeight: 600, color: active ? (center ? '#050816' : '#22FFAA') : '#4A5578', letterSpacing: '.02em', lineHeight: 1 }}>{label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </>
   );
 }

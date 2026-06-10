@@ -53,9 +53,9 @@ export default function Nav() {
         ? 'bg-[rgba(5,8,22,0.88)] backdrop-blur-2xl border-b border-[rgba(255,255,255,0.06)] shadow-[0_1px_24px_rgba(0,0,0,0.45)]'
         : 'bg-transparent',
     )}>
-      <nav className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <nav className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
         {/* Logo */}
-        <Logo variant="wordmark" size="sm" href="/" priority />
+        <Logo size="sm" href="/" priority />
 
         {/* Desktop nav */}
         <div className="hidden lg:flex items-center gap-0.5">

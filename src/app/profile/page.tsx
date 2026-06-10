@@ -80,7 +80,7 @@ export default function ProfilePage() {
   const tierColor  = mms >= 700 ? WARN : mms >= 400 ? AI : mms >= 150 ? ACCENT : FAINT;
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: 100, background: BG, color: TXT }}>
+    <div className="consumer-app" style={{ minHeight: '100vh', paddingBottom: 100, background: BG, color: TXT }}>
       <div style={{ maxWidth: 430, margin: '0 auto' }}>
 
         {/* ── Header ── */}
@@ -127,6 +127,17 @@ export default function ProfilePage() {
         </div>
 
         <div style={{ padding: '20px 20px' }}>
+
+          {/* Rewards CTA */}
+          <motion.a href="/rewards" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 18, marginBottom: 14, background: 'linear-gradient(135deg, rgba(34,255,170,.07), rgba(109,93,253,.07))', border: '1px solid rgba(34,255,170,.18)', textDecoration: 'none' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#22FFAA,#6D5DFD)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>🏆</div>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: '0 0 2px', fontSize: 14, fontWeight: 700, color: TXT }}>Rewards & Earnings</p>
+              <p style={{ margin: 0, fontSize: 12, color: DIM }}>Badges, payouts, Hunter Score progress</p>
+            </div>
+            <span style={{ fontSize: 18, color: ACCENT }}>›</span>
+          </motion.a>
 
           {/* Streak card */}
           {streak > 0 && (

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { loadState, saveState } from '@/lib/store';
-import { MOCK_HUNTS } from '@/lib/mockHunts';
+
 import type { Hunt } from '@/lib/types';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
 
@@ -477,7 +477,7 @@ export default function HomePage() {
     setIds(state.completedHunts.map((h) => h.huntId));
     setStreak(state.streak);
     if ((state.user as { name?: string }).name) setUserName((state.user as { name?: string }).name!);
-    setHunts(state.hunts.length > 0 ? state.hunts : MOCK_HUNTS);
+    setHunts(state.hunts);
     setMounted(true);
 
     void fetchSupabaseMissions().then((r) => {
@@ -511,7 +511,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, paddingBottom: 100 }}>
+    <div className="consumer-app" style={{ minHeight: '100vh', background: BG, paddingBottom: 100 }}>
 
       {/* ambient glow top-right */}
       <div style={{ position: 'fixed', top: -80, right: -80, width: 320, height: 320, borderRadius: '50%', background: `radial-gradient(circle, ${ACCENT}08 0%, transparent 65%)`, pointerEvents: 'none', zIndex: 0 }} />

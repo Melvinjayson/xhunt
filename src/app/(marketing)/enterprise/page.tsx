@@ -106,6 +106,24 @@ const USE_CASES = [
     metric: '55% reduction in support tickets',
     desc: 'Certify partners through guided missions that build real capability, verified through outcome-based assessments.',
   },
+  {
+    icon: '🌍',
+    title: 'Community Development',
+    metric: '3× participant follow-through',
+    desc: 'NGOs and civic programs use X-Hunt missions to mobilise communities around real-world goals — from health drives to neighbourhood clean-ups, all with verified completion.',
+  },
+  {
+    icon: '⚖️',
+    title: 'Social Accountability',
+    metric: 'Tamper-proof evidence chain',
+    desc: 'Public sector and social enterprises can deploy missions that require GPS-verified proof of delivery — ensuring aid, services, and initiatives actually reach their intended recipients.',
+  },
+  {
+    icon: '🌱',
+    title: 'Impact & ESG Programs',
+    metric: '62% sustained behaviour change',
+    desc: 'Translate sustainability commitments into verified daily actions. Participants complete environmental missions and earn impact badges — creating auditable ESG evidence for stakeholders.',
+  },
 ];
 
 const TRUST_SIGNALS = [

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Zap, Trophy, ChevronDown, ChevronUp, ShieldCheck, Building2 } from 'lucide-react';
 import { loadState } from '@/lib/store';
-import { MOCK_HUNTS, getTagGradient, getTagEmoji } from '@/lib/mockHunts';
+import { getTagGradient, getTagEmoji } from '@/lib/mockHunts';
 import type { Hunt } from '@/lib/types';
 
 const DIFF_CLR: Record<string, string> = {
@@ -32,7 +32,7 @@ export default function HuntDetailPage() {
 
   useEffect(() => {
     const state  = loadState();
-    const all    = state.hunts.length > 0 ? [...state.hunts, ...MOCK_HUNTS] : MOCK_HUNTS;
+    const all    = state.hunts;
     const found  = all.find((h) => h.id === huntId);
     if (found) { setHunt(found); setIsCompleted(state.completedHunts.some((c) => c.huntId === huntId)); }
     setMounted(true);

@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { Target, Clock, Zap, Trophy, ChevronRight, CheckCircle2, ShieldCheck, Building2, Lock, Sparkles, Bell } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { loadState, saveState } from '@/lib/store';
-import { MOCK_HUNTS, getTagEmoji } from '@/lib/mockHunts';
+import { getTagEmoji } from '@/lib/mockHunts';
 import type { Hunt } from '@/lib/types';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
 
@@ -121,7 +121,7 @@ export default function MissionsPage() {
     if (!state.user?.onboardingComplete) { router.replace('/'); return; }
     setIds(state.completedHunts.map((h) => h.huntId));
     setStreak(state.streak);
-    setHunts(state.hunts.length > 0 ? state.hunts : MOCK_HUNTS);
+    setHunts(state.hunts);
     setMounted(true);
     void fetch('/api/subscription/status').then((r) => r.json()).then((d: SubStatus) => setSub(d)).catch(() => setSub({ canAccessPremiumMissions: false, isTrialActive: false, trialDaysLeft: 0, tier: 'free', hasUsedTrial: false }));
     void fetchSupabaseMissions().then((r) => { if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } });
@@ -140,7 +140,7 @@ export default function MissionsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: 100, background: `radial-gradient(800px 500px at 50% 0%, rgba(34,255,170,.07) 0%, transparent 60%), ${BG}`, color: TXT }}>
+    <div className="consumer-app" style={{ minHeight: '100vh', paddingBottom: 100, background: `radial-gradient(800px 500px at 50% 0%, rgba(34,255,170,.07) 0%, transparent 60%), ${BG}`, color: TXT }}>
       <div style={{ maxWidth: 430, margin: '0 auto' }}>
 
         {/* ── Header ── */}

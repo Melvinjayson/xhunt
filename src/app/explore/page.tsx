@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Brain, Search, X, Clock, Trophy, Target } from 'lucide-react';
 import HuntCard from '@/components/HuntCard';
 import BottomNav from '@/components/BottomNav';
-import { MOCK_HUNTS } from '@/lib/mockHunts';
+
 import { loadState, saveState } from '@/lib/store';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
 import type { Hunt } from '@/lib/types';
@@ -87,7 +87,7 @@ export default function ExplorePage() {
   useEffect(() => {
     const state = loadState();
     setIds(state.completedHunts.map((h) => h.huntId));
-    setHunts(state.hunts.length > 0 ? state.hunts : MOCK_HUNTS);
+    setHunts(state.hunts);
     void fetchSupabaseMissions().then((r) => { if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } });
     void fetch('/api/recommendations?limit=5').then((r) => r.ok ? r.json() : null).then((d) => { if (d?.recommendations?.length) setRecs(d.recommendations); }).catch(() => {}).finally(() => setRL(false));
   }, []);
@@ -109,7 +109,7 @@ export default function ExplorePage() {
   const showRecs = !query && category === 'all' && sort === 'recommended';
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: 100, background: BG }}>
+    <div className="consumer-app" style={{ minHeight: '100vh', paddingBottom: 100, background: BG }}>
       <div style={{ maxWidth: 430, margin: '0 auto' }}>
 
         {/* ── Sticky header ── */}
