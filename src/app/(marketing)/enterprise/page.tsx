@@ -200,6 +200,13 @@ export default function EnterprisePage() {
                 <ArrowRight size={16} strokeWidth={2.8} />
               </Link>
               <Link
+                href="/workspace"
+                className="flex items-center gap-2 h-13 px-6 bg-[rgba(34,255,170,0.06)] border border-[rgba(34,255,170,0.15)] text-accent rounded-xl text-[15px] font-semibold hover:bg-[rgba(34,255,170,0.1)] transition-all"
+              >
+                Access Workspace
+                <ChevronRight size={15} strokeWidth={2.5} />
+              </Link>
+              <Link
                 href="/use-cases"
                 className="flex items-center gap-2 h-13 px-6 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-txt rounded-xl text-[15px] font-semibold hover:bg-[rgba(255,255,255,0.08)] transition-all"
               >
