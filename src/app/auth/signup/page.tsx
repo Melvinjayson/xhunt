@@ -76,7 +76,7 @@ function SignupForm() {
 
         {/* Logo */}
         <div style={{ marginBottom: 40 }}>
-          <img src="/logo-wordmark.png" alt="X-Hunt" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+          <img src="/xhunt-logo.png" alt="X-Hunt" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
         </div>
 
         <h1 style={{ fontSize: 26, fontWeight: 800, color: '#F0F4FF', margin: '0 0 6px', letterSpacing: '-.02em' }}>Create your account</h1>

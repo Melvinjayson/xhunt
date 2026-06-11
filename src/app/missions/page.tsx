@@ -10,6 +10,7 @@ import {
   Brain, TrendingUp, Award, MapPin, ChevronRight, Bookmark,
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
+import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import { loadState, saveState, loadProfile } from '@/lib/store';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
 import {
@@ -29,7 +30,7 @@ const ERR    = '#FF5C7A';
 const TXT    = '#F0F4FF';
 const DIM    = '#8B9CC0';
 const FAINT  = '#4A5578';
-const XGLASS: React.CSSProperties = { background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.08)' };
+const XGLASS: React.CSSProperties = LIQUID_GLASS_STYLE;
 
 /* ─── helpers ─── */
 function matchScore(hunt: Hunt, profile: ImpactProfile | null): number | null {
@@ -73,6 +74,7 @@ function MissionCard({ hunt, done, locked, profile, index }: {
     <motion.div
       initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.055, duration: 0.28 }}
+      className="liquid-glass"
       style={{ borderRadius: 22, overflow: 'hidden', opacity: locked ? 0.78 : 1, position: 'relative',
         background: done ? 'rgba(255,255,255,.025)' : CARD,
         border: `1px solid ${done ? 'rgba(255,255,255,.06)' : cat.color + '22'}`,
@@ -361,7 +363,7 @@ export default function MissionsPage() {
               { label: 'Active',  value: activeHunts.length,  color: ACCENT },
               { label: 'Done',    value: doneHunts.length,    color: ACCENT },
             ].map((s) => (
-              <div key={s.label} style={{ ...XGLASS, borderRadius: 14, padding: '10px 8px', textAlign: 'center' }}>
+              <div key={s.label} className="liquid-glass" style={{ ...XGLASS, borderRadius: 14, padding: '10px 8px', textAlign: 'center' }}>
                 <div style={{ fontSize: 20, fontWeight: 900, color: s.color, letterSpacing: '-.02em' }}>{s.value}</div>
                 <div style={{ fontSize: 9.5, fontWeight: 600, color: FAINT, marginTop: 2, textTransform: 'uppercase', letterSpacing: '.06em' }}>{s.label}</div>
               </div>

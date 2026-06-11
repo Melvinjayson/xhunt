@@ -5,6 +5,7 @@ const CONSUMER_PROTECTED = [
   '/home', '/missions', '/active', '/profile',
   '/timeline', '/live', '/upgrade', '/explore',
   '/hunt', '/complete', '/rewards',
+  '/people', '/messages',
 ];
 
 export async function proxy(request: NextRequest) {

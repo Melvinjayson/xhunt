@@ -9,6 +9,7 @@ import {
   SlidersHorizontal, Target,
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
+import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import { loadState, saveState, loadProfile } from '@/lib/store';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
 import {
@@ -27,11 +28,7 @@ const ERR    = '#FF5C7A';
 const TXT    = '#F0F4FF';
 const DIM    = '#8B9CC0';
 const FAINT  = '#4A5578';
-const XGLASS: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  backdropFilter: 'blur(24px)',
-  border: '1px solid rgba(255,255,255,0.08)',
-};
+const XGLASS: React.CSSProperties = LIQUID_GLASS_STYLE;
 
 const SORT_OPTS = [
   { id: 'recommended', label: 'Best Match'   },
@@ -76,6 +73,7 @@ function AIRecCard({ rec, profile }: { rec: Recommendation; profile: ImpactProfi
   return (
     <Link href={`/hunt/${rec.id}`} style={{ textDecoration: 'none', display: 'block' }}>
       <motion.div whileTap={{ scale: 0.985 }}
+        className="liquid-glass"
         style={{ ...XGLASS, borderRadius: 20, padding: '14px 16px', borderColor: 'rgba(109,93,253,0.2)', boxShadow: '0 0 32px rgba(109,93,253,0.08)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px 3px 6px', borderRadius: 999, background: 'rgba(109,93,253,.1)', border: '1px solid rgba(109,93,253,.22)' }}>
@@ -123,6 +121,7 @@ function ExploreCard({ hunt, index, completedIds, profile }: {
       transition={{ delay: index * 0.05, duration: 0.28 }}>
       <Link href={`/hunt/${hunt.id}`} style={{ display: 'block', textDecoration: 'none' }}>
         <motion.div whileTap={{ scale: 0.985 }}
+          className="liquid-glass"
           style={{ ...XGLASS, borderRadius: 20, overflow: 'hidden', opacity: done ? 0.65 : 1, borderColor: `${cat.color}18` }}>
 
           {/* micro stripe */}

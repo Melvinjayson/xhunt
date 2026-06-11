@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import BottomNav from '@/components/BottomNav';
+import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import { loadState, clearState, loadProfile } from '@/lib/store';
 import type { CompletedHunt, ImpactProfile } from '@/lib/types';
 
@@ -16,11 +17,7 @@ import type { CompletedHunt, ImpactProfile } from '@/lib/types';
 const BG = '#050816', CARD = '#0A1226', SURFACE = '#07101F';
 const ACCENT = '#22FFAA', AI = '#6D5DFD', WARN = '#FFB84D', ERR = '#FF5C7A';
 const TXT = '#F0F4FF', DIM = '#8B9CC0', FAINT = '#4A5578';
-const XGLASS: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  backdropFilter: 'blur(24px)',
-  border: '1px solid rgba(255,255,255,0.08)',
-};
+const XGLASS: React.CSSProperties = LIQUID_GLASS_STYLE;
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 interface SkillData {
@@ -213,7 +210,7 @@ export default function ProfilePage() {
               { label: 'Skills',   value: skills.length,         accent: AI,     icon: Brain      },
               { label: 'Impact',   value: impactScore,           accent: WARN,   icon: Star       },
             ].map(({ label, value, accent, icon: Icon }) => (
-              <div key={label} style={{ ...XGLASS, borderRadius: 14, padding: '11px 6px', textAlign: 'center' }}>
+              <div key={label} className="liquid-glass" style={{ ...XGLASS, borderRadius: 14, padding: '11px 6px', textAlign: 'center' }}>
                 <Icon size={12} strokeWidth={2} style={{ color: accent, marginBottom: 4 }} />
                 <div style={{ fontSize: 17, fontWeight: 800, color: accent, lineHeight: 1 }}>{value.toLocaleString()}</div>
                 <div style={{ fontSize: 9.5, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '.06em', marginTop: 3 }}>{label}</div>
@@ -231,7 +228,7 @@ export default function ProfilePage() {
                 <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: TXT }}>Skills</h2>
                 <span style={{ fontSize: 10, fontWeight: 700, color: FAINT, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 999, padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '.07em' }}>AI Inferred</span>
               </div>
-              <div style={{ ...XGLASS, borderRadius: 20, padding: '16px' }}>
+              <div className="liquid-glass" style={{ ...XGLASS, borderRadius: 20, padding: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
                   {skills.slice(0, 6).map((s, i) => {
                     const cfg = LEVEL_CFG[s.level] ?? LEVEL_CFG.Beginner;
@@ -351,7 +348,7 @@ export default function ProfilePage() {
               </div>
 
               {impactProfile.strengths.length > 0 && (
-                <div style={{ ...XGLASS, borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+                <div className="liquid-glass" style={{ ...XGLASS, borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
                   <p style={{ margin: '0 0 12px', fontSize: 10, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Top Strengths</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                     {impactProfile.strengths.slice(0, 4).map((s) => (
@@ -375,7 +372,7 @@ export default function ProfilePage() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {impactProfile.causes.length > 0 && (
-                  <div style={{ ...XGLASS, borderRadius: 16, padding: '12px 14px' }}>
+                  <div className="liquid-glass" style={{ ...XGLASS, borderRadius: 16, padding: '12px 14px' }}>
                     <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Causes</p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                       {impactProfile.causes.map((c) => (
@@ -384,7 +381,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 )}
-                <div style={{ ...XGLASS, borderRadius: 16, padding: '12px 14px' }}>
+                <div className="liquid-glass" style={{ ...XGLASS, borderRadius: 16, padding: '12px 14px' }}>
                   <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Availability</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Sparkles size={11} style={{ color: ACCENT }} strokeWidth={2} />
@@ -422,7 +419,7 @@ export default function ProfilePage() {
             </div>
 
             {completedHunts.length === 0 ? (
-              <div style={{ ...XGLASS, borderRadius: 20, padding: '32px 20px', textAlign: 'center' }}>
+              <div className="liquid-glass" style={{ ...XGLASS, borderRadius: 20, padding: '32px 20px', textAlign: 'center' }}>
                 <div style={{ width: 48, height: 48, borderRadius: '50%', background: `rgba(34,255,170,.08)`, border: `1px solid rgba(34,255,170,.15)`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
                   <Trophy size={22} strokeWidth={1.6} style={{ color: ACCENT }} />
                 </div>
@@ -442,7 +439,7 @@ export default function ProfilePage() {
                       <div style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, background: CARD, border: `2px solid ${ACCENT}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, marginTop: 11 }}>
                         <div style={{ width: 8, height: 8, borderRadius: '50%', background: ACCENT, boxShadow: `0 0 6px ${ACCENT}80` }} />
                       </div>
-                      <div style={{ flex: 1, ...XGLASS, borderRadius: 18, padding: '13px 15px' }}>
+                      <div className="liquid-glass" style={{ flex: 1, ...XGLASS, borderRadius: 18, padding: '13px 15px' }}>
                         <p style={{ margin: '0 0 3px', fontSize: 13.5, fontWeight: 600, color: TXT, lineHeight: 1.3 }}>{c.huntTitle}</p>
                         <p style={{ margin: '0 0 8px', fontSize: 11.5, fontWeight: 600, color: ACCENT }}>{c.reward.split('+')[0].trim()}</p>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

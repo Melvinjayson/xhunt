@@ -11,13 +11,14 @@ const isDev = process.env.NODE_ENV !== 'production';
 
 const cspDirectives = [
   "default-src 'self'",
-  isDev
-    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com"
-    : "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+  // 'unsafe-eval' required in dev for HMR; kept in prod only because Spline
+  // WebGL shader compilation needs it at runtime.
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : " 'unsafe-eval'"} https://js.stripe.com`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https://*.supabase.co https://*.supabase.in",
+  "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://prod.spline.design",
   "font-src 'self'",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.supabase.in wss://*.supabase.in https://api.groq.com https://api.stripe.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.supabase.in wss://*.supabase.in https://api.groq.com https://api.stripe.com https://prod.spline.design",
+  "worker-src blob: 'self'",
   "frame-src https://js.stripe.com https://hooks.stripe.com",
   "frame-ancestors 'none'",
   "object-src 'none'",

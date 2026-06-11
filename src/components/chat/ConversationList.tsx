@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Users, Target, Building2, Plus, Search, Check } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useConversations } from '@/hooks/useMessages';
+import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import type { ConversationWithDetails } from '@/lib/supabase/types';
 
 /* ─── design tokens ─── */
@@ -16,11 +17,7 @@ const DIM   = '#8B9CC0';
 const FAINT = '#4A5578';
 const TXT   = '#F0F4FF';
 
-const XGLASS: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  backdropFilter: 'blur(24px)',
-  border: '1px solid rgba(255,255,255,0.08)',
-};
+const XGLASS: React.CSSProperties = LIQUID_GLASS_STYLE;
 
 /* ─── helpers ─── */
 function timeAgo(iso: string | null): string {

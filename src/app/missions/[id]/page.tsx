@@ -12,7 +12,10 @@ import Link from 'next/link';
 import BottomNav from '@/components/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { emitEvent, syncProgress, emitRewardClaimed } from '@/lib/supabase/events';
+import { loadState } from '@/lib/store';
 import type { Hunt, Step } from '@/lib/types';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Phase = 'loading' | 'intro' | 'executing' | 'complete';
 
@@ -50,6 +53,23 @@ export default function MissionExecutionPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace(`/auth/login?next=/missions/${id}`); return; }
+
+      // Non-UUID IDs come from localStorage (AI-generated missions).
+      // Skip Supabase and load from local state directly.
+      if (!UUID_RE.test(id)) {
+        const localHunt = loadState().hunts.find((h) => h.id === id) ?? null;
+        if (localHunt) {
+          setMission(localHunt);
+          const prog = loadState().progress[id];
+          if (prog?.completedAt) { setDoneIds(prog.completedSteps ?? []); setPhase('complete'); return; }
+          if (prog) { setCurrentIdx(prog.currentStepIndex ?? 0); setDoneIds(prog.completedSteps ?? []); setPhase('executing'); return; }
+          setPhase('intro');
+          return;
+        }
+        setLoadErr('Mission not found in your library.');
+        setPhase('intro');
+        return;
+      }
 
       const { data: m, error } = await supabase
         .from('missions')
@@ -326,7 +346,7 @@ export default function MissionExecutionPage() {
               {mission.steps.map((step, i) => {
                 const sm = STEP_META[step.type] ?? STEP_META.action;
                 return (
-                  <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14 }}>
+                  <div key={step.id} className="liquid-glass" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14 }}>
                     <div style={{ width: 24, height: 24, borderRadius: '50%', background: sm.bg, border: `1px solid ${sm.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
                       <span style={{ fontSize: 10, fontWeight: 900, color: sm.text }}>{i + 1}</span>
                     </div>
@@ -444,7 +464,7 @@ export default function MissionExecutionPage() {
 
             {/* success criteria */}
             {step.success_criteria && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '10px 14px', background: 'rgba(34,255,170,0.04)', border: '1px solid rgba(34,255,170,0.12)', borderRadius: 12, marginBottom: 22 }}>
+              <div className="liquid-glass" style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '10px 14px', background: 'rgba(34,255,170,0.04)', border: '1px solid rgba(34,255,170,0.12)', borderRadius: 12, marginBottom: 22 }}>
                 <CheckCircle2 size={13} strokeWidth={2} style={{ color: '#22FFAA', marginTop: 1, flexShrink: 0 }} />
                 <p style={{ fontSize: 12.5, color: DIM, margin: 0, lineHeight: 1.55 }}>{step.success_criteria}</p>
               </div>
@@ -496,7 +516,7 @@ export default function MissionExecutionPage() {
             </div>
 
             {/* AI coaching hint */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 14px', background: 'rgba(109,93,253,0.06)', border: '1px solid rgba(109,93,253,0.14)', borderRadius: 12 }}>
+            <div className="liquid-glass" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 14px', background: 'rgba(109,93,253,0.06)', border: '1px solid rgba(109,93,253,0.14)', borderRadius: 12 }}>
               <Sparkles size={12} strokeWidth={2} style={{ color: '#A99FFE', marginTop: 2, flexShrink: 0 }} />
               <p style={{ fontSize: 12, color: DIM, margin: 0, lineHeight: 1.55 }}>{sm.hint}</p>
             </div>

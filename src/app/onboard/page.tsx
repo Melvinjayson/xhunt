@@ -31,10 +31,9 @@ export default function OnboardPage() {
   const [error, setError]     = useState('');
   const [mounted, setMounted] = useState(false);
 
-  const supabase = createClient();
-
   useEffect(() => {
     async function checkAuth() {
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace('/auth/login'); return; }
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id, onboarding_complete').eq('id', user.id).single();
@@ -42,7 +41,7 @@ export default function OnboardPage() {
       setMounted(true);
     }
     checkAuth();
-  }, [router, supabase]);
+  }, [router]);
 
   if (!mounted) return null;
 
@@ -54,13 +53,14 @@ export default function OnboardPage() {
     if (!orgName || !orgType) return;
     setSaving(true); setError('');
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
       const slug = `${slugify(orgName)}-${Math.random().toString(36).slice(2, 7)}`;
-      const { data: tenant, error: tenantError } = await supabase.from('tenants').insert({ name: orgName, slug, settings: { org_type: orgType } }).select().single();
-      if (tenantError) throw tenantError;
-      const { error: profileError } = await supabase.from('user_profiles').update({ tenant_id: tenant.id, role: 'tenant_admin', onboarding_complete: true }).eq('id', user.id);
-      if (profileError) throw profileError;
+      const res  = await fetch('/api/workspace/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: orgName, slug, org_type: orgType }),
+      });
+      const data = await res.json() as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? 'Something went wrong');
       router.push('/workspace');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -74,7 +74,7 @@ export default function OnboardPage() {
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 40 }}>
-          <img src="/logo-wordmark.png" alt="X-Hunt" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+          <img src="/xhunt-logo.png" alt="X-Hunt" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
           <span style={{ fontSize: 10, fontWeight: 700, color: FAINT, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 999, padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '.08em' }}>
             Workspace setup
           </span>

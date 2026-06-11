@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Compass, Target, MessageSquare, User } from 'lucide-react';
+import { Home, Compass, Target, MessageSquare, User, Users } from 'lucide-react';
 import { useTotalUnread } from '@/hooks/useMessages';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
@@ -13,6 +13,10 @@ const NAV_ITEMS = [
   { href: '/missions', icon: Target,        label: 'Missions', center: true },
   { href: '/messages', icon: MessageSquare, label: 'Messages', badge: true },
   { href: '/profile',  icon: User,          label: 'Profile'  },
+];
+
+const DESKTOP_EXTRA: { href: string; icon: typeof Users; label: string; center?: boolean; badge?: boolean }[] = [
+  { href: '/people', icon: Users, label: 'People' },
 ];
 
 export default function BottomNav() {
@@ -33,10 +37,8 @@ export default function BottomNav() {
       `}</style>
 
       {/* ─── Mobile bottom bar ─── */}
-      <nav className="md:hidden" style={{
+      <nav className="md:hidden liquid-nav" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-        background: 'rgba(5,8,22,0.92)',
-        backdropFilter: 'blur(24px)',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}>
@@ -83,12 +85,11 @@ export default function BottomNav() {
       </nav>
 
       {/* ─── Desktop left sidebar ─── */}
-      <nav className="hidden md:flex" style={{
+      <nav className="hidden md:flex liquid-nav" style={{
         position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 50,
         width: 68, flexDirection: 'column',
-        background: 'rgba(5,8,22,0.96)',
-        backdropFilter: 'blur(24px)',
         borderRight: '1px solid rgba(255,255,255,0.07)',
+        boxShadow: '4px 0 24px rgba(0,0,0,0.35), inset -1px 0 0 rgba(255,255,255,0.06)',
       }}>
         {/* Logo */}
         <Link href="/home" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 64, borderBottom: '1px solid rgba(255,255,255,.06)', textDecoration: 'none', flexShrink: 0 }}>
@@ -100,7 +101,7 @@ export default function BottomNav() {
 
         {/* Nav items */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '12px 0' }}>
-          {NAV_ITEMS.map(({ href, icon: Icon, label, center, badge }) => {
+          {[...NAV_ITEMS, ...DESKTOP_EXTRA].map(({ href, icon: Icon, label, center, badge }) => {
             const active = pathname === href || pathname.startsWith(href + '/');
             const unread = badge && totalUnread > 0 ? totalUnread : 0;
             return (

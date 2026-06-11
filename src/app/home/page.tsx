@@ -9,12 +9,16 @@ import {
   ArrowUpRight, TrendingUp, Sparkles, ArrowRight,
   Target, X, Star, Flame,
   CheckCircle2, PlayCircle, BarChart3,
+  Clock, DollarSign, Trophy, Users, ShieldCheck,
+  Activity, Layers,
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
+import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import { loadState, saveState, loadProfile } from '@/lib/store';
 
 import type { Hunt, ImpactProfile } from '@/lib/types';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
+import { estimateCashReward, estimateXP, resolveCategory } from '@/lib/missionCategories';
 
 /* ─── types ─── */
 interface SubStatus {
@@ -46,12 +50,7 @@ const TXT     = '#F0F4FF';
 const DIM     = '#8B9CC0';
 const FAINT   = '#4A5578';
 
-const XGLASS: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  backdropFilter: 'blur(24px)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  boxShadow: '0 0 40px rgba(34,255,170,0.06)',
-};
+const XGLASS: React.CSSProperties = LIQUID_GLASS_STYLE;
 
 /* ─── category colour map ─── */
 const TAG_ACCENT: Record<string, string> = {
@@ -124,6 +123,7 @@ function MMSCard({ score, delta, tier, tierColor }: { score: number; delta: numb
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.08 }}
+      className="liquid-glass"
       style={{
         ...XGLASS,
         borderRadius: 20,
@@ -172,13 +172,14 @@ function StatCard({ label, value, sub, icon: Icon, accent, index }: {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: 0.12 + index * 0.07 }}
+      className="liquid-glass"
       style={{ ...XGLASS, borderRadius: 18, padding: '14px 14px', flex: '1 1 0', minWidth: 0, position: 'relative', overflow: 'hidden' }}
     >
       <div style={{ position: 'absolute', top: -20, right: -20, width: 70, height: 70, borderRadius: '50%', background: `radial-gradient(circle, ${accent}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
       <div style={{ width: 28, height: 28, borderRadius: 9, background: `${accent}16`, border: `1px solid ${accent}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
         <Icon size={13} strokeWidth={2} style={{ color: accent }} />
       </div>
-      <p style={{ margin: '0 0 2px', fontSize: 22, fontWeight: 900, color: TXT, lineHeight: 1, letterSpacing: '-0.04em' }}>
+      <p style={{ margin: '0 0 2px', fontSize: 16, fontWeight: 900, color: TXT, lineHeight: 1, letterSpacing: '-0.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {typeof value === 'number' ? <Counter to={value} /> : value}
       </p>
       <p style={{ margin: '0 0 6px', fontSize: 10, color: FAINT, fontWeight: 500 }}>{label}</p>
@@ -191,101 +192,186 @@ function StatCard({ label, value, sub, icon: Icon, accent, index }: {
 }
 
 /* ─── active mission card ─── */
-function ActiveMissionCard({ hunt, progress = 0 }: { hunt: Hunt; progress?: number }) {
-  const accent = tagAccent(hunt.tags);
-  const [bg0, bg1] = tagBg(hunt.tags);
+function ActiveMissionCard({
+  hunt,
+  stepsCompleted = 0,
+  matchScore,
+}: {
+  hunt: Hunt;
+  stepsCompleted?: number;
+  matchScore?: number | null;
+}) {
+  const accent      = tagAccent(hunt.tags);
+  const [bg0, bg1]  = tagBg(hunt.tags);
+  const totalSteps  = hunt.steps?.length ?? 1;
+  const progress    = Math.round((stepsCompleted / totalSteps) * 100);
+  const stepsLeft   = totalSteps - stepsCompleted;
+  const cat         = resolveCategory(hunt.tags, hunt.category);
+  const cash        = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
+  const xp          = estimateXP(hunt.xpReward, hunt.difficulty, totalSteps);
+
+  const DIFF_COLOR: Record<string, string> = { easy: ACCENT, medium: WARN, hard: ERR };
+  const diffColor   = DIFF_COLOR[hunt.difficulty] ?? DIM;
+
+  // Circumference for the SVG progress ring
+  const R    = 22;
+  const circ = 2 * Math.PI * R;
+  const dash = circ - (progress / 100) * circ;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.22 }}
-      style={{ borderRadius: 22, overflow: 'hidden', border: `1px solid ${accent}18`, boxShadow: `0 0 48px ${accent}10` }}
+      style={{ borderRadius: 24, overflow: 'hidden', border: `1px solid ${accent}22`, boxShadow: `0 0 60px ${accent}0C` }}
     >
-      {/* Mission "scene" */}
-      <div
-        style={{
-          background: `linear-gradient(160deg, ${bg0} 0%, ${bg1} 100%)`,
-          height: 90, position: 'relative', overflow: 'hidden',
-          display: 'flex', alignItems: 'flex-end', padding: '0 18px 14px',
-        }}
-      >
-        {/* glow orbs */}
-        <div style={{ position: 'absolute', top: 10, right: 20, width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${accent}30 0%, transparent 70%)` }} />
-        <div style={{ position: 'absolute', top: 20, left: 40, width: 50, height: 50, borderRadius: '50%', background: `radial-gradient(circle, ${accent}16 0%, transparent 70%)` }} />
-        {/* label */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(0,0,0,.5)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 999, padding: '5px 12px' }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent, boxShadow: `0 0 8px ${accent}` }} />
-          <span style={{ fontSize: 10.5, fontWeight: 700, color: TXT, textTransform: 'uppercase', letterSpacing: '.06em' }}>Active Mission</span>
+      {/* ── Header scene ── */}
+      <div style={{
+        background: `linear-gradient(145deg, ${bg0} 0%, ${bg1} 100%)`,
+        padding: '16px 18px 14px', position: 'relative', overflow: 'hidden',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        {/* glow orb */}
+        <div style={{ position: 'absolute', top: -20, right: 0, width: 160, height: 160, borderRadius: '50%', background: `radial-gradient(circle, ${accent}28 0%, transparent 70%)`, pointerEvents: 'none' }} />
+
+        {/* Left: label + title */}
+        <div style={{ flex: 1, minWidth: 0, zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent, boxShadow: `0 0 8px ${accent}` }} />
+            <span style={{ fontSize: 9.5, fontWeight: 800, color: accent, textTransform: 'uppercase', letterSpacing: '.1em' }}>Active Mission</span>
+            {hunt.isVerified && (
+              <ShieldCheck size={11} strokeWidth={2.5} style={{ color: accent }} />
+            )}
+          </div>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: TXT, lineHeight: 1.3, letterSpacing: '-0.02em', paddingRight: 12 }}>
+            {hunt.title}
+          </p>
+          {hunt.tenantName && (
+            <p style={{ margin: '4px 0 0', fontSize: 10.5, color: DIM, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Users size={10} strokeWidth={2} />
+              {hunt.tenantName}
+            </p>
+          )}
         </div>
 
-        {/* play button */}
-        <Link href={`/missions/${hunt.id}`} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', textDecoration: 'none' }}>
-          <motion.div
-            whileTap={{ scale: 0.92 }}
-            style={{
-              width: 44, height: 44, borderRadius: '50%',
-              background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: `0 0 24px ${accent}60`,
-            }}
-          >
-            <PlayCircle size={22} strokeWidth={2} style={{ color: '#050816' }} />
+        {/* Right: progress ring */}
+        <Link href={`/missions/${hunt.id}`} style={{ textDecoration: 'none', flexShrink: 0, zIndex: 1 }}>
+          <motion.div whileTap={{ scale: 0.92 }} style={{ position: 'relative', width: 56, height: 56 }}>
+            <svg width="56" height="56" style={{ transform: 'rotate(-90deg)' }}>
+              <circle cx="28" cy="28" r={R} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="3.5" />
+              <circle cx="28" cy="28" r={R} fill="none" stroke={accent} strokeWidth="3.5"
+                strokeDasharray={circ} strokeDashoffset={dash}
+                strokeLinecap="round"
+                style={{ transition: 'stroke-dashoffset 0.8s ease', filter: `drop-shadow(0 0 4px ${accent}80)` }} />
+            </svg>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {progress > 0
+                ? <span style={{ fontSize: 11, fontWeight: 900, color: accent }}>{progress}%</span>
+                : <PlayCircle size={18} strokeWidth={2} style={{ color: accent }} />
+              }
+            </div>
           </motion.div>
         </Link>
       </div>
 
-      {/* Card body */}
-      <div style={{ background: CARD, padding: '16px 18px' }}>
-        <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: TXT, lineHeight: 1.25, letterSpacing: '-0.02em' }}>
-          {hunt.title}
-        </p>
-        <p style={{ margin: '0 0 14px', fontSize: 11.5, color: DIM }}>
-          {hunt.steps?.length ?? '?'} tasks remaining · Est. {hunt.estimated_time}
-        </p>
+      {/* ── Body ── */}
+      <div style={{ background: CARD, padding: '14px 18px 18px' }}>
 
-        {/* Progress */}
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: 10.5, fontWeight: 600, color: FAINT }}>Progress</span>
-            <span style={{ fontSize: 10.5, fontWeight: 700, color: accent }}>{progress}%</span>
+        {/* ── Econometrics row ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
+          {/* Cash reward */}
+          <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 12, padding: '9px 10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+              <DollarSign size={9} strokeWidth={2.5} style={{ color: ACCENT }} />
+              <span style={{ fontSize: 8.5, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.06em' }}>Earnings</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: ACCENT, letterSpacing: '-0.03em' }}>
+              {cash > 0 ? `$${cash}` : hunt.reward.match(/\$\d+/)?.[0] ?? '—'}
+            </p>
           </div>
-          <div style={{ height: 6, borderRadius: 4, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
+
+          {/* XP */}
+          <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 12, padding: '9px 10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+              <Trophy size={9} strokeWidth={2.5} style={{ color: AI_CLR }} />
+              <span style={{ fontSize: 8.5, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.06em' }}>XP</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: AI_CLR, letterSpacing: '-0.03em' }}>+{xp}</p>
+          </div>
+
+          {/* Steps remaining */}
+          <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 12, padding: '9px 10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+              <Layers size={9} strokeWidth={2.5} style={{ color: WARN }} />
+              <span style={{ fontSize: 8.5, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.06em' }}>Steps</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: TXT, letterSpacing: '-0.03em' }}>
+              {stepsCompleted}<span style={{ fontSize: 9, color: FAINT, fontWeight: 600 }}>/{totalSteps}</span>
+            </p>
+          </div>
+        </div>
+
+        {/* ── Progress bar ── */}
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: FAINT }}>
+              {stepsLeft > 0 ? `${stepsLeft} step${stepsLeft !== 1 ? 's' : ''} remaining` : 'Ready to complete!'}
+            </span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: accent }}>{progress}% done</span>
+          </div>
+          <div style={{ height: 5, borderRadius: 999, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
-              style={{
-                height: '100%', borderRadius: 4,
-                background: `linear-gradient(90deg, ${accent}, ${accent}CC)`,
-                boxShadow: `0 0 12px ${accent}80`,
-              }}
+              transition={{ duration: 0.9, delay: 0.4, ease: 'easeOut' }}
+              style={{ height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${accent}, ${accent}BB)`, boxShadow: `0 0 10px ${accent}70` }}
             />
           </div>
         </div>
 
-        {/* Reward + category */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-          <div style={{ flex: 1, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 12, padding: '8px 12px' }}>
-            <p style={{ margin: '0 0 2px', fontSize: 9.5, color: FAINT, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em' }}>Reward</p>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: accent }}>{hunt.reward.split('+')[0].trim()}</p>
+        {/* ── Meta tags row ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 16, flexWrap: 'wrap' }}>
+          {/* Time */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 999, padding: '3px 9px' }}>
+            <Clock size={9} strokeWidth={2.5} style={{ color: DIM }} />
+            <span style={{ fontSize: 10, fontWeight: 600, color: DIM }}>{hunt.estimated_time}</span>
           </div>
-          <div style={{ flex: 1, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 12, padding: '8px 12px' }}>
-            <p style={{ margin: '0 0 2px', fontSize: 9.5, color: FAINT, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em' }}>Category</p>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: TXT }}>{hunt.tags[0] ?? 'Mission'}</p>
+
+          {/* Difficulty */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${diffColor}10`, border: `1px solid ${diffColor}28`, borderRadius: 999, padding: '3px 9px' }}>
+            <Activity size={9} strokeWidth={2.5} style={{ color: diffColor }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: diffColor, textTransform: 'capitalize' }}>{hunt.difficulty}</span>
           </div>
+
+          {/* Category */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${cat.color}10`, border: `1px solid ${cat.color}28`, borderRadius: 999, padding: '3px 9px' }}>
+            <span style={{ fontSize: 9 }}>{cat.emoji}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: cat.color }}>{cat.label}</span>
+          </div>
+
+          {/* Match score */}
+          {matchScore != null && (
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, background: matchScore >= 80 ? `${ACCENT}12` : `${WARN}12`, border: `1px solid ${matchScore >= 80 ? ACCENT : WARN}28`, borderRadius: 999, padding: '3px 9px' }}>
+              <TrendingUp size={9} strokeWidth={2.5} style={{ color: matchScore >= 80 ? ACCENT : WARN }} />
+              <span style={{ fontSize: 10, fontWeight: 800, color: matchScore >= 80 ? ACCENT : WARN }}>{matchScore}% match</span>
+            </div>
+          )}
         </div>
 
-        {/* CTA */}
+        {/* ── CTA ── */}
         <Link href={`/missions/${hunt.id}`} style={{ textDecoration: 'none', display: 'block' }}>
           <motion.div
             whileTap={{ scale: 0.98 }}
             style={{
-              height: 48, borderRadius: 14, background: accent,
+              height: 50, borderRadius: 14,
+              background: `linear-gradient(135deg, ${accent}, ${accent}CC)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              boxShadow: `0 0 28px ${accent}40`,
+              boxShadow: `0 4px 28px ${accent}40`,
             }}
           >
-            <span style={{ fontSize: 14, fontWeight: 800, color: '#050816' }}>{progress > 0 ? 'Continue Mission' : 'Start Mission'}</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: '#050816' }}>
+              {stepsCompleted > 0 ? 'Continue Mission' : 'Start Mission'}
+            </span>
             <ArrowRight size={16} strokeWidth={2.8} style={{ color: '#050816' }} />
           </motion.div>
         </Link>
@@ -397,6 +483,7 @@ function MissionCard({ hunt, index, isCompleted, matchScore }: { hunt: Hunt; ind
     >
       <Link href={`/missions/${hunt.id}`} style={{ textDecoration: 'none', display: 'block' }}>
         <div
+          className="liquid-glass"
           style={{
             ...XGLASS,
             borderRadius: 20,
@@ -481,25 +568,32 @@ function ActivityItem({ text, sub, xp, positive, index }: { text: string; sub: s
 /* ─── PAGE ─── */
 export default function HomePage() {
   const router = useRouter();
-  const [hunts, setHunts]           = useState<Hunt[]>([]);
-  const [completedIds, setIds]      = useState<string[]>([]);
-  const [streak, setStreak]         = useState(0);
-  const [mounted, setMounted]       = useState(false);
-  const [subStatus, setSub]         = useState<SubStatus | null>(null);
-  const [nudgeDismissed, setNudge]  = useState(false);
-  const [aiDismissed, setAIDismiss] = useState(false);
-  const [recs, setRecs]             = useState<Recommendation[]>([]);
-  const [userName, setUserName]     = useState('Explorer');
-  const [impactProfile, setProfile] = useState<ImpactProfile | null>(null);
+  const [hunts, setHunts]               = useState<Hunt[]>([]);
+  const [completedIds, setIds]          = useState<string[]>([]);
+  const [activeMissionSteps, setAMSteps] = useState(0);
+  const [streak, setStreak]             = useState(0);
+  const [mounted, setMounted]           = useState(false);
+  const [subStatus, setSub]             = useState<SubStatus | null>(null);
+  const [nudgeDismissed, setNudge]      = useState(false);
+  const [aiDismissed, setAIDismiss]     = useState(false);
+  const [recs, setRecs]                 = useState<Recommendation[]>([]);
+  const [userName, setUserName]         = useState('Explorer');
+  const [impactProfile, setProfile]     = useState<ImpactProfile | null>(null);
 
   useEffect(() => {
     const state = loadState();
     if (!state.user?.onboardingComplete) { router.replace('/'); return; }
-    setIds(state.completedHunts.map((h) => h.huntId));
+    const completed = state.completedHunts.map((h) => h.huntId);
+    setIds(completed);
     setStreak(state.streak);
     if ((state.user as { name?: string }).name) setUserName((state.user as { name?: string }).name!);
     setHunts(state.hunts);
     setProfile(loadProfile());
+    // Compute steps done for the first active mission
+    const topId = state.hunts.find((h) => !completed.includes(h.id))?.id;
+    if (topId && state.progress[topId]) {
+      setAMSteps(state.progress[topId].completedSteps?.length ?? 0);
+    }
     setMounted(true);
 
     void fetchSupabaseMissions().then((r) => {
@@ -526,10 +620,10 @@ export default function HomePage() {
   const tierColor  = mms >= 700 ? WARN : mms >= 400 ? AI_CLR : mms >= 150 ? ACCENT : FAINT;
 
   const ACTIONS = [
-    { icon: Compass,   label: 'Explore',  href: '/explore',  primary: false },
-    { icon: Zap,       label: 'Go Live',  href: '/timeline', primary: false },
-    { icon: BarChart3, label: 'Missions', href: '/missions', primary: false },
-    { icon: Radio,     label: 'Timeline', href: '/timeline', primary: false },
+    { icon: Compass,   label: 'Explore',  href: '/explore'  },
+    { icon: Users,     label: 'People',   href: '/people'   },
+    { icon: BarChart3, label: 'Missions', href: '/missions' },
+    { icon: Radio,     label: 'Timeline', href: '/timeline' },
   ];
 
   return (
@@ -602,7 +696,7 @@ export default function HomePage() {
         <div style={{ padding: '20px 20px 0' }}>
           <div style={{ display: 'flex', gap: 10 }}>
             <MMSCard score={mms} delta={mmsDelta} tier={tierLabel} tierColor={tierColor} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '0 0 auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '0 0 108px', width: 108 }}>
               <StatCard label="XPoints" value={xpBalance} sub={`+${completedIds.length * 50 || 0} Today`} icon={Star} accent={AI_CLR} index={0} />
               <StatCard label="Completed" value={completedIds.length} sub={`+${Math.min(streak, 3)} this week`} icon={CheckCircle2} accent={ACCENT} index={1} />
             </div>
@@ -634,7 +728,11 @@ export default function HomePage() {
         {/* ─────────── ACTIVE MISSION ─────────── */}
         {topHunt && (
           <div style={{ padding: '20px 20px 0' }}>
-            <ActiveMissionCard hunt={topHunt} progress={0} />
+            <ActiveMissionCard
+              hunt={topHunt}
+              stepsCompleted={activeMissionSteps}
+              matchScore={computeMatchScore(topHunt, impactProfile)}
+            />
           </div>
         )}
 
@@ -653,6 +751,7 @@ export default function HomePage() {
               <Link key={label} href={href} style={{ textDecoration: 'none', flex: 1 }}>
                 <motion.div
                   whileTap={{ scale: 0.93 }}
+                  className="liquid-glass"
                   style={{ ...XGLASS, borderRadius: 16, padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}
                 >
                   <Icon size={19} strokeWidth={1.8} style={{ color: DIM }} />
@@ -669,6 +768,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
+            className="liquid-glass"
             style={{ margin: '16px 20px 0', ...XGLASS, borderRadius: 20, padding: '16px 18px' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -718,7 +818,7 @@ export default function HomePage() {
               </div>
               <p style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 700, color: TXT }}>No missions yet</p>
               <p style={{ margin: '0 0 20px', fontSize: 12.5, color: FAINT }}>Generate your first AI mission to start earning.</p>
-              <Link href="/get-started" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 22px', borderRadius: 14, background: ACCENT, color: '#050816', fontWeight: 800, fontSize: 13.5, textDecoration: 'none', boxShadow: `0 0 24px ${ACCENT}40` }}>
+              <Link href="/explore" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 22px', borderRadius: 14, background: ACCENT, color: '#050816', fontWeight: 800, fontSize: 13.5, textDecoration: 'none', boxShadow: `0 0 24px ${ACCENT}40` }}>
                 <Zap size={14} strokeWidth={2.5} /> Start My First Hunt
               </Link>
             </div>
@@ -733,7 +833,7 @@ export default function HomePage() {
 
         {/* ─────────── RECENT ACTIVITY ─────────── */}
         {done.length > 0 && (
-          <div style={{ margin: '24px 20px 0', ...XGLASS, borderRadius: 22, padding: '18px 18px', overflow: 'hidden' }}>
+          <div className="liquid-glass" style={{ margin: '24px 20px 0', ...XGLASS, borderRadius: 22, padding: '18px 18px', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
               <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: TXT }}>Recent Activity</p>
               <Link href="/profile" style={{ fontSize: 12, fontWeight: 600, color: DIM, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 2 }}>

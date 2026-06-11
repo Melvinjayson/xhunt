@@ -81,7 +81,7 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
   const initials = (userName ?? orgName ?? 'U').slice(0, 2).toUpperCase();
 
   return (
-    <aside className="w-[260px] flex-shrink-0 bg-[#07101F] border-r border-[#0F1D35] flex flex-col min-h-screen sticky top-0">
+    <aside className="liquid-nav w-[260px] flex-shrink-0 bg-[#07101F] border-r border-[#0F1D35] flex flex-col min-h-screen sticky top-0">
 
       {/* Org Header */}
       <div className="px-4 py-4 border-b border-[#0F1D35]">

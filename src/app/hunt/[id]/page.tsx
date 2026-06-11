@@ -12,6 +12,7 @@ import {
   FileText, Upload, MessageSquare, TrendingUp,
 } from 'lucide-react';
 import { loadState, loadProfile } from '@/lib/store';
+import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import {
   MISSION_TYPE_META, ORG_TYPE_META, DIFF_META, SDG_META,
   estimateCashReward, estimateXP, deadlineLabel, spotsLabel, demandLabel,
@@ -31,11 +32,7 @@ const TXT    = '#F0F4FF';
 const DIM    = '#8B9CC0';
 const FAINT  = '#4A5578';
 
-const XGLASS: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  backdropFilter: 'blur(24px)',
-  border: '1px solid rgba(255,255,255,0.08)',
-};
+const XGLASS: React.CSSProperties = LIQUID_GLASS_STYLE;
 
 /* ─── reward pill ─── */
 function RewardPill({ icon, label, value, color, bg }: {
@@ -347,7 +344,7 @@ export default function HuntDetailPage() {
               { icon: <Target size={14} strokeWidth={2} style={{ color: diff.color }} />, label: 'Level', value: diff.label },
               { icon: <Briefcase size={14} strokeWidth={2} style={{ color: AI_CLR }} />, label: 'Steps', value: `${hunt.steps.length} tasks` },
             ].map((s) => (
-              <div key={s.label} style={{ ...XGLASS, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
+              <div key={s.label} className="liquid-glass" style={{ ...XGLASS, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>{s.icon}</div>
                 <p style={{ margin: '0 0 2px', fontSize: 13.5, fontWeight: 800, color: TXT, letterSpacing: '-.01em' }}>{s.value}</p>
                 <p style={{ margin: 0, fontSize: 9.5, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '.07em' }}>{s.label}</p>
@@ -359,7 +356,7 @@ export default function HuntDetailPage() {
           {(hunt.locationType || hunt.teamSize) && (
             <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
               {hunt.locationType && (
-                <div style={{ flex: 1, ...XGLASS, borderRadius: 14, padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="liquid-glass" style={{ flex: 1, ...XGLASS, borderRadius: 14, padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <MapPin size={13} strokeWidth={2} style={{ color: ACCENT }} />
                   <div>
                     <p style={{ margin: 0, fontSize: 9, color: FAINT, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Location</p>
@@ -368,7 +365,7 @@ export default function HuntDetailPage() {
                 </div>
               )}
               {hunt.teamSize && (
-                <div style={{ flex: 1, ...XGLASS, borderRadius: 14, padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="liquid-glass" style={{ flex: 1, ...XGLASS, borderRadius: 14, padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Users size={13} strokeWidth={2} style={{ color: AI_CLR }} />
                   <div>
                     <p style={{ margin: 0, fontSize: 9, color: FAINT, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Team Size</p>
@@ -419,7 +416,7 @@ export default function HuntDetailPage() {
           {/* ── ORGANISATION CARD ── */}
           {(hunt.tenantName || hunt.organizationAbout) && (
             <section style={{ marginBottom: 20 }}>
-              <div style={{ ...XGLASS, borderRadius: 20, padding: '16px 18px' }}>
+              <div className="liquid-glass" style={{ ...XGLASS, borderRadius: 20, padding: '16px 18px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                   {hunt.tenantLogo ? (
                     <img src={hunt.tenantLogo} alt={hunt.tenantName} style={{ width: 40, height: 40, borderRadius: 12, objectFit: 'cover' }} />

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Onest } from 'next/font/google';
+import { GlassFilter } from '@/components/LiquidGlass';
 import './globals.css';
 
 const onest = Onest({
@@ -66,6 +67,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         style={{ fontFamily: 'var(--font-onest), system-ui, sans-serif' }}
         className="min-h-screen bg-muted"
       >
+        {/* Global SVG filter for liquid glass distortion — renders nothing visible */}
+        <GlassFilter />
         {children}
       </body>
     </html>
