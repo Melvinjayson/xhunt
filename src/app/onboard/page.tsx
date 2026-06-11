@@ -38,7 +38,7 @@ export default function OnboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace('/auth/login'); return; }
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id, onboarding_complete').eq('id', user.id).single();
-      if (profile?.tenant_id && profile?.onboarding_complete) { router.replace('/admin'); return; }
+      if (profile?.tenant_id && profile?.onboarding_complete) { router.replace('/workspace'); return; }
       setMounted(true);
     }
     checkAuth();
@@ -61,7 +61,7 @@ export default function OnboardPage() {
       if (tenantError) throw tenantError;
       const { error: profileError } = await supabase.from('user_profiles').update({ tenant_id: tenant.id, role: 'tenant_admin', onboarding_complete: true }).eq('id', user.id);
       if (profileError) throw profileError;
-      router.push('/admin');
+      router.push('/workspace');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setSaving(false);
