@@ -4,7 +4,6 @@ import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
-import { SplineScene } from '@/components/ui/splite';
 import { Spotlight } from '@/components/ui/spotlight';
 import {
   ArrowRight, ChevronRight, Shield, CheckCircle2,
@@ -634,19 +633,29 @@ export default function RootPage() {
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#6D5DFD]/4 blur-[100px] rounded-full" />
         </div>
 
-        {/* ─ AI Robot: absolute, bottom-right ─ */}
+        {/* ─ Hero visual: emerald glass sculpture ─ */}
         <motion.div
-          initial={{ opacity: 0, x: 60 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.9, delay: 0.35, ease: 'easeOut' }}
-          className="hidden lg:block absolute right-0 bottom-0 w-[54%] h-[90vh] z-10">
+          initial={{ opacity: 0, x: 60, scale: 0.96 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          transition={{ duration: 1.1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="hidden lg:block absolute right-[-4%] bottom-0 w-[52%] h-[88vh] z-10 pointer-events-none">
           <Spotlight className="-top-10 left-20" fill="#22FFAA" />
-          <SplineScene
-            scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-            className="w-full h-full"
-          />
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[400px] h-[100px] rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(ellipse, rgba(34,255,170,.28) 0%, transparent 70%)', filter: 'blur(30px)' }} />
+          {/* Ambient glow behind image */}
+          <div className="absolute inset-0"
+            style={{ background: 'radial-gradient(ellipse 70% 60% at 55% 50%, rgba(0,200,130,0.18) 0%, rgba(0,120,90,0.07) 50%, transparent 75%)', filter: 'blur(40px)' }} />
+          {/* Glass sculpture */}
+          <div className="absolute inset-0 flex items-center justify-center p-8">
+            <Image
+              src="/auth-glass.png"
+              alt=""
+              fill
+              style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 100px rgba(0,200,130,0.4)) drop-shadow(0 40px 60px rgba(0,0,0,0.6))' }}
+              priority
+            />
+          </div>
+          {/* Ground glow */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[420px] h-[80px] rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(ellipse, rgba(34,255,170,.22) 0%, transparent 70%)', filter: 'blur(28px)' }} />
         </motion.div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-20 lg:py-28 w-full">

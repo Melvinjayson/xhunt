@@ -48,7 +48,12 @@ const NAV_GROUPS = [
   },
 ];
 
-export default function AdminSidebar() {
+interface Props {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function AdminSidebar({ isOpen = false, onClose }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -59,7 +64,14 @@ export default function AdminSidebar() {
   }
 
   return (
-    <aside className="w-60 flex-shrink-0 bg-[#0a1020] border-r border-[#1c2a3a] flex flex-col min-h-screen sticky top-0">
+    <>
+      {isOpen && (
+        <div className="portal-overlay md:hidden" onClick={onClose} aria-hidden="true" />
+      )}
+    <aside
+      className="portal-sidebar bg-[#0a1020] border-r border-[#1c2a3a] flex flex-col"
+      data-open={isOpen ? 'true' : 'false'}
+    >
       {/* Logo */}
       <div className="px-5 py-5 border-b border-[#1c2a3a]">
         <div className="flex items-center gap-2.5">
@@ -112,5 +124,6 @@ export default function AdminSidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }

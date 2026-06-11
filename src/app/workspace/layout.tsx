@@ -3,7 +3,8 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { Menu, X } from 'lucide-react';
 import WorkspaceSidebar from '@/components/workspace/WorkspaceSidebar';
 import { createClient } from '@/lib/supabase/client';
 
@@ -17,7 +18,12 @@ interface WorkspaceUser {
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<WorkspaceUser | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Close sidebar on route change
+  useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
   useEffect(() => {
     async function boot() {
@@ -71,17 +77,32 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex min-h-screen bg-[#050816]">
+    <div className="portal-shell">
       <WorkspaceSidebar
         orgName={user.orgName}
         plan={user.plan}
         userName={user.userName}
         userRole={user.userRole}
         avatarUrl={user.avatarUrl}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
-      <main className="flex-1 min-w-0 overflow-auto">
-        {children}
-      </main>
+      <div className="portal-main flex flex-col">
+        {/* Mobile top bar */}
+        <header className="portal-topbar">
+          <button
+            onClick={() => setSidebarOpen(v => !v)}
+            aria-label="Toggle navigation"
+            className="p-2 rounded-lg text-[#8B9CC0] hover:text-[#F0F4FF] hover:bg-[#0A1226] transition-colors"
+          >
+            {sidebarOpen ? <X size={20} strokeWidth={1.8} /> : <Menu size={20} strokeWidth={1.8} />}
+          </button>
+          <span className="text-[15px] font-bold text-[#F0F4FF] tracking-tight">Workspace</span>
+        </header>
+        <main className="flex-1 min-w-0 overflow-auto">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

@@ -65,9 +65,11 @@ interface Props {
   userName: string | null;
   userRole: string;
   avatarUrl: string | null;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export default function WorkspaceSidebar({ orgName, plan, userName, userRole, avatarUrl }: Props) {
+export default function WorkspaceSidebar({ orgName, plan, userName, userRole, avatarUrl, isOpen = false, onClose }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -81,7 +83,15 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
   const initials = (userName ?? orgName ?? 'U').slice(0, 2).toUpperCase();
 
   return (
-    <aside className="liquid-nav w-[260px] flex-shrink-0 bg-[#07101F] border-r border-[#0F1D35] flex flex-col min-h-screen sticky top-0">
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div className="portal-overlay md:hidden" onClick={onClose} aria-hidden="true" />
+      )}
+    <aside
+      className="portal-sidebar liquid-nav bg-[#07101F] border-r border-[#0F1D35] flex flex-col"
+      data-open={isOpen ? 'true' : 'false'}
+    >
 
       {/* Org Header */}
       <div className="px-4 py-4 border-b border-[#0F1D35]">
@@ -178,5 +188,6 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
         </div>
       </div>
     </aside>
+    </>
   );
 }

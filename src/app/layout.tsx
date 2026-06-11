@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Onest } from 'next/font/google';
+import { ClerkProvider } from '@clerk/nextjs';
 import { GlassFilter } from '@/components/LiquidGlass';
+import { MuiProvider } from '@/components/MuiProvider';
 import './globals.css';
 
 const onest = Onest({
@@ -57,26 +59,30 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={onest.variable}>
-      <head>
-        {/* Apply saved theme synchronously before first paint to prevent flash */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('xhunt-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){}})();`,
-          }}
-        />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
-      </head>
-      <body
-        style={{ fontFamily: 'var(--font-onest), system-ui, sans-serif' }}
-        className="min-h-screen bg-muted"
-      >
-        {/* Global SVG filter for liquid glass distortion — renders nothing visible */}
-        <GlassFilter />
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className={onest.variable}>
+        <head>
+          {/* Apply saved theme synchronously before first paint to prevent flash */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){try{var t=localStorage.getItem('xhunt-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){}})();`,
+            }}
+          />
+          <link rel="apple-touch-icon" href="/icon-192.png" />
+          <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+          <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+        </head>
+        <body
+          style={{ fontFamily: 'var(--font-onest), system-ui, sans-serif' }}
+          className="min-h-screen bg-muted"
+        >
+          {/* Global SVG filter for liquid glass distortion — renders nothing visible */}
+          <GlassFilter />
+          <MuiProvider>
+            {children}
+          </MuiProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

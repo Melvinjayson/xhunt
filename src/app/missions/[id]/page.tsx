@@ -285,7 +285,7 @@ export default function MissionExecutionPage() {
   /* ── INTRO ───────────────────────────────────────────────────── */
   if (phase === 'intro') {
     return (
-      <div style={{ minHeight: '100vh', background: BG, paddingBottom: 110 }}>
+      <div className="consumer-app" style={{ minHeight: '100vh', background: BG, paddingBottom: 110 }}>
         {/* nav bar */}
         <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', position: 'sticky', top: 0, background: 'rgba(5,8,22,0.95)', backdropFilter: 'blur(20px)', zIndex: 10 }}>
           <button onClick={() => router.back()} style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: DIM, cursor: 'pointer' }}>

@@ -184,7 +184,7 @@ export default function PeoplePage() {
   }
 
   return (
-    <main style={{ background: T.bg, minHeight: '100dvh', paddingBottom: '5.5rem' }}>
+    <main className="consumer-app" style={{ background: T.bg, minHeight: '100dvh', paddingBottom: '5.5rem' }}>
 
       {/* Header */}
       <div style={{

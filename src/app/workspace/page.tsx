@@ -200,11 +200,11 @@ export default function WorkspaceDashboard() {
           </div>
           <Skeleton className="h-9 w-36" />
         </div>
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-2xl" />)}
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          <Skeleton className="col-span-2 h-80 rounded-2xl" />
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <Skeleton className="col-span-1 xl:col-span-2 h-80 rounded-2xl" />
           <Skeleton className="h-80 rounded-2xl" />
         </div>
       </div>
@@ -212,10 +212,10 @@ export default function WorkspaceDashboard() {
   }
 
   return (
-    <div className="p-8 max-w-[1600px]">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6 md:mb-8">
         <div>
           <p className="text-[#4A5578] text-[12px] font-medium mb-0.5">{today}</p>
           <h1 className="text-[28px] font-bold text-[#F0F4FF] leading-tight">
@@ -240,7 +240,7 @@ export default function WorkspaceDashboard() {
       </div>
 
       {/* Hero Momentum + KPIs */}
-      <div className="grid grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
 
         {/* Momentum Score */}
         <motion.div
@@ -315,14 +315,14 @@ export default function WorkspaceDashboard() {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
 
         {/* Active Missions Table */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="col-span-2 bg-[#0A1226] border border-[#0F1D35] rounded-2xl overflow-hidden"
+          className="col-span-1 xl:col-span-2 bg-[#0A1226] border border-[#0F1D35] rounded-2xl overflow-hidden"
         >
           <div className="flex items-center justify-between px-5 py-4 border-b border-[#0F1D35]">
             <div className="flex items-center gap-2">
@@ -490,7 +490,7 @@ export default function WorkspaceDashboard() {
       </div>
 
       {/* Bottom Grid */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 
         {/* Outcome Overview */}
         <motion.div

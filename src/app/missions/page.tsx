@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Target, Clock, Zap, Trophy, CheckCircle2, ShieldCheck, Building2,
@@ -18,6 +19,27 @@ import {
   estimateCashReward, estimateXP, deadlineLabel, spotsLabel, resolveCategory,
 } from '@/lib/missionCategories';
 import type { Hunt, ImpactProfile } from '@/lib/types';
+
+/* ─── Unsplash thumbnails ─── */
+const MISSION_IMAGES: Record<string, string> = {
+  fitness:   'photo-1571019613454-1cb2f99b2d8b',
+  adventure: 'photo-1476514525535-07fb3b4ae5f1',
+  food:      'photo-1504674900247-0877df9cc836',
+  tech:      'photo-1518770660439-4636190af475',
+  learning:  'photo-1456513080510-7bf3a84b82f8',
+  social:    'photo-1529156069898-49953e39b3ac',
+  art:       'photo-1513364776144-60967b0f800f',
+  travel:    'photo-1488085061387-422e29b40080',
+  mindful:   'photo-1506126613408-eca07ce68773',
+  civic:     'photo-1554224155-6726b3ff858f',
+  nature:    'photo-1441974231531-c6227db76b6e',
+  finance:   'photo-1611974789855-9c2a0a7236a3',
+  default:   'photo-1519389950473-47ba0277781c',
+};
+function getMissionImage(tags: string[], w = 700, h = 260): string {
+  for (const t of tags) { const id = MISSION_IMAGES[t.toLowerCase()]; if (id) return `https://images.unsplash.com/${id}?w=${w}&h=${h}&fit=crop&q=75&auto=format`; }
+  return `https://images.unsplash.com/${MISSION_IMAGES.default}?w=${w}&h=${h}&fit=crop&q=75&auto=format`;
+}
 
 /* ─── tokens ─── */
 const BG     = '#050816';
@@ -69,6 +91,8 @@ function MissionCard({ hunt, done, locked, profile, index }: {
   const spLabel = spotsLabel(hunt.spotsRemaining, hunt.spotsTotal);
   const ms      = matchScore(hunt, profile);
   const msColor = ms == null ? DIM : ms >= 80 ? ACCENT : ms >= 65 ? WARN : DIM;
+  const [imgFailed, setImgFailed] = useState(false);
+  const thumbImg = getMissionImage(hunt.tags);
 
   return (
     <motion.div
@@ -80,8 +104,31 @@ function MissionCard({ hunt, done, locked, profile, index }: {
         border: `1px solid ${done ? 'rgba(255,255,255,.06)' : cat.color + '22'}`,
         boxShadow: done ? 'none' : `0 0 40px ${cat.color}08` }}>
 
-      {/* category colour stripe */}
-      <div style={{ height: 3, background: done ? 'rgba(255,255,255,.08)' : `linear-gradient(90deg, ${cat.color}, ${cat.color}00)` }} />
+      {/* ── thumbnail banner ── */}
+      <div style={{ position: 'relative', height: 120, overflow: 'hidden', background: '#030A18' }}>
+        {!imgFailed && (
+          <Image src={thumbImg} alt="" fill style={{ objectFit: 'cover', objectPosition: 'center', opacity: done ? 0.3 : locked ? 0.4 : 0.78 }}
+            onError={() => setImgFailed(true)} unoptimized />
+        )}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(10,18,38,.9) 100%)' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: done ? 'rgba(255,255,255,.08)' : `linear-gradient(90deg,${cat.color},${cat.color}00)` }} />
+        {/* status badge */}
+        {done && (
+          <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(5,8,22,.75)', border: `1px solid ${ACCENT}40`, borderRadius: 999, padding: '3px 9px', backdropFilter: 'blur(8px)' }}>
+            <CheckCircle2 size={9} strokeWidth={2.5} style={{ color: ACCENT }} /><span style={{ fontSize: 9.5, fontWeight: 700, color: ACCENT }}>Completed</span>
+          </div>
+        )}
+        {locked && (
+          <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(5,8,22,.75)', border: `1px solid ${AI_CLR}40`, borderRadius: 999, padding: '3px 9px', backdropFilter: 'blur(8px)' }}>
+            <Sparkles size={9} strokeWidth={2.5} style={{ color: AI_CLR }} /><span style={{ fontSize: 9.5, fontWeight: 700, color: AI_CLR }}>Premium</span>
+          </div>
+        )}
+        {ms != null && !done && !locked && (
+          <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', alignItems: 'center', gap: 3, background: 'rgba(5,8,22,.75)', border: `1px solid ${msColor}40`, borderRadius: 999, padding: '3px 9px', backdropFilter: 'blur(8px)' }}>
+            <TrendingUp size={9} strokeWidth={2.5} style={{ color: msColor }} /><span style={{ fontSize: 9.5, fontWeight: 800, color: msColor }}>{ms}% match</span>
+          </div>
+        )}
+      </div>
 
       <div style={{ padding: '14px 16px 0' }}>
 
@@ -121,15 +168,6 @@ function MissionCard({ hunt, done, locked, profile, index }: {
               {hunt.isVerified && <ShieldCheck size={10} strokeWidth={2.5} style={{ color: ACCENT }} />}
             </div>
           </div>
-          {/* match score */}
-          {ms != null && !done && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-              <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${msColor}12`, border: `2px solid ${msColor}28`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: 10, fontWeight: 900, color: msColor }}>{ms}%</span>
-              </div>
-              <span style={{ fontSize: 8.5, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '.05em' }}>match</span>
-            </div>
-          )}
         </div>
 
         {/* description excerpt */}

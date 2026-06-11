@@ -2,40 +2,54 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Compass, Target, MessageSquare, User, Users } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
+import {
+  Home, Compass, Target, MessageSquare, User,
+  Users, Trophy, LogOut, Sun, Moon,
+} from 'lucide-react';
 import { useTotalUnread } from '@/hooks/useMessages';
-import { createClient } from '@/lib/supabase/client';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
-const NAV_ITEMS = [
+const PRIMARY_NAV = [
   { href: '/home',     icon: Home,          label: 'Home'     },
   { href: '/explore',  icon: Compass,       label: 'Explore'  },
-  { href: '/missions', icon: Target,        label: 'Missions', center: true },
+  { href: '/missions', icon: Target,        label: 'Missions', accent: true },
   { href: '/messages', icon: MessageSquare, label: 'Messages', badge: true },
   { href: '/profile',  icon: User,          label: 'Profile'  },
 ];
 
-const DESKTOP_EXTRA: { href: string; icon: typeof Users; label: string; center?: boolean; badge?: boolean }[] = [
-  { href: '/people', icon: Users, label: 'People' },
+const SECONDARY_NAV = [
+  { href: '/people',  icon: Users,  label: 'People'  },
+  { href: '/rewards', icon: Trophy, label: 'Rewards' },
 ];
+
+function ThemeToggleBtn() {
+  const [light, setLight] = useState(false);
+  useEffect(() => {
+    setLight(localStorage.getItem('xhunt-theme') === 'light');
+  }, []);
+  function toggle() {
+    const next = !light;
+    setLight(next);
+    document.documentElement.setAttribute('data-theme', next ? 'light' : 'dark');
+    localStorage.setItem('xhunt-theme', next ? 'light' : 'dark');
+  }
+  return (
+    <button onClick={toggle} title={light ? 'Dark mode' : 'Light mode'}
+      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, borderRadius: 10, color: '#4A5578', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {light ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
+    </button>
+  );
+}
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const [userId, setUserId] = useState<string | null>(null);
-  useEffect(() => {
-    createClient().auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
-  }, []);
-  const totalUnread = useTotalUnread(userId);
+  const { user } = useUser();
+  // Pass null until clerk_user_id mapping is live in DB — badge degrades gracefully
+  const totalUnread = useTotalUnread(null);
 
   return (
     <>
-      {/* Desktop padding injection */}
-      <style>{`
-        @media (min-width: 768px) {
-          .consumer-app { padding-left: 72px !important; padding-bottom: 24px !important; }
-        }
-      `}</style>
-
       {/* ─── Mobile bottom bar ─── */}
       <nav className="md:hidden liquid-nav" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
@@ -43,10 +57,10 @@ export default function BottomNav() {
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}>
         <div style={{ maxWidth: 500, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '10px 8px 10px' }}>
-          {NAV_ITEMS.map(({ href, icon: Icon, label, center, badge }) => {
+          {PRIMARY_NAV.map(({ href, icon: Icon, label, accent, badge }) => {
             const active = pathname === href || pathname.startsWith(href + '/');
             const unread = badge && totalUnread > 0 ? totalUnread : 0;
-            if (center) return (
+            if (accent) return (
               <Link key={href} href={href} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
                 <div style={{
                   width: 52, height: 52, borderRadius: '50%',
@@ -67,12 +81,7 @@ export default function BottomNav() {
                 <div style={{ position: 'relative' }}>
                   <Icon size={20} strokeWidth={active ? 2.2 : 1.7} style={{ color: active ? '#22FFAA' : '#4A5578', transition: 'color .15s' }} />
                   {unread > 0 && (
-                    <div style={{
-                      position: 'absolute', top: -5, right: -6,
-                      width: 15, height: 15, borderRadius: '50%',
-                      background: '#22FFAA', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 8, fontWeight: 800, color: '#050816', border: '2px solid #050816',
-                    }}>
+                    <div style={{ position: 'absolute', top: -5, right: -6, width: 15, height: 15, borderRadius: '50%', background: '#22FFAA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 800, color: '#050816', border: '2px solid #050816' }}>
                       {unread > 9 ? '9+' : unread}
                     </div>
                   )}
@@ -84,54 +93,109 @@ export default function BottomNav() {
         </div>
       </nav>
 
-      {/* ─── Desktop left sidebar ─── */}
-      <nav className="hidden md:flex liquid-nav" style={{
+      {/* ─── Desktop full sidebar (260px) ─── */}
+      <aside className="hidden md:flex liquid-nav" style={{
         position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 50,
-        width: 68, flexDirection: 'column',
+        width: 260, flexDirection: 'column',
         borderRight: '1px solid rgba(255,255,255,0.07)',
-        boxShadow: '4px 0 24px rgba(0,0,0,0.35), inset -1px 0 0 rgba(255,255,255,0.06)',
+        boxShadow: '4px 0 24px rgba(0,0,0,0.3)',
       }}>
         {/* Logo */}
-        <Link href="/home" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 64, borderBottom: '1px solid rgba(255,255,255,.06)', textDecoration: 'none', flexShrink: 0 }}>
+        <Link href="/home" style={{ display: 'flex', alignItems: 'center', gap: 10, height: 64, padding: '0 20px', borderBottom: '1px solid rgba(255,255,255,.06)', textDecoration: 'none', flexShrink: 0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-mark.png" alt="X-Hunt" style={{ width: 28, height: 28, objectFit: 'contain' }}
+          <img src="/logo-mark.png" alt="" style={{ width: 28, height: 28, objectFit: 'contain' }}
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          <span style={{ fontSize: 18, fontWeight: 900, color: '#22FFAA', display: 'none' }} aria-hidden>X</span>
+          <span style={{ fontSize: 17, fontWeight: 900, color: '#F0F4FF', letterSpacing: '-0.02em' }}>X-hunt</span>
         </Link>
 
-        {/* Nav items */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '12px 0' }}>
-          {[...NAV_ITEMS, ...DESKTOP_EXTRA].map(({ href, icon: Icon, label, center, badge }) => {
+        {/* Primary nav */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 10px' }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5578', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px 8px' }}>Main</p>
+          {PRIMARY_NAV.map(({ href, icon: Icon, label, accent, badge }) => {
             const active = pathname === href || pathname.startsWith(href + '/');
             const unread = badge && totalUnread > 0 ? totalUnread : 0;
             return (
-              <Link key={href} href={href} title={label} style={{
-                textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                width: 52, padding: '10px 0', borderRadius: 14, position: 'relative',
-                background: active ? (center ? '#22FFAA' : 'rgba(34,255,170,.08)') : 'transparent',
-                border: active && !center ? '1px solid rgba(34,255,170,.2)' : '1px solid transparent',
+              <Link key={href} href={href} style={{
+                textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12,
+                padding: '10px 12px', borderRadius: 12, marginBottom: 2,
+                background: active
+                  ? (accent ? 'rgba(34,255,170,0.12)' : 'rgba(34,255,170,0.08)')
+                  : 'transparent',
+                border: active ? '1px solid rgba(34,255,170,0.18)' : '1px solid transparent',
                 transition: 'all .15s',
               }}>
-                <div style={{ position: 'relative' }}>
-                  <Icon size={center ? 20 : 18} strokeWidth={active ? 2.4 : 1.7}
-                    style={{ color: active ? (center ? '#050816' : '#22FFAA') : '#4A5578', transition: 'color .15s' }} />
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <Icon size={18} strokeWidth={active ? 2.3 : 1.7}
+                    style={{ color: active ? '#22FFAA' : '#4A5578', transition: 'color .15s', display: 'block' }} />
                   {unread > 0 && (
-                    <div style={{
-                      position: 'absolute', top: -4, right: -6,
-                      width: 14, height: 14, borderRadius: '50%',
-                      background: '#22FFAA', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 7.5, fontWeight: 800, color: '#050816', border: '2px solid #050816',
-                    }}>
+                    <div style={{ position: 'absolute', top: -4, right: -6, minWidth: 14, height: 14, borderRadius: 7, background: '#22FFAA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7.5, fontWeight: 800, color: '#050816', padding: '0 2px', border: '1.5px solid #050816' }}>
                       {unread > 9 ? '9+' : unread}
                     </div>
                   )}
                 </div>
-                <span style={{ fontSize: 8.5, fontWeight: 600, color: active ? (center ? '#050816' : '#22FFAA') : '#4A5578', letterSpacing: '.02em', lineHeight: 1 }}>{label}</span>
+                <span style={{ fontSize: 14, fontWeight: active ? 700 : 500, color: active ? '#F0F4FF' : '#8B9CC0', transition: 'color .15s' }}>{label}</span>
+                {active && <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: '#22FFAA', boxShadow: '0 0 8px rgba(34,255,170,0.7)', flexShrink: 0 }} />}
+              </Link>
+            );
+          })}
+
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '10px 4px' }} />
+
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#4A5578', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px 8px' }}>Discover</p>
+          {SECONDARY_NAV.map(({ href, icon: Icon, label }) => {
+            const active = pathname === href || pathname.startsWith(href + '/');
+            return (
+              <Link key={href} href={href} style={{
+                textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12,
+                padding: '10px 12px', borderRadius: 12, marginBottom: 2,
+                background: active ? 'rgba(255,255,255,0.05)' : 'transparent',
+                border: '1px solid transparent',
+                transition: 'all .15s',
+              }}>
+                <Icon size={17} strokeWidth={active ? 2.2 : 1.7}
+                  style={{ color: active ? '#F0F4FF' : '#4A5578', transition: 'color .15s', flexShrink: 0 }} />
+                <span style={{ fontSize: 14, fontWeight: active ? 600 : 400, color: active ? '#F0F4FF' : '#8B9CC0', transition: 'color .15s' }}>{label}</span>
               </Link>
             );
           })}
         </div>
-      </nav>
+
+        {/* User + controls */}
+        <div style={{ padding: '12px 10px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', marginBottom: 8, borderRadius: 12, background: 'rgba(255,255,255,0.04)' }}>
+              {user.imageUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={user.imageUrl} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+              ) : (
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(34,255,170,0.15)', border: '1px solid rgba(34,255,170,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#22FFAA' }}>
+                    {(user.firstName?.[0] ?? user.emailAddresses?.[0]?.emailAddress?.[0] ?? 'U').toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#F0F4FF', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {user.firstName ?? user.emailAddresses?.[0]?.emailAddress?.split('@')[0] ?? 'Explorer'}
+                </p>
+                <p style={{ fontSize: 11, color: '#4A5578', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {user.emailAddresses?.[0]?.emailAddress ?? ''}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
+            <ThemeToggleBtn />
+            <Link href="/auth/login" title="Sign out" style={{
+              background: 'none', border: 'none', cursor: 'pointer', padding: 8, borderRadius: 10,
+              color: '#4A5578', display: 'flex', alignItems: 'center', textDecoration: 'none',
+            }}>
+              <LogOut size={16} strokeWidth={2} />
+            </Link>
+          </div>
+        </div>
+      </aside>
     </>
   );
 }

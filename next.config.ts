@@ -15,7 +15,7 @@ const cspDirectives = [
   // WebGL shader compilation needs it at runtime.
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : " 'unsafe-eval'"} https://js.stripe.com`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://prod.spline.design",
+  "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://prod.spline.design https://images.unsplash.com",
   "font-src 'self'",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.supabase.in wss://*.supabase.in https://api.groq.com https://api.stripe.com https://prod.spline.design",
   "worker-src blob: 'self'",
@@ -32,6 +32,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
       { protocol: 'https', hostname: '*.supabase.in' },
+      { protocol: 'https', hostname: 'img.clerk.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
   },
 
