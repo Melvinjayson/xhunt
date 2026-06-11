@@ -4,9 +4,37 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, ArrowRight } from 'lucide-react';
+import { Menu, X, ChevronDown, ArrowRight, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import Logo from '@/components/Logo';
+
+function ThemeToggle() {
+  const [light, setLight] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('xhunt-theme');
+    const isLight = saved === 'light';
+    setLight(isLight);
+    document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
+  }, []);
+
+  function toggle() {
+    const next = !light;
+    setLight(next);
+    document.documentElement.setAttribute('data-theme', next ? 'light' : 'dark');
+    localStorage.setItem('xhunt-theme', next ? 'light' : 'dark');
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      aria-label={light ? 'Switch to dark mode' : 'Switch to light mode'}
+      className="w-9 h-9 flex items-center justify-center rounded-lg text-txt-dim hover:text-txt hover:bg-[rgba(255,255,255,0.06)] transition-colors"
+    >
+      {light ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
+    </button>
+  );
+}
 
 const PRODUCT_ITEMS = [
   { label: 'Consumer Platform', href: '/consumer', desc: 'Personal AI mission experiences', emoji: '🎯' },
@@ -115,6 +143,7 @@ export default function Nav() {
 
         {/* CTA */}
         <div className="hidden lg:flex items-center gap-2">
+          <ThemeToggle />
           <Link href="/auth/login" className="px-4 py-2 text-sm font-medium text-txt-dim hover:text-txt transition-colors">
             Sign in
           </Link>
@@ -125,11 +154,14 @@ export default function Nav() {
           </Link>
         </div>
 
-        {/* Mobile toggle */}
-        <button onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu"
-          className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg text-txt-dim hover:text-txt hover:bg-[rgba(255,255,255,0.06)] transition-colors">
-          {mobileOpen ? <X size={20} strokeWidth={2} /> : <Menu size={20} strokeWidth={2} />}
-        </button>
+        {/* Mobile controls */}
+        <div className="lg:hidden flex items-center gap-1">
+          <ThemeToggle />
+          <button onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-txt-dim hover:text-txt hover:bg-[rgba(255,255,255,0.06)] transition-colors">
+            {mobileOpen ? <X size={20} strokeWidth={2} /> : <Menu size={20} strokeWidth={2} />}
+          </button>
+        </div>
       </nav>
 
       {/* Mobile menu */}
