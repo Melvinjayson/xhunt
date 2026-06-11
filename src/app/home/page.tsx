@@ -11,9 +11,9 @@ import {
   CheckCircle2, PlayCircle, BarChart3,
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
-import { loadState, saveState } from '@/lib/store';
+import { loadState, saveState, loadProfile } from '@/lib/store';
 
-import type { Hunt } from '@/lib/types';
+import type { Hunt, ImpactProfile } from '@/lib/types';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
 
 /* ─── types ─── */
@@ -220,7 +220,7 @@ function ActiveMissionCard({ hunt, progress = 0 }: { hunt: Hunt; progress?: numb
         </div>
 
         {/* play button */}
-        <Link href={`/hunt/${hunt.id}`} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', textDecoration: 'none' }}>
+        <Link href={`/missions/${hunt.id}`} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', textDecoration: 'none' }}>
           <motion.div
             whileTap={{ scale: 0.92 }}
             style={{
@@ -276,7 +276,7 @@ function ActiveMissionCard({ hunt, progress = 0 }: { hunt: Hunt; progress?: numb
         </div>
 
         {/* CTA */}
-        <Link href={`/hunt/${hunt.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+        <Link href={`/missions/${hunt.id}`} style={{ textDecoration: 'none', display: 'block' }}>
           <motion.div
             whileTap={{ scale: 0.98 }}
             style={{
@@ -366,8 +366,23 @@ function AIInsightCard({ recs, onDismiss }: { recs: Recommendation[]; onDismiss:
   );
 }
 
+/* ─── match score helper ─── */
+function computeMatchScore(hunt: Hunt, profile: ImpactProfile | null): number | null {
+  if (!profile) return null;
+  const huntTagsLower = hunt.tags.map((t) => t.toLowerCase());
+  const causesLower = profile.causes.map((c) => c.toLowerCase());
+  const strengthsLower = profile.strengths.map((s) => s.name.toLowerCase());
+  let score = 55;
+  for (const tag of huntTagsLower) {
+    if (causesLower.some((c) => c.includes(tag) || tag.includes(c))) score += 12;
+    if (strengthsLower.some((s) => s.includes(tag) || tag.includes(s))) score += 8;
+  }
+  score += Math.round((profile.impactScore / 100) * 10);
+  return Math.min(98, score);
+}
+
 /* ─── compact mission card (recommended) ─── */
-function MissionCard({ hunt, index, isCompleted }: { hunt: Hunt; index: number; isCompleted?: boolean }) {
+function MissionCard({ hunt, index, isCompleted, matchScore }: { hunt: Hunt; index: number; isCompleted?: boolean; matchScore?: number | null }) {
   const accent = tagAccent(hunt.tags);
   const diffColor = DIFF_CLR[hunt.difficulty] ?? DIM;
   const rewardMatch = hunt.reward.match(/\$(\d+[\d,]*)/);
@@ -380,7 +395,7 @@ function MissionCard({ hunt, index, isCompleted }: { hunt: Hunt; index: number; 
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.07, duration: 0.35 }}
     >
-      <Link href={`/hunt/${hunt.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+      <Link href={`/missions/${hunt.id}`} style={{ textDecoration: 'none', display: 'block' }}>
         <div
           style={{
             ...XGLASS,
@@ -406,12 +421,17 @@ function MissionCard({ hunt, index, isCompleted }: { hunt: Hunt; index: number; 
             </div>
           </div>
 
-          {/* row 2 — meta + difficulty */}
+          {/* row 2 — meta + difficulty + match */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 49, marginBottom: 12 }}>
             <span style={{ fontSize: 11, color: FAINT }}>{hunt.estimated_time}</span>
             <span style={{ fontSize: 10, fontWeight: 700, color: diffColor, background: `${diffColor}12`, border: `1px solid ${diffColor}25`, borderRadius: 999, padding: '1px 7px' }}>
               {hunt.difficulty}
             </span>
+            {matchScore != null && !isCompleted && (
+              <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 800, color: matchScore >= 80 ? ACCENT : matchScore >= 65 ? WARN : DIM, background: matchScore >= 80 ? `${ACCENT}12` : matchScore >= 65 ? `${WARN}12` : 'rgba(255,255,255,.04)', border: `1px solid ${matchScore >= 80 ? `${ACCENT}25` : matchScore >= 65 ? `${WARN}25` : 'rgba(255,255,255,.08)'}`, borderRadius: 999, padding: '2px 8px' }}>
+                {matchScore}% match
+              </span>
+            )}
             {isCompleted && (
               <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, color: ACCENT }}>
                 <CheckCircle2 size={10} strokeWidth={2.5} /> Completed
@@ -470,6 +490,7 @@ export default function HomePage() {
   const [aiDismissed, setAIDismiss] = useState(false);
   const [recs, setRecs]             = useState<Recommendation[]>([]);
   const [userName, setUserName]     = useState('Explorer');
+  const [impactProfile, setProfile] = useState<ImpactProfile | null>(null);
 
   useEffect(() => {
     const state = loadState();
@@ -478,6 +499,7 @@ export default function HomePage() {
     setStreak(state.streak);
     if ((state.user as { name?: string }).name) setUserName((state.user as { name?: string }).name!);
     setHunts(state.hunts);
+    setProfile(loadProfile());
     setMounted(true);
 
     void fetchSupabaseMissions().then((r) => {
@@ -703,7 +725,7 @@ export default function HomePage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {(active.length > 0 ? active : done).slice(0, 4).map((hunt, i) => (
-                <MissionCard key={hunt.id} hunt={hunt} index={i} isCompleted={completedIds.includes(hunt.id)} />
+                <MissionCard key={hunt.id} hunt={hunt} index={i} isCompleted={completedIds.includes(hunt.id)} matchScore={computeMatchScore(hunt, impactProfile)} />
               ))}
             </div>
           )}
@@ -749,7 +771,7 @@ export default function HomePage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {done.slice(0, 3).map((hunt, i) => (
-                <MissionCard key={hunt.id} hunt={hunt} index={i} isCompleted />
+                <MissionCard key={hunt.id} hunt={hunt} index={i} isCompleted matchScore={null} />
               ))}
             </div>
           </div>

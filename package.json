@@ -14,6 +14,7 @@
     "@splinetool/runtime": "^1.12.97",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.108.0",
+    "@xyflow/react": "^12.11.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.40.0",
     "groq-sdk": "^1.2.1",

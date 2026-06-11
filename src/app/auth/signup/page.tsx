@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, User, Loader2, AlertCircle, Check } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-export default function SignupPage() {
+function SignupForm() {
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next') ?? '/get-started';
+
   const [name, setName]               = useState('');
   const [email, setEmail]             = useState('');
   const [password, setPassword]       = useState('');
@@ -26,7 +29,10 @@ export default function SignupPage() {
     setLoading(true); setError('');
     const { error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { full_name: name }, emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboard` },
+      options: {
+        data: { full_name: name },
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
     });
     if (error) { setError(error.message); setLoading(false); return; }
     setSuccess(true); setLoading(false);
@@ -36,7 +42,7 @@ export default function SignupPage() {
     setGoogleLoad(true); setError('');
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/onboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
     if (error) { setError(error.message); setGoogleLoad(false); }
   }
@@ -73,8 +79,8 @@ export default function SignupPage() {
           <img src="/logo-wordmark.png" alt="X-Hunt" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
         </div>
 
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: '#F0F4FF', margin: '0 0 6px', letterSpacing: '-.02em' }}>Create your workspace</h1>
-        <p style={{ fontSize: 14, color: '#8B9CC0', margin: '0 0 28px' }}>Start building missions for your organization</p>
+        <h1 style={{ fontSize: 26, fontWeight: 800, color: '#F0F4FF', margin: '0 0 6px', letterSpacing: '-.02em' }}>Create your account</h1>
+        <p style={{ fontSize: 14, color: '#8B9CC0', margin: '0 0 28px' }}>Start earning on missions matched to your unique profile</p>
 
         {error && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,92,122,.1)', border: '1px solid rgba(255,92,122,.3)', borderRadius: 14, padding: '10px 14px', marginBottom: 18 }}>
@@ -147,5 +153,17 @@ export default function SignupPage() {
         </p>
       </motion.div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', background: '#050816', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 28, height: 28, border: '2px solid #22FFAA', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.9s linear infinite' }} />
+      </div>
+    }>
+      <SignupForm />
+    </Suspense>
   );
 }

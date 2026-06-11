@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
@@ -8,10 +10,10 @@ import { createClient } from '@/lib/supabase/client';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
     async function checkAccess() {
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace('/auth/login'); return; }
 
@@ -35,7 +37,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setAuthorized(true);
     }
     checkAccess();
-  }, [router, supabase]);
+  }, [router]);
 
   if (!authorized) {
     return (

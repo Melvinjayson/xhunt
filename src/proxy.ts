@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 const CONSUMER_PROTECTED = [
   '/home', '/missions', '/active', '/profile',
   '/timeline', '/live', '/upgrade', '/explore',
-  '/hunt', '/complete',
+  '/hunt', '/complete', '/rewards',
 ];
 
 export async function proxy(request: NextRequest) {
@@ -38,7 +38,7 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  const isAdminRoute    = pathname.startsWith('/admin') || pathname.startsWith('/onboard');
+  const isAdminRoute    = pathname.startsWith('/admin') || pathname.startsWith('/onboard') || pathname.startsWith('/workspace');
   const isConsumerRoute = CONSUMER_PROTECTED.some(p => pathname === p || pathname.startsWith(p + '/'));
 
   if ((isAdminRoute || isConsumerRoute) && !user) {

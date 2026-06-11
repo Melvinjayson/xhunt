@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Radar, Layers, TrendingUp, BarChart3, Bot, Network,
   UserSquare2, Gift, ShieldCheck, Plug, Code2, CreditCard, Settings,
-  LogOut, Building2, ChevronDown, Plus, Sparkles, Zap,
+  LogOut, Building2, ChevronDown, Plus, Sparkles, Zap, Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { createClient } from '@/lib/supabase/client';
@@ -31,8 +31,9 @@ const NAV_GROUPS = [
   {
     group: 'ENGAGEMENT',
     items: [
-      { href: '/workspace/audience', label: 'Audience', icon: UserSquare2 },
-      { href: '/workspace/rewards', label: 'Rewards', icon: Gift },
+      { href: '/workspace/audience',    label: 'Audience',    icon: UserSquare2 },
+      { href: '/workspace/rewards',     label: 'Rewards',     icon: Gift },
+      { href: '/workspace/marketplace', label: 'Marketplace', icon: Globe },
     ],
   },
   {

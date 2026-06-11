@@ -11,6 +11,7 @@ import {
   Clock, Award, Wallet, Users, Camera, MapPin,
   Zap, Star, TrendingUp, BarChart3,
 } from 'lucide-react';
+import OnboardingSplash from '@/components/OnboardingSplash';
 
 /* ─── animation helpers ─── */
 const fadeUp = {
@@ -409,7 +410,7 @@ function PayoutScreen() {
 }
 
 /* ─── App Mocks Section ─── */
-function AppMocksSection() {
+function AppMocksSection({ onCTA }: { onCTA: () => void }) {
   const [activeScreen, setActiveScreen] = useState(0);
   const screens = [
     { id: 'discover', label: 'Browse Missions', tagline: 'Pick what fits your life', component: <DiscoverScreen /> },
@@ -544,10 +545,10 @@ function AppMocksSection() {
             </div>
 
             <motion.div variants={fadeUp} custom={0.52} className="mt-8 flex flex-wrap gap-3">
-              <Link href="/get-started"
-                className="flex items-center gap-2.5 h-12 px-6 bg-accent text-[#050816] rounded-xl text-[14px] font-bold shadow-[0_0_24px_rgba(34,255,170,0.3)] hover:shadow-[0_0_40px_rgba(34,255,170,0.5)] transition-all">
+              <button onClick={onCTA}
+                className="flex items-center gap-2.5 h-12 px-6 bg-accent text-[#050816] rounded-xl text-[14px] font-bold shadow-[0_0_24px_rgba(34,255,170,0.3)] hover:shadow-[0_0_40px_rgba(34,255,170,0.5)] transition-all cursor-pointer border-none">
                 Find your first mission <ArrowRight size={15} strokeWidth={2.8} />
-              </Link>
+              </button>
             </motion.div>
           </div>
         </div>
@@ -615,8 +616,12 @@ function TimelineFeed() {
 
 /* ─── PAGE ─── */
 export default function RootPage() {
+  const [splashOpen, setSplashOpen] = useState(false);
+  const openSplash = () => setSplashOpen(true);
+
   return (
     <div className="bg-[#050816] text-[#F0F4FF] overflow-x-hidden">
+      <OnboardingSplash open={splashOpen} onClose={() => setSplashOpen(false)} />
 
       {/* ─── HERO ─── */}
       <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
@@ -698,10 +703,10 @@ export default function RootPage() {
               <motion.div
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.46 }}
                 className="flex flex-wrap gap-3">
-                <Link href="/get-started"
-                  className="flex items-center gap-2.5 h-13 px-7 bg-[#22FFAA] text-[#050816] rounded-xl text-[15px] font-bold shadow-[0_0_28px_rgba(34,255,170,0.3)] hover:shadow-[0_0_44px_rgba(34,255,170,0.5)] transition-all duration-200">
+                <button onClick={openSplash}
+                  className="flex items-center gap-2.5 h-13 px-7 bg-[#22FFAA] text-[#050816] rounded-xl text-[15px] font-bold shadow-[0_0_28px_rgba(34,255,170,0.3)] hover:shadow-[0_0_44px_rgba(34,255,170,0.5)] transition-all duration-200 cursor-pointer border-none">
                   Find a mission now <ArrowRight size={16} strokeWidth={2.8} />
-                </Link>
+                </button>
                 <Link href="/missions"
                   className="flex items-center gap-2.5 h-13 px-6 border text-[#8B9CC0] rounded-xl text-[15px] font-semibold hover:text-[#F0F4FF] transition-all duration-200"
                   style={{ background: 'rgba(255,255,255,.04)', borderColor: 'rgba(255,255,255,.09)' }}>
@@ -742,7 +747,7 @@ export default function RootPage() {
       </div>
 
       {/* ─── APP MOCKS ─── */}
-      <AppMocksSection />
+      <AppMocksSection onCTA={openSplash} />
 
       {/* ─── HOW IT WORKS ─── */}
       <Sec className="py-24 lg:py-32 border-y border-[rgba(255,255,255,.05)]" style={{ background: '#07101F' }}>
@@ -1068,10 +1073,10 @@ export default function RootPage() {
             Free to join · No credit card · First mission generated in under 15 seconds
           </motion.p>
           <motion.div variants={fadeUp} custom={0.26} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-            <Link href="/get-started"
-              className="flex items-center justify-center gap-2.5 h-13 px-8 bg-[#22FFAA] text-[#050816] rounded-xl text-[15px] font-bold shadow-[0_0_32px_rgba(34,255,170,0.3)] hover:shadow-[0_0_48px_rgba(34,255,170,0.5)] transition-all">
+            <button onClick={openSplash}
+              className="flex items-center justify-center gap-2.5 h-13 px-8 bg-[#22FFAA] text-[#050816] rounded-xl text-[15px] font-bold shadow-[0_0_32px_rgba(34,255,170,0.3)] hover:shadow-[0_0_48px_rgba(34,255,170,0.5)] transition-all cursor-pointer border-none">
               Start hunting free <ArrowRight size={16} strokeWidth={2.8} />
-            </Link>
+            </button>
             <Link href="/enterprise"
               className="flex items-center justify-center gap-2.5 h-13 px-7 border text-[#8B9CC0] rounded-xl text-[15px] font-semibold hover:text-[#F0F4FF] transition-all"
               style={{ background: 'rgba(255,255,255,.04)', borderColor: 'rgba(255,255,255,.09)' }}>

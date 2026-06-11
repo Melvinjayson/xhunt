@@ -1,4 +1,4 @@
-import type { AppState } from './types';
+import type { AppState, ImpactProfile } from './types';
 
 const STORAGE_KEY = 'xhunt_v1';
 
@@ -31,4 +31,24 @@ export function saveState(state: AppState): void {
 export function clearState(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(STORAGE_KEY);
+}
+
+const PROFILE_KEY = 'xhunt_impact_v1';
+
+export function loadProfile(): ImpactProfile | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    return raw ? (JSON.parse(raw) as ImpactProfile) : null;
+  } catch { return null; }
+}
+
+export function saveProfile(p: ImpactProfile): void {
+  if (typeof window === 'undefined') return;
+  try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch {}
+}
+
+export function clearProfile(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(PROFILE_KEY);
 }

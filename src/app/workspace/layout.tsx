@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import WorkspaceSidebar from '@/components/workspace/WorkspaceSidebar';
@@ -16,12 +18,12 @@ interface WorkspaceUser {
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<WorkspaceUser | null>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     async function boot() {
+      const supabase = createClient();
       const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) { router.replace('/auth/login'); return; }
+      if (!authUser) { router.replace('/auth/login?next=/workspace'); return; }
 
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -55,7 +57,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
       });
     }
     boot();
-  }, [router, supabase]);
+  }, [router]);
 
   if (!user) {
     return (

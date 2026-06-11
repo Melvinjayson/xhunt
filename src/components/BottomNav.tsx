@@ -2,18 +2,26 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Compass, Target, Activity, User } from 'lucide-react';
+import { Home, Compass, Target, MessageSquare, User } from 'lucide-react';
+import { useTotalUnread } from '@/hooks/useMessages';
+import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState } from 'react';
 
 const NAV_ITEMS = [
-  { href: '/home',     icon: Home,     label: 'Home'     },
-  { href: '/explore',  icon: Compass,  label: 'Explore'  },
-  { href: '/missions', icon: Target,   label: 'Missions', center: true },
-  { href: '/timeline', icon: Activity, label: 'Feed'     },
-  { href: '/profile',  icon: User,     label: 'Profile'  },
+  { href: '/home',     icon: Home,          label: 'Home'     },
+  { href: '/explore',  icon: Compass,       label: 'Explore'  },
+  { href: '/missions', icon: Target,        label: 'Missions', center: true },
+  { href: '/messages', icon: MessageSquare, label: 'Messages', badge: true },
+  { href: '/profile',  icon: User,          label: 'Profile'  },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
+  const totalUnread = useTotalUnread(userId);
 
   return (
     <>
@@ -33,8 +41,9 @@ export default function BottomNav() {
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}>
         <div style={{ maxWidth: 500, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '10px 8px 10px' }}>
-          {NAV_ITEMS.map(({ href, icon: Icon, label, center }) => {
+          {NAV_ITEMS.map(({ href, icon: Icon, label, center, badge }) => {
             const active = pathname === href || pathname.startsWith(href + '/');
+            const unread = badge && totalUnread > 0 ? totalUnread : 0;
             if (center) return (
               <Link key={href} href={href} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
                 <div style={{
@@ -53,7 +62,19 @@ export default function BottomNav() {
             return (
               <Link key={href} href={href} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '2px 10px', borderRadius: 14, position: 'relative' }}>
                 {active && <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', width: 24, height: 2, borderRadius: 2, background: '#22FFAA', boxShadow: '0 0 8px rgba(34,255,170,0.7)' }} />}
-                <Icon size={20} strokeWidth={active ? 2.2 : 1.7} style={{ color: active ? '#22FFAA' : '#4A5578', transition: 'color .15s' }} />
+                <div style={{ position: 'relative' }}>
+                  <Icon size={20} strokeWidth={active ? 2.2 : 1.7} style={{ color: active ? '#22FFAA' : '#4A5578', transition: 'color .15s' }} />
+                  {unread > 0 && (
+                    <div style={{
+                      position: 'absolute', top: -5, right: -6,
+                      width: 15, height: 15, borderRadius: '50%',
+                      background: '#22FFAA', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 8, fontWeight: 800, color: '#050816', border: '2px solid #050816',
+                    }}>
+                      {unread > 9 ? '9+' : unread}
+                    </div>
+                  )}
+                </div>
                 <span style={{ fontSize: 9.5, fontWeight: 600, color: active ? '#22FFAA' : '#4A5578', letterSpacing: '.02em' }}>{label}</span>
               </Link>
             );
@@ -79,8 +100,9 @@ export default function BottomNav() {
 
         {/* Nav items */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '12px 0' }}>
-          {NAV_ITEMS.map(({ href, icon: Icon, label, center }) => {
+          {NAV_ITEMS.map(({ href, icon: Icon, label, center, badge }) => {
             const active = pathname === href || pathname.startsWith(href + '/');
+            const unread = badge && totalUnread > 0 ? totalUnread : 0;
             return (
               <Link key={href} href={href} title={label} style={{
                 textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
@@ -89,8 +111,20 @@ export default function BottomNav() {
                 border: active && !center ? '1px solid rgba(34,255,170,.2)' : '1px solid transparent',
                 transition: 'all .15s',
               }}>
-                <Icon size={center ? 20 : 18} strokeWidth={active ? 2.4 : 1.7}
-                  style={{ color: active ? (center ? '#050816' : '#22FFAA') : '#4A5578', transition: 'color .15s' }} />
+                <div style={{ position: 'relative' }}>
+                  <Icon size={center ? 20 : 18} strokeWidth={active ? 2.4 : 1.7}
+                    style={{ color: active ? (center ? '#050816' : '#22FFAA') : '#4A5578', transition: 'color .15s' }} />
+                  {unread > 0 && (
+                    <div style={{
+                      position: 'absolute', top: -4, right: -6,
+                      width: 14, height: 14, borderRadius: '50%',
+                      background: '#22FFAA', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 7.5, fontWeight: 800, color: '#050816', border: '2px solid #050816',
+                    }}>
+                      {unread > 9 ? '9+' : unread}
+                    </div>
+                  )}
+                </div>
                 <span style={{ fontSize: 8.5, fontWeight: 600, color: active ? (center ? '#050816' : '#22FFAA') : '#4A5578', letterSpacing: '.02em', lineHeight: 1 }}>{label}</span>
               </Link>
             );

@@ -319,6 +319,44 @@ export interface DbEscrowTransaction {
   created_at: string;
 }
 
+// ── Event Spine ───────────────────────────────────────────────────────────────
+
+export type MissionEventType =
+  | 'mission_viewed'    | 'mission_started'    | 'mission_resumed'
+  | 'step_started'      | 'step_completed'     | 'step_skipped'     | 'step_adapted'
+  | 'reward_viewed'     | 'reward_claimed'     | 'mission_completed'
+  | 'mission_abandoned' | 'mission_shared'     | 'ask_xeno'         | 'profile_match_viewed';
+
+export interface DbMissionEvent {
+  id:          string;
+  user_id:     string;
+  tenant_id:   string | null;
+  mission_id:  string | null;
+  step_id:     number | null;
+  event_type:  MissionEventType;
+  session_id:  string | null;
+  duration_ms: number | null;
+  client_ts:   string;
+  metadata:    Record<string, unknown>;
+  created_at:  string;
+}
+
+export type MissionStateName =
+  | 'not_started' | 'active' | 'in_progress'
+  | 'stalled'     | 'completed' | 'analyzed';
+
+export interface DbMissionState {
+  id:             string;
+  user_id:        string;
+  mission_id:     string;
+  tenant_id:      string | null;
+  state:          MissionStateName;
+  previous_state: MissionStateName | null;
+  entered_at:     string;
+  metadata:       Record<string, unknown>;
+  updated_at:     string;
+}
+
 // ── Revenue Manager ───────────────────────────────────────────────────────────
 
 export type RevenueCategory = 'subscription' | 'mission_fee' | 'outcome_bonus' | 'escrow_release' | 'api_usage' | 'professional_services';
@@ -361,4 +399,80 @@ export interface DbInvoice {
   due_at: string | null;
   paid_at: string | null;
   created_at: string;
+}
+
+// ── XChat: Messaging ──────────────────────────────────────────────────────────
+
+export type ConversationType = 'direct' | 'mission' | 'team' | 'organization' | 'community';
+export type MemberRole = 'member' | 'moderator' | 'admin' | 'owner';
+export type MessageType = 'text' | 'image' | 'file' | 'voice' | 'mission_share' | 'system';
+
+export interface DbConversation {
+  id: string;
+  type: ConversationType;
+  name: string | null;
+  description: string | null;
+  avatar_url: string | null;
+  mission_id: string | null;
+  tenant_id: string | null;
+  created_by: string;
+  last_message_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbConversationMember {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  role: MemberRole;
+  last_read_at: string | null;
+  is_muted: boolean;
+  joined_at: string;
+}
+
+export interface DbMessage {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string | null;
+  message_type: MessageType;
+  metadata: Record<string, unknown>;
+  reply_to_id: string | null;
+  is_deleted: boolean;
+  is_encrypted: boolean;
+  iv: string | null;
+  edited_at: string | null;
+  created_at: string;
+}
+
+export interface DbMessageReaction {
+  id: string;
+  message_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+}
+
+export interface DbMessageReadReceipt {
+  id: string;
+  message_id: string;
+  user_id: string;
+  read_at: string;
+}
+
+// Enriched types used in the UI (joins resolved)
+export interface MessageWithSender extends DbMessage {
+  sender: { display_name: string | null; avatar_url: string | null } | null;
+}
+
+export interface ConversationWithDetails extends DbConversation {
+  members: Array<{
+    user_id: string;
+    role: MemberRole;
+    last_read_at: string | null;
+    profile: { display_name: string | null; avatar_url: string | null } | null;
+  }>;
+  last_message: { content: string | null; sender_id: string; created_at: string } | null;
+  unread_count: number;
 }

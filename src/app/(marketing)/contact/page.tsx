@@ -26,9 +26,19 @@ export default function ContactPage() {
     e.preventDefault();
     if (!inquiryType || !form.name || !form.email || !form.message) return;
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setSubmitted(true);
-    setSubmitting(false);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inquiryType, ...form }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      setSubmitted(true);
+    } catch {
+      alert('Something went wrong — please email us directly at hello@xhunt.app');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (submitted) {

@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 import {
   Settings, Building2, Users, Shield, Palette, Globe, Bell,
   Save, Check, AlertCircle, Lock, Key, Eye, EyeOff, ChevronRight,
-  Trash2, Plus, UserPlus, Mail
+  Trash2, Plus, UserPlus, Mail, ShieldCheck, ExternalLink, Loader2,
+  Server, RefreshCw
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
@@ -14,6 +15,26 @@ import type { DbTenant, DbUserProfile } from '@/lib/supabase/types';
 function Skeleton({ className }: { className?: string }) {
   return <div className={cn('bg-[#0D1530] animate-pulse rounded-lg', className)} />;
 }
+
+interface SsoConfig {
+  id: string;
+  tenant_id: string;
+  provider_type: string;
+  display_name: string;
+  is_enabled: boolean;
+  is_default: boolean;
+  config: Record<string, string>;
+  last_tested_at: string | null;
+  login_count: number;
+}
+
+const SSO_PROVIDERS = [
+  { id: 'microsoft_entra', label: 'Microsoft Entra ID', icon: '🔷', protocol: 'oidc' },
+  { id: 'google_workspace', label: 'Google Workspace', icon: '🔵', protocol: 'oidc' },
+  { id: 'okta', label: 'Okta', icon: '🔶', protocol: 'saml' },
+  { id: 'saml', label: 'Generic SAML 2.0', icon: '🔒', protocol: 'saml' },
+  { id: 'oidc', label: 'Generic OIDC', icon: '🔑', protocol: 'oidc' },
+] as const;
 
 const TABS = [
   { id: 'organization', label: 'Organization', icon: Building2 },
@@ -46,6 +67,13 @@ export default function SettingsPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('participant');
   const [currentUserId, setCurrentUserId] = useState('');
+  const [tenantId, setTenantId] = useState('');
+  // SSO configuration state
+  const [ssoConfigs, setSsoConfigs] = useState<SsoConfig[]>([]);
+  const [ssoSaving, setSsoSaving] = useState(false);
+  const [ssoTesting, setSsoTesting] = useState<string | null>(null);
+  const [activeSsoProvider, setActiveSsoProvider] = useState<string>('microsoft_entra');
+  const [ssoForm, setSsoForm] = useState({ displayName: '', entityId: '', ssoUrl: '', certificate: '', clientId: '', issuerUrl: '' });
   const supabase = createClient();
 
   useEffect(() => {
@@ -56,10 +84,12 @@ export default function SettingsPage() {
 
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
       if (!profile?.tenant_id) return;
+      setTenantId(profile.tenant_id);
 
-      const [tenantRes, usersRes] = await Promise.all([
+      const [tenantRes, usersRes, ssoRes] = await Promise.all([
         supabase.from('tenants').select('*').eq('id', profile.tenant_id).single(),
         supabase.from('user_profiles').select('*').eq('tenant_id', profile.tenant_id).order('created_at', { ascending: true }),
+        supabase.from('sso_configs').select('*').eq('tenant_id', profile.tenant_id),
       ]);
 
       if (tenantRes.data) {
@@ -68,6 +98,10 @@ export default function SettingsPage() {
         setOrgSlug(tenantRes.data.slug);
       }
       setUsers(usersRes.data ?? []);
+      if (ssoRes.data && ssoRes.data.length > 0) {
+        setSsoConfigs(ssoRes.data as SsoConfig[]);
+        setSsoEnabled(ssoRes.data.some((c: SsoConfig) => c.is_enabled));
+      }
       setLoading(false);
     }
     load();
@@ -81,6 +115,43 @@ export default function SettingsPage() {
     setSaved(true);
     setSaving(false);
     setTimeout(() => setSaved(false), 2500);
+  }
+
+  async function saveSsoConfig() {
+    if (!tenantId) return;
+    setSsoSaving(true);
+    const isSaml = ['saml', 'microsoft_entra', 'okta'].includes(activeSsoProvider);
+    const config = isSaml
+      ? { entity_id: ssoForm.entityId, sso_url: ssoForm.ssoUrl, certificate: ssoForm.certificate }
+      : { client_id: ssoForm.clientId, issuer_url: ssoForm.issuerUrl };
+
+    const { data, error } = await supabase.from('sso_configs').upsert({
+      tenant_id: tenantId,
+      provider_type: activeSsoProvider,
+      display_name: ssoForm.displayName || activeSsoProvider.replace(/_/g, ' '),
+      is_enabled: true,
+      config,
+    }, { onConflict: 'tenant_id,provider_type' }).select();
+
+    if (!error && data) {
+      setSsoConfigs((prev) => {
+        const updated = [...prev.filter((c) => c.provider_type !== activeSsoProvider), data[0] as SsoConfig];
+        return updated;
+      });
+      setSsoEnabled(true);
+    }
+    setSsoSaving(false);
+  }
+
+  async function testSsoConfig(configId: string) {
+    setSsoTesting(configId);
+    await new Promise((r) => setTimeout(r, 1500)); // simulate test
+    setSsoTesting(null);
+  }
+
+  async function toggleSsoConfig(configId: string, enabled: boolean) {
+    await supabase.from('sso_configs').update({ is_enabled: enabled }).eq('id', configId);
+    setSsoConfigs((prev) => prev.map((c) => c.id === configId ? { ...c, is_enabled: enabled } : c));
   }
 
   async function updateUserRole(userId: string, role: string) {
@@ -270,33 +341,172 @@ export default function SettingsPage() {
       {/* Security */}
       {activeTab === 'security' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-          {[
-            { key: 'mfa', label: 'Multi-Factor Authentication', desc: 'Require MFA for all workspace members.', state: mfaEnabled, set: setMfaEnabled, badge: 'Recommended' },
-            { key: 'sso', label: 'Single Sign-On (SSO)', desc: 'Configure SAML/OIDC SSO for your organization.', state: ssoEnabled, set: setSsoEnabled, badge: 'Enterprise' },
-          ].map(({ key, label, desc, state, set, badge }) => (
-            <div key={key} className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-5 flex items-center justify-between">
+          {/* MFA Toggle */}
+          <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-5 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <ShieldCheck size={14} className="text-[#22FFAA]" strokeWidth={2} />
+                <p className="text-[13px] font-bold text-[#F0F4FF]">Multi-Factor Authentication</p>
+                <span className="text-[9px] font-bold px-2 py-0.5 bg-[#22FFAA]/10 border border-[#22FFAA]/20 text-[#22FFAA] rounded-full">Recommended</span>
+              </div>
+              <p className="text-[12px] text-[#4A5578]">Require MFA for all workspace members on next login.</p>
+            </div>
+            <button onClick={() => setMfaEnabled(!mfaEnabled)}
+              className={cn('relative w-10 h-6 rounded-full transition-all flex-shrink-0',
+                mfaEnabled ? 'bg-accent' : 'bg-[#0D1530] border border-[#162440]')}>
+              <span className={cn('absolute top-1 w-4 h-4 rounded-full transition-all',
+                mfaEnabled ? 'right-1 bg-[#060a0e]' : 'left-1 bg-[#4A5578]')} />
+            </button>
+          </div>
+
+          {/* SSO Toggle + Configuration */}
+          <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl overflow-hidden">
+            <div className="p-5 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-[13px] font-bold text-[#F0F4FF]">{label}</p>
-                  <span className="text-[9px] font-bold px-2 py-0.5 bg-[#6D5DFD]/10 border border-[#6D5DFD]/20 text-[#A99FFE] rounded-full">{badge}</span>
+                  <Key size={14} className="text-[#6D5DFD]" strokeWidth={2} />
+                  <p className="text-[13px] font-bold text-[#F0F4FF]">Single Sign-On (SSO)</p>
+                  <span className="text-[9px] font-bold px-2 py-0.5 bg-[#6D5DFD]/10 border border-[#6D5DFD]/20 text-[#A99FFE] rounded-full">Enterprise</span>
                 </div>
-                <p className="text-[12px] text-[#4A5578]">{desc}</p>
+                <p className="text-[12px] text-[#4A5578]">Configure SAML 2.0 or OIDC for your identity provider.</p>
               </div>
-              <button
-                onClick={() => set(!state)}
-                className={cn(
-                  'relative w-10 h-6 rounded-full transition-all flex-shrink-0',
-                  state ? 'bg-accent' : 'bg-[#0D1530] border border-[#162440]'
-                )}
-              >
-                <span className={cn(
-                  'absolute top-1 w-4 h-4 rounded-full transition-all',
-                  state ? 'right-1 bg-[#060a0e]' : 'left-1 bg-[#4A5578]'
-                )} />
+              <button onClick={() => setSsoEnabled(!ssoEnabled)}
+                className={cn('relative w-10 h-6 rounded-full transition-all flex-shrink-0',
+                  ssoEnabled ? 'bg-[#6D5DFD]' : 'bg-[#0D1530] border border-[#162440]')}>
+                <span className={cn('absolute top-1 w-4 h-4 rounded-full transition-all',
+                  ssoEnabled ? 'right-1 bg-white' : 'left-1 bg-[#4A5578]')} />
               </button>
             </div>
-          ))}
 
+            {ssoEnabled && (
+              <div className="border-t border-[#0F1D35] p-5 space-y-5">
+                {/* Existing configs */}
+                {ssoConfigs.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider">Configured Providers</p>
+                    {ssoConfigs.map((cfg) => {
+                      const meta = SSO_PROVIDERS.find((p) => p.id === cfg.provider_type);
+                      return (
+                        <div key={cfg.id} className="flex items-center justify-between p-3 rounded-xl"
+                          style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                          <div className="flex items-center gap-3">
+                            <span className="text-base">{meta?.icon ?? '🔒'}</span>
+                            <div>
+                              <p className="text-[13px] font-semibold text-[#F0F4FF]">{cfg.display_name}</p>
+                              <p className="text-[10px] text-[#4A5578]">
+                                {cfg.login_count} logins · {cfg.last_tested_at ? `Tested ${new Date(cfg.last_tested_at).toLocaleDateString()}` : 'Not tested'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => testSsoConfig(cfg.id)} disabled={ssoTesting === cfg.id}
+                              className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[11px] font-semibold"
+                              style={{ background: 'rgba(109,93,253,0.1)', color: '#6D5DFD', border: '1px solid rgba(109,93,253,0.2)' }}>
+                              {ssoTesting === cfg.id
+                                ? <Loader2 size={11} className="animate-spin" />
+                                : <RefreshCw size={11} strokeWidth={2} />}
+                              Test
+                            </button>
+                            <button onClick={() => toggleSsoConfig(cfg.id, !cfg.is_enabled)}
+                              className={cn('relative w-8 h-5 rounded-full transition-all',
+                                cfg.is_enabled ? 'bg-[#6D5DFD]' : 'bg-[#0D1530] border border-[#162440]')}>
+                              <span className={cn('absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all',
+                                cfg.is_enabled ? 'right-0.5 bg-white' : 'left-0.5 bg-[#4A5578]')} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Add new provider */}
+                <div className="space-y-4">
+                  <p className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider">Add Identity Provider</p>
+                  <div className="grid grid-cols-5 gap-2">
+                    {SSO_PROVIDERS.map((p) => (
+                      <button key={p.id} onClick={() => setActiveSsoProvider(p.id)}
+                        className={cn('flex flex-col items-center gap-1.5 p-3 rounded-xl text-center transition-all border',
+                          activeSsoProvider === p.id
+                            ? 'bg-[#6D5DFD]/10 border-[#6D5DFD]/30'
+                            : 'bg-[#07101F] border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.12)]')}>
+                        <span className="text-xl">{p.icon}</span>
+                        <span className="text-[10px] font-semibold leading-tight" style={{ color: activeSsoProvider === p.id ? '#A99FFE' : '#8B9CC0' }}>
+                          {p.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* SAML fields */}
+                  {['saml', 'microsoft_entra', 'okta'].includes(activeSsoProvider) ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-2">
+                        <label className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5 block">Display Name</label>
+                        <input value={ssoForm.displayName} onChange={(e) => setSsoForm((f) => ({ ...f, displayName: e.target.value }))}
+                          placeholder="e.g. Acme Corp Entra ID"
+                          className="w-full h-9 px-3 bg-[#07101F] border border-[#0F1D35] rounded-xl text-[13px] text-[#F0F4FF] placeholder:text-[#4A5578] focus:outline-none focus:border-[#162440]" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5 block">Entity ID / Issuer</label>
+                        <input value={ssoForm.entityId} onChange={(e) => setSsoForm((f) => ({ ...f, entityId: e.target.value }))}
+                          placeholder="https://sts.windows.net/..."
+                          className="w-full h-9 px-3 bg-[#07101F] border border-[#0F1D35] rounded-xl text-[13px] text-[#F0F4FF] placeholder:text-[#4A5578] focus:outline-none focus:border-[#162440]" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5 block">SSO URL</label>
+                        <input value={ssoForm.ssoUrl} onChange={(e) => setSsoForm((f) => ({ ...f, ssoUrl: e.target.value }))}
+                          placeholder="https://login.microsoftonline.com/..."
+                          className="w-full h-9 px-3 bg-[#07101F] border border-[#0F1D35] rounded-xl text-[13px] text-[#F0F4FF] placeholder:text-[#4A5578] focus:outline-none focus:border-[#162440]" />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5 block">X.509 Certificate</label>
+                        <textarea value={ssoForm.certificate} onChange={(e) => setSsoForm((f) => ({ ...f, certificate: e.target.value }))}
+                          placeholder="-----BEGIN CERTIFICATE-----&#10;MII...&#10;-----END CERTIFICATE-----"
+                          rows={3}
+                          className="w-full px-3 py-2 bg-[#07101F] border border-[#0F1D35] rounded-xl text-[12px] font-mono text-[#F0F4FF] placeholder:text-[#4A5578] focus:outline-none focus:border-[#162440] resize-none" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-2">
+                        <label className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5 block">Display Name</label>
+                        <input value={ssoForm.displayName} onChange={(e) => setSsoForm((f) => ({ ...f, displayName: e.target.value }))}
+                          placeholder="e.g. Acme Google Workspace"
+                          className="w-full h-9 px-3 bg-[#07101F] border border-[#0F1D35] rounded-xl text-[13px] text-[#F0F4FF] placeholder:text-[#4A5578] focus:outline-none focus:border-[#162440]" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5 block">Client ID</label>
+                        <input value={ssoForm.clientId} onChange={(e) => setSsoForm((f) => ({ ...f, clientId: e.target.value }))}
+                          placeholder="your-app-client-id"
+                          className="w-full h-9 px-3 bg-[#07101F] border border-[#0F1D35] rounded-xl text-[13px] text-[#F0F4FF] placeholder:text-[#4A5578] focus:outline-none focus:border-[#162440]" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5 block">Issuer URL</label>
+                        <input value={ssoForm.issuerUrl} onChange={(e) => setSsoForm((f) => ({ ...f, issuerUrl: e.target.value }))}
+                          placeholder="https://accounts.google.com"
+                          className="w-full h-9 px-3 bg-[#07101F] border border-[#0F1D35] rounded-xl text-[13px] text-[#F0F4FF] placeholder:text-[#4A5578] focus:outline-none focus:border-[#162440]" />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-3 pt-1">
+                    <button onClick={saveSsoConfig} disabled={ssoSaving}
+                      className="flex items-center gap-2 h-9 px-4 rounded-xl text-[13px] font-semibold disabled:opacity-50"
+                      style={{ background: 'rgba(109,93,253,0.12)', color: '#A99FFE', border: '1px solid rgba(109,93,253,0.25)' }}>
+                      {ssoSaving ? <Loader2 size={13} className="animate-spin" /> : <Server size={13} strokeWidth={2} />}
+                      {ssoSaving ? 'Saving…' : 'Save Provider'}
+                    </button>
+                    <p className="text-[11px] text-[#4A5578]">
+                      ACS URL: <span className="font-mono text-[#8B9CC0]">{typeof window !== 'undefined' ? window.location.origin : ''}/api/auth/sso/callback</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Session Controls */}
           <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-1">
               <Key size={14} className="text-[#6D5DFD]" strokeWidth={2} />
@@ -307,19 +517,13 @@ export default function SettingsPage() {
               <div>
                 <label className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5 block">Session Timeout</label>
                 <select className="w-full h-9 px-3 bg-[#07101F] border border-[#0F1D35] rounded-xl text-[12px] text-[#F0F4FF] focus:outline-none">
-                  <option>24 hours</option>
-                  <option>8 hours</option>
-                  <option>1 hour</option>
-                  <option>30 minutes</option>
+                  <option>24 hours</option><option>8 hours</option><option>1 hour</option><option>30 minutes</option>
                 </select>
               </div>
               <div>
                 <label className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5 block">Max Concurrent Sessions</label>
                 <select className="w-full h-9 px-3 bg-[#07101F] border border-[#0F1D35] rounded-xl text-[12px] text-[#F0F4FF] focus:outline-none">
-                  <option>Unlimited</option>
-                  <option>5</option>
-                  <option>3</option>
-                  <option>1</option>
+                  <option>Unlimited</option><option>5</option><option>3</option><option>1</option>
                 </select>
               </div>
             </div>

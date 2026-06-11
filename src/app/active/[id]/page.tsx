@@ -9,12 +9,15 @@ import { cn } from '@/lib/cn';
 import { loadState, saveState } from '@/lib/store';
 
 import type { Hunt, HuntProgress, Step } from '@/lib/types';
-import { emitEvent, syncProgress } from '@/lib/supabase/events';
+import { emitEvent, emitTypedEvent, syncProgress, markStepStart, measureDuration } from '@/lib/supabase/events';
 
-const STEP_TYPE_CONFIG = {
-  action:     { label: 'Action',     emoji: '⚡', bg: 'bg-[rgba(255,184,77,0.08)]',  text: 'text-[#FFB84D]', border: 'border-[rgba(255,184,77,0.18)]'  },
-  reflection: { label: 'Reflection', emoji: '💭', bg: 'bg-[rgba(109,93,253,0.08)]',  text: 'text-[#6D5DFD]', border: 'border-[rgba(109,93,253,0.18)]'  },
-  discovery:  { label: 'Discovery',  emoji: '🔍', bg: 'bg-[rgba(34,255,170,0.08)]',  text: 'text-[#22FFAA]', border: 'border-[rgba(34,255,170,0.15)]'  },
+const STEP_TYPE_CONFIG: Record<string, { label: string; emoji: string; bg: string; text: string; border: string }> = {
+  action:        { label: 'Action',        emoji: '⚡', bg: 'bg-[rgba(255,184,77,0.08)]',   text: 'text-[#FFB84D]', border: 'border-[rgba(255,184,77,0.18)]'  },
+  reflection:    { label: 'Reflection',    emoji: '💭', bg: 'bg-[rgba(109,93,253,0.08)]',   text: 'text-[#6D5DFD]', border: 'border-[rgba(109,93,253,0.18)]'  },
+  discovery:     { label: 'Discovery',     emoji: '🔍', bg: 'bg-[rgba(34,255,170,0.08)]',   text: 'text-[#22FFAA]', border: 'border-[rgba(34,255,170,0.15)]'  },
+  research:      { label: 'Research',      emoji: '🔬', bg: 'bg-[rgba(96,165,250,0.08)]',   text: 'text-[#60A5FA]', border: 'border-[rgba(96,165,250,0.18)]'  },
+  submission:    { label: 'Submission',    emoji: '📤', bg: 'bg-[rgba(34,255,170,0.08)]',   text: 'text-[#22FFAA]', border: 'border-[rgba(34,255,170,0.15)]'  },
+  collaboration: { label: 'Collaborate',   emoji: '🤝', bg: 'bg-[rgba(167,139,250,0.08)]',  text: 'text-[#a78bfa]', border: 'border-[rgba(167,139,250,0.18)]' },
 };
 
 type SheetState = 'hidden' | 'skip_confirm' | 'adapting' | 'adapted';
@@ -41,8 +44,14 @@ export default function ActiveHuntPage() {
     const existing = state.progress[huntId];
     if (existing) {
       setProgress(existing);
+      const resumeStep = found.steps[existing.currentStepIndex];
       emitEvent('mission_resumed', { missionId: huntId });
-      emitEvent('step_started', { missionId: huntId, stepId: found.steps[existing.currentStepIndex]?.id });
+      emitTypedEvent('step_started', huntId, {
+        step_id:    resumeStep?.id,
+        step_index: existing.currentStepIndex,
+        step_type:  resumeStep?.type,
+      });
+      if (resumeStep) markStepStart(resumeStep.id);
     } else {
       const fresh: HuntProgress = {
         huntId, currentStepIndex: 0, completedSteps: [],
@@ -50,8 +59,14 @@ export default function ActiveHuntPage() {
       };
       setProgress(fresh);
       saveState({ ...state, progress: { ...state.progress, [huntId]: fresh } });
+      const firstStep = found.steps[0];
       emitEvent('mission_started', { missionId: huntId });
-      emitEvent('step_started', { missionId: huntId, stepId: found.steps[0]?.id });
+      emitTypedEvent('step_started', huntId, {
+        step_id:    firstStep?.id,
+        step_index: 0,
+        step_type:  firstStep?.type,
+      });
+      if (firstStep) markStepStart(firstStep.id);
     }
     setMounted(true);
   }, [huntId]);
@@ -73,7 +88,14 @@ export default function ActiveHuntPage() {
     if (!hunt || !progress) return;
     const updatedCompleted = [...progress.completedSteps, rawStep.id];
     const state = loadState();
-    emitEvent('step_completed', { missionId: huntId, stepId: rawStep.id });
+    const dur = measureDuration(rawStep.id);
+    emitTypedEvent('step_completed', huntId, {
+      step_id:    rawStep.id,
+      step_index: progress.currentStepIndex,
+      step_type:  rawStep.type,
+      duration_ms: dur,
+      adapted:    isAdaptedMode,
+    });
 
     if (isLastStep) {
       const updatedProgress: HuntProgress = { ...progress, completedSteps: updatedCompleted, completedAt: new Date().toISOString() };
@@ -83,26 +105,46 @@ export default function ActiveHuntPage() {
         : [...state.completedHunts, { huntId, huntTitle: hunt.title, reward: hunt.reward, completedAt: new Date().toISOString() }];
       saveState({ ...state, progress: { ...state.progress, [huntId]: updatedProgress }, completedHunts: newCompleted, streak: (state.streak || 0) + 1 });
       syncProgress(huntId, updatedProgress);
+      emitTypedEvent('mission_completed', huntId, {});
       router.push(`/complete/${huntId}`);
     } else {
-      const updatedProgress: HuntProgress = { ...progress, currentStepIndex: progress.currentStepIndex + 1, completedSteps: updatedCompleted };
+      const nextIndex = progress.currentStepIndex + 1;
+      const nextStep  = hunt.steps[nextIndex];
+      const updatedProgress: HuntProgress = { ...progress, currentStepIndex: nextIndex, completedSteps: updatedCompleted };
       setProgress(updatedProgress);
       saveState({ ...state, progress: { ...state.progress, [huntId]: updatedProgress } });
       syncProgress(huntId, updatedProgress);
-      emitEvent('step_started', { missionId: huntId, stepId: hunt.steps[progress.currentStepIndex + 1]?.id });
+      emitTypedEvent('step_started', huntId, {
+        step_id:    nextStep?.id,
+        step_index: nextIndex,
+        step_type:  nextStep?.type,
+      });
+      if (nextStep) markStepStart(nextStep.id);
     }
   }
 
   function skipStep() {
     if (!hunt || !progress) return;
     const state = loadState();
-    emitEvent('step_skipped', { missionId: huntId, stepId: rawStep.id });
+    emitTypedEvent('step_skipped', huntId, {
+      step_id:    rawStep.id,
+      step_index: progress.currentStepIndex,
+      step_type:  rawStep.type,
+      reason:     'user_skipped',
+    });
     if (isLastStep) { router.push(`/complete/${huntId}`); return; }
-    const updatedProgress: HuntProgress = { ...progress, currentStepIndex: progress.currentStepIndex + 1 };
+    const nextSkipIndex = progress.currentStepIndex + 1;
+    const nextSkipStep  = hunt.steps[nextSkipIndex];
+    const updatedProgress: HuntProgress = { ...progress, currentStepIndex: nextSkipIndex };
     setProgress(updatedProgress);
     saveState({ ...state, progress: { ...state.progress, [huntId]: updatedProgress } });
     syncProgress(huntId, updatedProgress);
-    emitEvent('step_started', { missionId: huntId, stepId: hunt.steps[progress.currentStepIndex + 1]?.id });
+    emitTypedEvent('step_started', huntId, {
+      step_id:    nextSkipStep?.id,
+      step_index: nextSkipIndex,
+      step_type:  nextSkipStep?.type,
+    });
+    if (nextSkipStep) markStepStart(nextSkipStep.id);
     setSheet('hidden');
   }
 
@@ -127,7 +169,14 @@ export default function ActiveHuntPage() {
     } catch { setSheet('skip_confirm'); }
   }
 
-  function applyAdaptedStep() { setIsAdaptedMode(true); setSheet('hidden'); }
+  function applyAdaptedStep() {
+    setIsAdaptedMode(true);
+    setSheet('hidden');
+    emitTypedEvent('step_adapted', huntId, {
+      step_id:    rawStep.id,
+      step_index: progress?.currentStepIndex,
+    });
+  }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#050816' }}>
