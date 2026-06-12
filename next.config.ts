@@ -17,7 +17,7 @@ const cspDirectives = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://prod.spline.design https://images.unsplash.com https://img.clerk.com",
   "font-src 'self'",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.supabase.in wss://*.supabase.in https://api.groq.com https://api.stripe.com https://prod.spline.design https://*.clerk.com https://*.clerk.dev https://*.accounts.dev",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.supabase.in wss://*.supabase.in https://api.groq.com https://api.stripe.com https://prod.spline.design https://*.clerk.com https://*.clerk.dev https://*.accounts.dev https://nominatim.openstreetmap.org",
   "worker-src blob: 'self'",
   "frame-src https://js.stripe.com https://hooks.stripe.com https://*.clerk.com https://*.clerk.dev https://*.accounts.dev",
   "frame-ancestors 'none'",
@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options',                value: 'DENY'                             },
           { key: 'X-XSS-Protection',               value: '1; mode=block'                   },
           { key: 'Referrer-Policy',                value: 'strict-origin-when-cross-origin'  },
-          { key: 'Permissions-Policy',             value: 'camera=(), microphone=(), geolocation=()' },
+          { key: 'Permissions-Policy',             value: 'camera=(), microphone=(), geolocation=(self)' },
           { key: 'Content-Security-Policy',        value: cspDirectives                      },
           // HSTS: 1 year, include subdomains, preload-ready
           // Only set in production — dev HTTPS is typically self-signed

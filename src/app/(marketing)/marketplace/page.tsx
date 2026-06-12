@@ -277,8 +277,6 @@ function ApplyModal({ listingId, onClose }: { listingId: string; onClose: () => 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function MarketplacePage() {
-  const supabase = createClient();
-
   const [listings,    setListings]    = useState<ListingRow[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [search,      setSearch]      = useState('');
@@ -289,6 +287,7 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     async function load() {
+      const supabase = createClient();
       const { data } = await supabase
         .from('marketplace_listings')
         .select(`
