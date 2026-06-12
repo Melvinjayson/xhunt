@@ -9,7 +9,9 @@ import {
   Clock, Award, Wallet,
   Users, TrendingUp, Activity,
   Share2, Flame, Eye,
+  MapPin, Zap, Dumbbell, UtensilsCrossed, Trees, Laptop,
 } from 'lucide-react';
+import { Radar, IconContainer } from '@/components/ui/radar';
 
 /* ─── animation helpers ─── */
 const fadeUp = {
@@ -561,6 +563,114 @@ export default function ConsumerPage() {
                 </div>
               </motion.div>
             </AnimatePresence>
+          </div>
+        </div>
+      </Sec>
+
+      {/* ─── PROXIMITY SENSING ─── */}
+      <Sec className="py-28 lg:py-36 border-y border-[rgba(255,255,255,0.05)]" style={{ background: '#050816' }}>
+        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+
+            {/* Left — copy */}
+            <div>
+              <motion.p variants={fadeUp} className="text-[11px] font-bold text-[#4A5578] uppercase tracking-widest mb-3">
+                Proximity Intelligence
+              </motion.p>
+              <motion.h2 variants={fadeUp} custom={0.06}
+                className="text-[clamp(1.9rem,3.5vw,2.8rem)] font-black text-[#F0F4FF] leading-tight tracking-tight mb-5">
+                Missions find you.
+                <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#22FFAA] to-[#6D5DFD]">
+                  Wherever you are.
+                </span>
+              </motion.h2>
+              <motion.p variants={fadeUp} custom={0.12}
+                className="text-[14px] text-[#8B9CC0] leading-relaxed mb-8">
+                The Mission Architect AI uses your GPS location to surface gigs within reach right now.
+                Walk to the gym, explore a neighbourhood, or check into a venue — X-Hunt knows you&apos;re there
+                and queues missions that match your proximity, preferences, and Hunter Score.
+              </motion.p>
+              <div className="flex flex-col gap-3">
+                {[
+                  { icon: MapPin, title: 'GPS-anchored checkpoints', body: 'Every location-based mission validates your presence with radius-confirmed GPS — no faking it.' },
+                  { icon: Zap, title: 'Real-time mission matching', body: 'As you move, new gigs surface based on what\'s possible from your exact position right now.' },
+                  { icon: Shield, title: 'Offline caching', body: 'Mission data and clues cache locally so your field work isn\'t interrupted by patchy signal.' },
+                ].map((f, i) => (
+                  <motion.div key={f.title} variants={fadeUp} custom={0.18 + i * 0.07}
+                    className="flex items-start gap-4 p-4 rounded-xl border"
+                    style={{ background: 'rgba(255,255,255,.02)', borderColor: 'rgba(255,255,255,.06)' }}>
+                    <f.icon size={16} strokeWidth={1.8} className="flex-shrink-0 mt-0.5" style={{ color: '#22FFAA' }} />
+                    <div>
+                      <p className="text-[13px] font-bold text-[#F0F4FF] mb-1">{f.title}</p>
+                      <p className="text-[12px] text-[#8B9CC0] leading-relaxed">{f.body}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right — Radar visualisation */}
+            <motion.div variants={fadeUp} custom={0.16}
+              className="relative flex items-center justify-center"
+              style={{ minHeight: 480 }}>
+              {/* Ambient glow */}
+              <div className="absolute inset-0 pointer-events-none"
+                style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 50%, rgba(34,255,170,0.07) 0%, transparent 70%)' }} />
+
+              {/* Mission type icons — top-left */}
+              <div className="absolute top-[12%] left-[8%] z-50">
+                <IconContainer
+                  icon={<Dumbbell size={20} strokeWidth={1.8} className="text-[#22FFAA]" />}
+                  text="Fitness"
+                  delay={0.3}
+                />
+              </div>
+              {/* top-right */}
+              <div className="absolute top-[10%] right-[10%] z-50">
+                <IconContainer
+                  icon={<UtensilsCrossed size={20} strokeWidth={1.8} className="text-[#FFB84D]" />}
+                  text="Food"
+                  delay={0.5}
+                />
+              </div>
+              {/* middle-left */}
+              <div className="absolute top-[42%] left-[2%] z-50">
+                <IconContainer
+                  icon={<Trees size={20} strokeWidth={1.8} className="text-[#6D5DFD]" />}
+                  text="Outdoors"
+                  delay={0.7}
+                />
+              </div>
+              {/* middle-right */}
+              <div className="absolute top-[40%] right-[2%] z-50">
+                <IconContainer
+                  icon={<Laptop size={20} strokeWidth={1.8} className="text-[#a78bfa]" />}
+                  text="Tech"
+                  delay={0.9}
+                />
+              </div>
+              {/* bottom-left */}
+              <div className="absolute bottom-[12%] left-[10%] z-50">
+                <IconContainer
+                  icon={<MapPin size={20} strokeWidth={1.8} className="text-[#22FFAA]" />}
+                  text="Explore"
+                  delay={1.1}
+                />
+              </div>
+              {/* bottom-right */}
+              <div className="absolute bottom-[10%] right-[8%] z-50">
+                <IconContainer
+                  icon={<Zap size={20} strokeWidth={1.8} className="text-[#FFB84D]" />}
+                  text="Quick Gig"
+                  delay={1.3}
+                />
+              </div>
+
+              {/* Radar */}
+              <Radar className="h-[380px] w-[380px]" />
+            </motion.div>
+
           </div>
         </div>
       </Sec>

@@ -2,9 +2,9 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { Spotlight } from '@/components/ui/spotlight';
+import { SplineScene } from '@/components/ui/splite';
 import {
   ArrowRight, ChevronRight, Shield, CheckCircle2,
   Clock, Award, Wallet, Users, Camera, MapPin,
@@ -633,26 +633,21 @@ export default function RootPage() {
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#6D5DFD]/4 blur-[100px] rounded-full" />
         </div>
 
-        {/* ─ Hero visual: emerald glass sculpture ─ */}
+        {/* ─ Hero visual: interactive 3D scene ─ */}
         <motion.div
           initial={{ opacity: 0, x: 60, scale: 0.96 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
           transition={{ duration: 1.1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="hidden lg:block absolute right-[-4%] bottom-0 w-[52%] h-[88vh] z-10 pointer-events-none">
+          className="hidden lg:block absolute right-[-4%] bottom-0 w-[52%] h-[88vh] z-10">
           <Spotlight className="-top-10 left-20" fill="#22FFAA" />
-          {/* Ambient glow behind image */}
-          <div className="absolute inset-0"
+          {/* Ambient glow */}
+          <div className="absolute inset-0 pointer-events-none"
             style={{ background: 'radial-gradient(ellipse 70% 60% at 55% 50%, rgba(0,200,130,0.18) 0%, rgba(0,120,90,0.07) 50%, transparent 75%)', filter: 'blur(40px)' }} />
-          {/* Glass sculpture */}
-          <div className="absolute inset-0 flex items-center justify-center p-8">
-            <Image
-              src="/auth-glass.png"
-              alt=""
-              fill
-              style={{ objectFit: 'contain', filter: 'drop-shadow(0 0 100px rgba(0,200,130,0.4)) drop-shadow(0 40px 60px rgba(0,0,0,0.6))' }}
-              priority
-            />
-          </div>
+          {/* Interactive Spline 3D scene */}
+          <SplineScene
+            scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
+            className="w-full h-full"
+          />
           {/* Ground glow */}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[420px] h-[80px] rounded-full pointer-events-none"
             style={{ background: 'radial-gradient(ellipse, rgba(34,255,170,.22) 0%, transparent 70%)', filter: 'blur(28px)' }} />

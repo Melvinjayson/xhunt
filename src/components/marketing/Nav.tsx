@@ -207,8 +207,8 @@ export default function Nav() {
                 <span className="text-sm font-semibold text-[#A99FFE]">Mission Workspace</span>
                 <ArrowRight size={13} strokeWidth={2.5} className="text-[#6D5DFD] ml-auto" />
               </Link>
-              <Link href="/auth/login" className="px-3 py-2.5 text-sm font-medium text-txt-dim">Sign in</Link>
-              <Link href="/get-started" className="flex items-center justify-center gap-2 h-12 bg-accent text-[#050816] rounded-xl text-sm font-bold mt-1 shadow-[0_4px_20px_rgba(34,255,170,0.35)]">
+              <Link href="/sign-in" className="px-3 py-2.5 text-sm font-medium text-txt-dim">Sign in</Link>
+              <Link href="/sign-up" className="flex items-center justify-center gap-2 h-12 bg-accent text-[#050816] rounded-xl text-sm font-bold mt-1 shadow-[0_4px_20px_rgba(34,255,170,0.35)]">
                 Start Exploring
                 <ArrowRight size={14} strokeWidth={2.8} />
               </Link>
