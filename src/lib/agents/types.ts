@@ -4,7 +4,8 @@ export type AgentId =
   | 'experience-designer'
   | 'behavioral-analyst'
   | 'knowledge-agent'
-  | 'insight-analyst';
+  | 'insight-analyst'
+  | 'economy-coordinator';
 
 // ── Mission Architect ─────────────────────────────────────────────────────────
 
@@ -156,4 +157,43 @@ export interface InsightAnalystOutput {
   risks: string[];
   recommended_actions: string[];
   roi_narrative: string;
+}
+
+// ── Economy Coordinator ───────────────────────────────────────────────────────
+
+export type EconomyCoordinatorContext =
+  | 'opportunity_match'
+  | 'contribution_review'
+  | 'trust_assessment'
+  | 'coordination_design';
+
+export interface EconomyCoordinatorInput {
+  context: EconomyCoordinatorContext;
+  currentSkills: string[];
+  contributionHistory: Array<{ type: string; points: number; domain: string }>;
+  trustScores: Record<string, number>;  // dimension → score
+  objective: string;
+}
+
+export interface EconomyCoordinatorOutput {
+  recommendation: string;
+  action_type: 'match_opportunity' | 'validate_contribution' | 'build_trust' | 'coordinate_team';
+  priority_actions: Array<{
+    action: string;
+    rationale: string;
+    expected_impact: string;
+  }>;
+  skill_gaps: string[];
+  trust_opportunities: string[];
+  coordination_plan?: {
+    workflow_type: 'human_only' | 'ai_assisted' | 'hybrid' | 'autonomous';
+    steps: Array<{
+      step: string;
+      assignee_type: 'human' | 'ai' | 'either';
+      checkpoint: boolean;
+    }>;
+  };
+  desiderata_alignment: string[];
+  anti_objectives_check: string;
+  confidence_pct: number;
 }
