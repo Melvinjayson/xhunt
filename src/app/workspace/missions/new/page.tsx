@@ -5,12 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Wand2, Plus, Trash2, ChevronLeft, Zap, Save, Target,
   Clock, Tag, CheckCircle2, AlertCircle, Layers, ArrowUp, ArrowDown,
-  Users, Settings2, Eye, Globe, Lock, Calendar, Loader2, ArrowRight
+  Users, Settings2, Eye, Globe, Lock, Calendar, Loader2, ArrowRight,
+  MapPin, Navigation,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
+import { geocodeCity } from '@/lib/proximity';
 
 interface Step {
   id: number;
@@ -61,6 +63,15 @@ export default function NewMissionPage() {
   const [isPublic, setIsPublic] = useState(false);
   const [deadline, setDeadline] = useState('');
   const [maxParts, setMaxParts] = useState('');
+
+  // Location / proximity
+  const [locationType, setLocationType]     = useState<'remote' | 'local' | 'hybrid'>('remote');
+  const [locationCity, setLocationCity]     = useState('');
+  const [locationLat, setLocationLat]       = useState<number | null>(null);
+  const [locationLng, setLocationLng]       = useState<number | null>(null);
+  const [locationRadius, setLocationRadius] = useState(50);
+  const [geoLoading, setGeoLoading]         = useState(false);
+  const [geoError, setGeoError]             = useState('');
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [saving, setSaving]       = useState(false);
@@ -141,6 +152,46 @@ export default function NewMissionPage() {
     setSelSegs((prev) => prev.includes(sid) ? prev.filter((x) => x !== sid) : [...prev, sid]);
   }
 
+  async function resolveLocationCoords() {
+    if (!locationCity.trim()) return;
+    setGeoLoading(true);
+    setGeoError('');
+    try {
+      const result = await geocodeCity(locationCity.trim());
+      if (result) {
+        setLocationLat(result.lat);
+        setLocationLng(result.lng);
+        if (!locationCity.trim()) setLocationCity(result.city);
+      } else {
+        setGeoError('City not found — try a more specific name.');
+      }
+    } catch {
+      setGeoError('Geocoding failed. Coords will be saved when available.');
+    } finally {
+      setGeoLoading(false);
+    }
+  }
+
+  function detectMyLocation() {
+    if (!navigator.geolocation) { setGeoError('Geolocation not supported.'); return; }
+    setGeoLoading(true);
+    setGeoError('');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        setLocationLat(pos.coords.latitude);
+        setLocationLng(pos.coords.longitude);
+        try {
+          const { reverseGeocode } = await import('@/lib/proximity');
+          const place = await reverseGeocode({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setLocationCity(place.city + (place.country ? `, ${place.country}` : ''));
+        } catch { /* city will remain empty */ }
+        setGeoLoading(false);
+      },
+      () => { setGeoError('Could not access your location.'); setGeoLoading(false); },
+      { timeout: 8000 }
+    );
+  }
+
   async function generateWithAI() {
     if (!title.trim()) { setError('Enter a mission title first.'); return; }
     setError('');
@@ -186,17 +237,23 @@ export default function NewMissionPage() {
     const segTags = selectedSegs.map((sid) => `seg:${sid}`);
 
     const { data, error: dbErr } = await supabase.from('missions').insert({
-      tenant_id: profile.tenant_id,
-      created_by: user.id,
-      title: title.trim(),
-      story_context: story.trim() || null,
+      tenant_id:      profile.tenant_id,
+      created_by:     user.id,
+      title:          title.trim(),
+      story_context:  story.trim() || null,
       difficulty,
       estimated_time: estimatedTime || null,
-      steps: cleanSteps,
-      reward: reward.trim() || 'Mission completion badge',
-      tags: [...tags, ...segTags],
+      steps:          cleanSteps,
+      reward:         reward.trim() || 'Mission completion badge',
+      tags:           [...tags, ...segTags],
       status,
-      is_public: isPublic,
+      is_public:      isPublic,
+      // Proximity fields
+      location_type:  locationType,
+      location_city:  locationCity.trim() || null,
+      lat:            locationLat,
+      lng:            locationLng,
+      radius_km:      locationType !== 'remote' ? locationRadius : null,
     }).select('id').single();
 
     if (dbErr) { setError(dbErr.message); setSaving(false); return; }
@@ -552,6 +609,74 @@ export default function NewMissionPage() {
                 <label className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-2 block">Max Participants (optional)</label>
                 <input type="number" value={maxParts} onChange={(e) => setMaxParts(e.target.value)} placeholder="Unlimited" min={1}
                   className="w-full h-10 px-4 bg-[#07101F] border border-[#0F1D35] rounded-xl text-[13px] text-[#F0F4FF] placeholder:text-[#4A5578] focus:outline-none focus:border-[#162440]" />
+              </div>
+
+              {/* Location / Proximity */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin size={13} className="text-[#22FFAA]" strokeWidth={2} />
+                  <label className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider">Location Type</label>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {([
+                    { val: 'remote', label: '🌐 Remote',  desc: 'Fully online'        },
+                    { val: 'local',  label: '📍 Local',   desc: 'On-site required'    },
+                    { val: 'hybrid', label: '🔀 Hybrid',  desc: 'Mix of both'         },
+                  ] as const).map(({ val, label, desc }) => (
+                    <button key={val} onClick={() => setLocationType(val)}
+                      className={cn('flex flex-col items-center p-3 rounded-xl border text-center transition-all',
+                        locationType === val ? 'bg-[#22FFAA]/5 border-[#22FFAA]/25' : 'bg-[#07101F] border-[#0F1D35] hover:border-[#162440]'
+                      )}>
+                      <span className="text-[14px] mb-1">{label.split(' ')[0]}</span>
+                      <span className={cn('text-[11px] font-semibold', locationType === val ? 'text-[#22FFAA]' : 'text-[#8B9CC0]')}>{label.split(' ')[1]}</span>
+                      <span className="text-[10px] text-[#4A5578] mt-0.5">{desc}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {locationType !== 'remote' && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3">
+                    <div>
+                      <label className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-2 block">City / Location</label>
+                      <div className="flex gap-2">
+                        <input
+                          value={locationCity}
+                          onChange={(e) => setLocationCity(e.target.value)}
+                          onBlur={resolveLocationCoords}
+                          placeholder="e.g. Lagos, Nigeria"
+                          className="flex-1 h-10 px-4 bg-[#07101F] border border-[#0F1D35] rounded-xl text-[13px] text-[#F0F4FF] placeholder:text-[#4A5578] focus:outline-none focus:border-[#162440]"
+                        />
+                        <button onClick={detectMyLocation} disabled={geoLoading}
+                          className="flex items-center gap-1.5 h-10 px-4 bg-[#22FFAA]/10 border border-[#22FFAA]/25 text-[#22FFAA] rounded-xl text-[12px] font-semibold transition-colors hover:bg-[#22FFAA]/18 disabled:opacity-50 whitespace-nowrap">
+                          {geoLoading
+                            ? <Loader2 size={12} strokeWidth={2} className="animate-spin" />
+                            : <Navigation size={12} strokeWidth={2} />
+                          }
+                          My Location
+                        </button>
+                      </div>
+                      {geoError && <p className="text-[11px] text-[#FF5C7A] mt-1.5">{geoError}</p>}
+                      {locationLat != null && (
+                        <p className="text-[11px] text-[#22FFAA] mt-1.5 flex items-center gap-1">
+                          <MapPin size={10} strokeWidth={2} />
+                          Pinned: {locationLat.toFixed(4)}, {locationLng?.toFixed(4)}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-2 block">
+                        Participation Radius — {locationRadius} km
+                      </label>
+                      <input type="range" min={1} max={200} value={locationRadius}
+                        onChange={(e) => setLocationRadius(Number(e.target.value))}
+                        className="w-full accent-[#22FFAA]" />
+                      <div className="flex justify-between text-[10px] text-[#4A5578] mt-1">
+                        <span>1 km</span><span>Walking distance ({locationRadius <= 5 ? '✓' : ''})</span><span>200 km</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </div>
             </div>
           )}
