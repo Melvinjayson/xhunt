@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Target, Users, BarChart3, Settings, LogOut,
   UserSquare2, Gift, ShieldCheck, Bot, TrendingUp, Network,
-  CheckCircle2, DollarSign, Lock
+  CheckCircle2, DollarSign, Lock, Cpu, Coins, Leaf, Scale
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { createClient } from '@/lib/supabase/client';
@@ -22,6 +22,7 @@ const NAV_GROUPS = [
   {
     label: 'Intelligence',
     items: [
+      { href: '/admin/xil', icon: Cpu, label: 'XIL Layer', exact: false },
       { href: '/admin/agents', icon: Bot, label: 'AI Agents', exact: false },
       { href: '/admin/outcomes', icon: TrendingUp, label: 'Outcomes', exact: true },
       { href: '/admin/outcomes/validation', icon: CheckCircle2, label: 'Validation', exact: false },
@@ -33,6 +34,7 @@ const NAV_GROUPS = [
   {
     label: 'Finance',
     items: [
+      { href: '/admin/economy', icon: Coins, label: 'Economy', exact: false },
       { href: '/admin/revenue', icon: DollarSign, label: 'Revenue', exact: false },
       { href: '/admin/escrow', icon: Lock, label: 'Escrow', exact: false },
     ],
