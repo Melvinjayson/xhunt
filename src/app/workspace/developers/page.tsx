@@ -154,8 +154,8 @@ export default function DevelopersPage() {
             <div className="bg-[#07101F] border border-[#0F1D35] rounded-xl p-4 font-mono text-[11px]">
               <p className="text-[#4A5578] mb-1"># Get all active missions</p>
               <p className="text-[#22FFAA]">curl</p>
-              <p className="text-[#F0F4FF] ml-2">-H <span className="text-[#FFB84D]">"Authorization: Bearer {'<api-key>'}"</span></p>
-              <p className="text-[#F0F4FF] ml-2">-H <span className="text-[#FFB84D]">"Content-Type: application/json"</span></p>
+              <p className="text-[#F0F4FF] ml-2">-H <span className="text-[#FFB84D]">&quot;Authorization: Bearer {'<api-key>'}&quot;</span></p>
+              <p className="text-[#F0F4FF] ml-2">-H <span className="text-[#FFB84D]">&quot;Content-Type: application/json&quot;</span></p>
               <p className="text-[#F0F4FF] ml-2">https://app.xhunt.io/api/missions</p>
               <div className="mt-2 flex justify-end">
                 <button onClick={() => copy('curl -H "Authorization: Bearer <api-key>" https://app.xhunt.io/api/missions', 'curl')} className="flex items-center gap-1 text-[10px] text-[#4A5578] hover:text-[#22FFAA] transition-colors">

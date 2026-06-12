@@ -380,7 +380,7 @@ export default function HuntDetailPage() {
           <section style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <TrendingUp size={13} strokeWidth={2} style={{ color: FAINT }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Skills You'll Use</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Skills You&apos;ll Use</span>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
               {skills.map((s, i) => (

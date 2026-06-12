@@ -279,7 +279,7 @@ export default function MissionControlPage() {
               <p className="text-[11px] text-[#8B9CC0] mt-0.5 leading-relaxed">
                 {criticalActive.map((m, i) => (
                   <span key={m.id}>
-                    <span className="font-semibold text-[#F0F4FF]">"{m.title}"</span>
+                    <span className="font-semibold text-[#F0F4FF]">&quot;{m.title}&quot;</span>
                     {m.dropOffStep != null && ` — ${m.dropOffStep.count} users stuck at step ${m.dropOffStep.stepIdx + 1}`}
                     {i < criticalActive.length - 1 ? ' · ' : ''}
                   </span>
