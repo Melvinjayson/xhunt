@@ -374,6 +374,13 @@ export async function fetchSupabaseMissions(): Promise<import('../types').Hunt[]
         tenantLogo:     tenant?.logo_url ?? null,
         tenantSlug:     tenant?.slug,
         isVerified,
+        // Proximity fields
+        locationType:    m.location_type ?? undefined,
+        locationCity:    m.location_city ?? undefined,
+        locationCountry: m.location_country ?? undefined,
+        lat:             m.lat ?? null,
+        lng:             m.lng ?? null,
+        radiusKm:        m.radius_km ?? 50,
       };
     });
   } catch {

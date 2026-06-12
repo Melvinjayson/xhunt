@@ -78,6 +78,14 @@ export interface Hunt {
   applicationCount?: number;
   deadline?: string;            // ISO date
   teamSize?: string;            // "1 person" | "2–5 people"
+
+  /* ── proximity / location ── */
+  location?: string;            // free-text display label
+  locationCity?: string;
+  locationCountry?: string;
+  lat?: number | null;
+  lng?: number | null;
+  radiusKm?: number;            // how far a hunter can be (default 50 km)
 }
 
 export interface HuntProgress {
@@ -92,6 +100,10 @@ export interface UserProfile {
   interests: string[];
   goals: string[];
   location?: string;
+  locationCity?: string;
+  locationCountry?: string;
+  lat?: number | null;
+  lng?: number | null;
   onboardingComplete: boolean;
 }
 

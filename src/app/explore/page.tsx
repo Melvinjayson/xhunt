@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {
   Brain, Search, X, Clock, DollarSign, Star, Award,
   ShieldCheck, Building2, Zap, SlidersHorizontal, Target,
+  MapPin, Navigation,
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
@@ -17,9 +18,14 @@ import {
 } from '@/lib/missionCategories';
 import { t } from '@/theme/colors';
 import type { Hunt, ImpactProfile } from '@/lib/types';
+import { useProximity } from '@/hooks/useProximity';
+import { haversineKm, formatDistance, proximityColor, sortByProximity } from '@/lib/proximity';
+import { LocationPermissionCard } from '@/components/proximity/LocationPermissionCard';
+import { ProximityBadge } from '@/components/proximity/ProximityBadge';
 
 const SORT_OPTS = [
   { id: 'recommended', label: 'Best Match'  },
+  { id: 'nearby',      label: '📍 Nearby'   },
   { id: 'reward',      label: 'Highest Pay' },
   { id: 'easy',        label: 'Entry Level' },
   { id: 'hard',        label: 'Expert'      },
@@ -29,8 +35,15 @@ const SORT_OPTS = [
 const LOCATION_OPTS = [
   { id: 'all',    label: 'All'    },
   { id: 'remote', label: 'Remote' },
-  { id: 'local',  label: 'Local'  },
+  { id: 'local',  label: '📍 Local' },
   { id: 'hybrid', label: 'Hybrid' },
+];
+const RADIUS_OPTS = [
+  { km: 5,   label: '<5 km'  },
+  { km: 20,  label: '<20 km' },
+  { km: 50,  label: '<50 km' },
+  { km: 100, label: '<100 km'},
+  { km: 0,   label: 'Any distance' },
 ];
 type SortId = typeof SORT_OPTS[number]['id'];
 
@@ -53,7 +66,6 @@ function computeMatch(hunt: Hunt, profile: ImpactProfile | null): number | null 
 }
 
 function AIRecCard({ rec }: { rec: Recommendation }) {
-  const confColor = rec.confidence_pct >= 80 ? t.accent : rec.confidence_pct >= 65 ? t.warning : t.txtDim;
   return (
     <Link href={`/hunt/${rec.id}`} style={{ textDecoration: 'none', display: 'block' }}>
       <motion.div whileTap={{ scale: 0.985 }} className="liquid-glass"
@@ -84,8 +96,9 @@ function AIRecCard({ rec }: { rec: Recommendation }) {
   );
 }
 
-function ExploreCard({ hunt, index, completedIds, profile }: {
+function ExploreCard({ hunt, index, completedIds, profile, distanceKm }: {
   hunt: Hunt; index: number; completedIds: string[]; profile: ImpactProfile | null;
+  distanceKm?: number | null;
 }) {
   const done    = completedIds.includes(hunt.id);
   const cash    = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
@@ -106,7 +119,7 @@ function ExploreCard({ hunt, index, completedIds, profile }: {
           <div style={{ height: 2, background: `linear-gradient(90deg, ${cat.color}88, transparent)` }} />
 
           <div style={{ padding: '13px 15px' }}>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 9, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 9, flexWrap: 'wrap', alignItems: 'center' }}>
               {mtype && (
                 <span style={{ fontSize: 9.5, fontWeight: 700, color: mtype.color, background: `${mtype.color}10`, border: `1px solid ${mtype.color}18`, borderRadius: 999, padding: '2px 8px' }}>
                   {mtype.emoji} {mtype.label}
@@ -115,6 +128,17 @@ function ExploreCard({ hunt, index, completedIds, profile }: {
               <span style={{ fontSize: 9.5, fontWeight: 700, color: cat.color, background: `${cat.color}10`, border: `1px solid ${cat.color}18`, borderRadius: 999, padding: '2px 8px' }}>
                 {cat.emoji} {cat.label}
               </span>
+              {/* Proximity badge — shown when we have a distance */}
+              {distanceKm != null && (
+                <ProximityBadge distanceKm={distanceKm} />
+              )}
+              {/* Location city when no distance */}
+              {distanceKm == null && hunt.locationCity && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9.5, color: t.txtFaint, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 999, padding: '2px 8px' }}>
+                  <MapPin size={8} strokeWidth={2} />
+                  {hunt.locationCity}
+                </span>
+              )}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, marginBottom: 7 }}>
@@ -189,6 +213,7 @@ export default function ExplorePage() {
   const [category, setCategory]   = useState('all');
   const [sort, setSort]           = useState<SortId>('recommended');
   const [locationFilter, setLoc]  = useState('all');
+  const [radiusKm, setRadiusKm]   = useState(50);
   const [query, setQuery]         = useState('');
   const [hunts, setHunts]         = useState<Hunt[]>([]);
   const [completedIds, setIds]    = useState<string[]>([]);
@@ -197,6 +222,14 @@ export default function ExplorePage() {
   const [profile, setProfile]     = useState<ImpactProfile | null>(null);
   const [showFilters, setFilters] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const proximity = useProximity();
+
+  // When "Nearby" sort is picked and we don't have coords yet, trigger the request
+  useEffect(() => {
+    if ((sort === 'nearby' || locationFilter === 'local') && proximity.status === 'idle') {
+      proximity.requestLocation();
+    }
+  }, [sort, locationFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const state = loadState();
@@ -204,14 +237,23 @@ export default function ExplorePage() {
     setHunts(state.hunts);
     setProfile(loadProfile());
     void fetchSupabaseMissions().then(r => { if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } });
-    void fetch('/api/recommendations?limit=5')
+
+    const recUrl = proximity.coords
+      ? `/api/recommendations?limit=5&lat=${proximity.coords.lat}&lng=${proximity.coords.lng}`
+      : '/api/recommendations?limit=5';
+    void fetch(recUrl)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.recommendations?.length) setRecs(d.recommendations); })
       .catch(() => {})
       .finally(() => setRL(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const filtered = hunts
+  // Annotate hunts with distance when user has coords
+  const huntsWithDistance = proximity.coords
+    ? sortByProximity(hunts, proximity.coords)
+    : hunts.map(h => ({ ...h, distanceKm: null as number | null }));
+
+  const filtered = huntsWithDistance
     .filter(h => {
       if (query) {
         const q = query.toLowerCase();
@@ -220,9 +262,19 @@ export default function ExplorePage() {
           || (h.story_context ?? '').toLowerCase().includes(q)
           || (h.missionType ?? '').includes(q);
       }
-      const catMatch = category === 'all' || h.tags.some(tag => tag.toLowerCase().includes(category)) || h.category === category || resolveCategory(h.tags, h.category).id === category;
+      const catMatch = category === 'all'
+        || h.tags.some(tag => tag.toLowerCase().includes(category))
+        || h.category === category
+        || resolveCategory(h.tags, h.category).id === category;
       const locMatch = locationFilter === 'all' || h.locationType === locationFilter;
-      return catMatch && locMatch;
+      // Radius filter — only when user coords are known and local filter is active
+      const radiusMatch = (() => {
+        if (locationFilter !== 'local' || !proximity.coords || radiusKm === 0) return true;
+        if (h.locationType === 'remote') return false;
+        if (h.distanceKm == null) return true; // no coords on mission → show it
+        return h.distanceKm <= radiusKm;
+      })();
+      return catMatch && locMatch && radiusMatch;
     })
     .sort((a, b) => {
       const dr = { easy: 0, medium: 1, hard: 2 } as const;
@@ -235,6 +287,12 @@ export default function ExplorePage() {
         const db = b.deadline ? new Date(b.deadline).getTime() : Infinity;
         return da - db;
       }
+      if (sort === 'nearby') {
+        if (a.distanceKm == null && b.distanceKm == null) return 0;
+        if (a.distanceKm == null) return 1;
+        if (b.distanceKm == null) return -1;
+        return a.distanceKm - b.distanceKm;
+      }
       if (profile) {
         const sm = (computeMatch(b, profile) ?? 55) - (computeMatch(a, profile) ?? 55);
         if (sm !== 0) return sm;
@@ -244,6 +302,7 @@ export default function ExplorePage() {
 
   const showRecs = !query && category === 'all' && sort === 'recommended' && locationFilter === 'all';
   const totalCash = filtered.reduce((acc, h) => acc + estimateCashReward(h.cashReward, h.difficulty, h.missionType), 0);
+  const showLocalProximity = locationFilter === 'local' || sort === 'nearby';
 
   return (
     <div className="consumer-app" style={{ minHeight: '100vh', paddingBottom: 100, background: t.bg }}>
@@ -252,7 +311,17 @@ export default function ExplorePage() {
         {/* Sticky header */}
         <div style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(5,8,22,.94)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,.06)', padding: '52px 20px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900, color: t.txt, letterSpacing: '-.03em' }}>Explore</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900, color: t.txt, letterSpacing: '-.03em' }}>Explore</h1>
+              {proximity.coords && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 999, background: `${t.accent}0A`, border: `1px solid ${t.accent}18` }}>
+                  <Navigation size={9} strokeWidth={2.5} style={{ color: t.accent }} />
+                  <span style={{ fontSize: 9.5, fontWeight: 700, color: t.accent }}>
+                    {proximity.place?.city ?? 'Located'}
+                  </span>
+                </div>
+              )}
+            </div>
             <button onClick={() => setFilters(!showFilters)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 999, border: `1px solid ${showFilters ? t.accent + '35' : 'rgba(255,255,255,.1)'}`, background: showFilters ? `${t.accent}0A` : 'rgba(255,255,255,.04)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: showFilters ? t.accent : t.txtDim }}>
               <SlidersHorizontal size={13} strokeWidth={2} />
@@ -295,16 +364,18 @@ export default function ExplorePage() {
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
                   {SORT_OPTS.map(opt => {
                     const active = sort === opt.id;
+                    const isNearby = opt.id === 'nearby';
+                    const clr = isNearby ? t.accent : t.accent;
                     return (
                       <button key={opt.id} onClick={() => setSort(opt.id as SortId)}
-                        style={{ padding: '5px 12px', borderRadius: 999, border: `1px solid ${active ? t.accent : 'rgba(255,255,255,.07)'}`, background: active ? `${t.accent}10` : 'transparent', color: active ? t.accent : t.txtDim, fontSize: 11.5, fontWeight: active ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' }}>
+                        style={{ padding: '5px 12px', borderRadius: 999, border: `1px solid ${active ? clr : 'rgba(255,255,255,.07)'}`, background: active ? `${clr}10` : 'transparent', color: active ? clr : t.txtDim, fontSize: 11.5, fontWeight: active ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' }}>
                         {opt.label}
                       </button>
                     );
                   })}
                 </div>
                 <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>Location</p>
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 6, marginBottom: locationFilter === 'local' ? 10 : 0 }}>
                   {LOCATION_OPTS.map(opt => {
                     const active = locationFilter === opt.id;
                     return (
@@ -315,12 +386,42 @@ export default function ExplorePage() {
                     );
                   })}
                 </div>
+                {/* Radius filter — shown only when Local is active */}
+                <AnimatePresence>
+                  {locationFilter === 'local' && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                      style={{ overflow: 'hidden' }}>
+                      <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>Radius</p>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {RADIUS_OPTS.map(opt => {
+                          const active = radiusKm === opt.km;
+                          return (
+                            <button key={opt.km} onClick={() => setRadiusKm(opt.km)}
+                              style={{ padding: '4px 11px', borderRadius: 999, border: `1px solid ${active ? t.accent : 'rgba(255,255,255,.07)'}`, background: active ? `${t.accent}10` : 'transparent', color: active ? t.accent : t.txtDim, fontSize: 11, fontWeight: active ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' }}>
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
         <div style={{ padding: '16px 20px 0' }}>
+          {/* Location permission card — shown when local/nearby is active */}
+          {showLocalProximity && (
+            <LocationPermissionCard
+              status={proximity.status}
+              loading={proximity.loading}
+              cityName={proximity.place?.city}
+              onRequest={proximity.requestLocation}
+            />
+          )}
+
           {/* Market summary */}
           {filtered.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, padding: '9px 14px', borderRadius: 12, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)' }}>
@@ -328,7 +429,14 @@ export default function ExplorePage() {
               <span style={{ fontSize: 11, color: t.txtFaint }}>{filtered.length} mission{filtered.length !== 1 ? 's' : ''}</span>
               <div style={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
               <span style={{ fontSize: 11, fontWeight: 700, color: t.accent }}>${totalCash.toLocaleString()} available</span>
-              {profile && (
+              {proximity.coords && (
+                <>
+                  <div style={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
+                  <MapPin size={11} strokeWidth={2} style={{ color: t.accent }} />
+                  <span style={{ fontSize: 11, color: t.accent }}>proximity on</span>
+                </>
+              )}
+              {profile && !proximity.coords && (
                 <>
                   <div style={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
                   <Brain size={11} strokeWidth={2} style={{ color: t.ai }} />
@@ -378,23 +486,38 @@ export default function ExplorePage() {
           {filtered.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0', textAlign: 'center' }}>
               <div style={{ width: 52, height: 52, borderRadius: '50%', background: `${t.accent}0A`, border: `1px solid ${t.accent}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-                <Target size={22} strokeWidth={1.6} style={{ color: t.accent }} />
+                {showLocalProximity
+                  ? <Navigation size={22} strokeWidth={1.6} style={{ color: t.accent }} />
+                  : <Target size={22} strokeWidth={1.6} style={{ color: t.accent }} />
+                }
               </div>
-              <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: t.txt }}>No missions found</p>
-              <p style={{ margin: '6px 0 0', fontSize: 13, color: t.txtDim }}>
-                {query ? `No results for "${query}"` : `No ${category} missions yet.`}
+              <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: t.txt }}>
+                {showLocalProximity && proximity.status !== 'granted' ? 'Enable location to see nearby missions' : 'No missions found'}
               </p>
-              {query && (
-                <button onClick={() => { setQuery(''); setCategory('all'); }}
+              <p style={{ margin: '6px 0 0', fontSize: 13, color: t.txtDim }}>
+                {showLocalProximity && proximity.status !== 'granted'
+                  ? 'Tap Allow above to find missions near you.'
+                  : query ? `No results for "${query}"` : `No ${category} missions yet.`
+                }
+              </p>
+              {(query || locationFilter !== 'all') && (
+                <button onClick={() => { setQuery(''); setCategory('all'); setLoc('all'); setSort('recommended'); }}
                   style={{ marginTop: 16, padding: '8px 20px', borderRadius: 999, background: t.accent, color: t.bg, fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Clear filters
+                  Clear all filters
                 </button>
               )}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {filtered.map((hunt, i) => (
-                <ExploreCard key={hunt.id} hunt={hunt} index={i} completedIds={completedIds} profile={profile} />
+                <ExploreCard
+                  key={hunt.id}
+                  hunt={hunt}
+                  index={i}
+                  completedIds={completedIds}
+                  profile={profile}
+                  distanceKm={hunt.distanceKm}
+                />
               ))}
             </div>
           )}
