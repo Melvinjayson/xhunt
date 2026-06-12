@@ -42,18 +42,21 @@ export default function AdminEconomyPage() {
 
   useEffect(() => {
     async function load() {
-      const [cRes, tRes, gRes] = await Promise.all([
-        fetch('/api/economy/contributions?summary=true'),
-        fetch('/api/economy/trust'),
-        fetch('/api/economy/governance'),
-      ]);
-      const c = await cRes.json();
-      const t = await tRes.json();
-      const g = await gRes.json();
-      setContribSummary(c.summary ?? null);
-      setTrustProfile(t.profile ?? null);
-      setGovActions(g.actions ?? []);
-      setLoading(false);
+      try {
+        const [cRes, tRes, gRes] = await Promise.all([
+          fetch('/api/economy/contributions?summary=true'),
+          fetch('/api/economy/trust'),
+          fetch('/api/economy/governance'),
+        ]);
+        const [c, t, g] = await Promise.all([cRes.json(), tRes.json(), gRes.json()]);
+        setContribSummary(c.summary ?? null);
+        setTrustProfile(t.profile ?? null);
+        setGovActions(g.actions ?? []);
+      } catch (err) {
+        console.error('[economy]', err);
+      } finally {
+        setLoading(false);
+      }
     }
     void load();
   }, []);
@@ -199,7 +202,11 @@ function EconomyOverview({ contribSummary, trustProfile, govActions }: {
             </div>
           </div>
         ) : (
-          <p className="text-[#3d5068] text-sm text-center py-8">No trust data yet</p>
+          <div className="py-8 text-center">
+            <ShieldCheck size={28} className="text-[#3d5068] mx-auto mb-2" strokeWidth={1.5} />
+            <p className="text-[#7a8fa8] text-sm">No trust data yet</p>
+            <p className="text-[#3d5068] text-[11px] mt-1">Trust events accumulate as users interact</p>
+          </div>
         )}
       </div>
 
@@ -245,7 +252,9 @@ function ContributionsPanel() {
   useEffect(() => {
     fetch('/api/economy/contributions?limit=20')
       .then((r) => r.json())
-      .then((d) => { setItems(d.contributions ?? []); setLoading(false); });
+      .then((d) => { setItems(d.contributions ?? []); })
+      .catch((err) => console.error('[contributions]', err))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="py-16 flex justify-center"><div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" /></div>;
