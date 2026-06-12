@@ -27,3 +27,6 @@ export const colors = {
   border:     'rgba(255,255,255,0.08)',
   borderMid:  'rgba(255,255,255,0.12)',
 } as const;
+
+// Short alias — `import { t } from '@/theme/colors'` then use t.accent, t.ai, t.warning…
+export const t = colors;
