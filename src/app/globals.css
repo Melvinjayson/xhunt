@@ -328,6 +328,89 @@ body {
   background-color: var(--t-bg);
 }
 
+/* Workspace sidebar — nav text legibility in light mode */
+:root[data-theme="light"] .portal-sidebar a,
+:root[data-theme="light"] .portal-sidebar p,
+:root[data-theme="light"] .portal-sidebar span {
+  color: inherit;
+}
+
+:root[data-theme="light"] .portal-sidebar {
+  color: var(--t-dim);
+}
+
+/* Card and surface overrides for workspace main content */
+:root[data-theme="light"] .portal-main .bg-\[\#0A1226\],
+:root[data-theme="light"] .portal-main .bg-\[\#07101F\],
+:root[data-theme="light"] .portal-main .bg-\[\#0D1530\] {
+  background-color: var(--t-card) !important;
+}
+
+:root[data-theme="light"] .portal-main .border-\[\#0F1D35\],
+:root[data-theme="light"] .portal-main .border-\[\#162440\] {
+  border-color: rgba(0,0,0,0.08) !important;
+}
+
+:root[data-theme="light"] .portal-main .text-\[\#F0F4FF\] {
+  color: var(--t-txt) !important;
+}
+
+:root[data-theme="light"] .portal-main .text-\[\#8B9CC0\] {
+  color: var(--t-dim) !important;
+}
+
+:root[data-theme="light"] .portal-main .text-\[\#4A5578\] {
+  color: var(--t-faint) !important;
+}
+
+/* Admin portal — always force dark, never respond to light theme */
+.portal-shell--admin {
+  background-color: #050816 !important;
+  color-scheme: dark;
+}
+
+.portal-shell--admin * {
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] .portal-shell--admin {
+  background-color: #050816 !important;
+}
+
+:root[data-theme="light"] .portal-shell--admin .portal-sidebar {
+  background-color: #07101F !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+
+:root[data-theme="light"] .portal-shell--admin .portal-sidebar .liquid-nav {
+  background: rgba(5, 8, 22, 0.85) !important;
+}
+
+:root[data-theme="light"] .portal-shell--admin .portal-main {
+  background-color: #050816 !important;
+}
+
+:root[data-theme="light"] .portal-shell--admin .portal-topbar {
+  background: rgba(5, 8, 22, 0.95) !important;
+  border-bottom-color: rgba(255,255,255,0.07) !important;
+}
+
+/* Marketing pages — keep intentional dark design in light mode */
+:root[data-theme="light"] .marketing-section-dark {
+  background-color: #050816;
+  color: #F0F4FF;
+}
+
+/* Auth pages — always dark, lock regardless of theme */
+.auth-page-dark {
+  background-color: #050816 !important;
+  min-height: 100vh;
+}
+
+:root[data-theme="light"] .auth-page-dark {
+  background-color: #050816 !important;
+}
+
 .portal-sidebar {
   /* Desktop: always visible */
   width: 240px;
