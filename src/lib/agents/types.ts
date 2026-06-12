@@ -5,7 +5,12 @@ export type AgentId =
   | 'behavioral-analyst'
   | 'knowledge-agent'
   | 'insight-analyst'
-  | 'economy-coordinator';
+  | 'economy-coordinator'
+  | 'discovery-agent'
+  | 'community-catalyst'
+  | 'trust-guardian'
+  | 'sustainability-navigator'
+  | 'agent-foundry';
 
 // ── Mission Architect ─────────────────────────────────────────────────────────
 
@@ -196,4 +201,205 @@ export interface EconomyCoordinatorOutput {
   desiderata_alignment: string[];
   anti_objectives_check: string;
   confidence_pct: number;
+}
+
+// ── Discovery Agent (Participant Intelligence) ────────────────────────────────
+
+export interface DiscoveryAgentInput {
+  goals: string[];
+  currentSkills: string[];
+  interests: string[];
+  location?: string;
+  historyContext?: string;
+  maxRecommendations?: number;
+}
+
+export interface DiscoveryAgentOutput {
+  opportunities: Array<{
+    title: string;
+    description: string;
+    relevance_score: number;
+    rationale: string;
+    skill_match_pct: number;
+    learning_value: string;
+    time_commitment: string;
+    community_impact: string;
+    accessibility_notes?: string;
+  }>;
+  skill_path: Array<{
+    skill: string;
+    current_level: string;
+    target_level: string;
+    path_steps: string[];
+  }>;
+  discovery_insight: string;
+  diversity_note: string;    // ensures diverse opportunities, not just popular ones
+  desiderata_alignment: string[];
+  anti_objectives_check: string;
+}
+
+// ── Community Catalyst (Community Intelligence) ───────────────────────────────
+
+export interface CommunityCatalystInput {
+  communityContext: string;
+  activeMissions: Array<{ id: string; title: string; participantCount: number; tags: string[] }>;
+  participantCohort: Array<{ interests: string[]; skills: string[]; location?: string }>;
+  focusArea?: string;
+}
+
+export interface CommunityCatalystOutput {
+  collaboration_opportunities: Array<{
+    title: string;
+    participants_needed: number;
+    rationale: string;
+    expected_impact: string;
+    formation_mechanism: string;
+  }>;
+  engagement_strategy: string;
+  social_capital_initiatives: Array<{
+    initiative: string;
+    mechanism: string;
+    expected_outcome: string;
+    local_economy_impact?: string;
+  }>;
+  community_health_score: number;
+  feedback_loops: {
+    reinforcing: string[];
+    balancing: string[];
+    risks: string[];
+  };
+  second_order_effects: string[];
+  desiderata_alignment: string[];
+}
+
+// ── Trust Guardian (Governance) ───────────────────────────────────────────────
+
+export interface TrustGuardianInput {
+  proposedAction: string;
+  actionType: 'feature' | 'recommendation' | 'policy' | 'agent_behavior' | 'data_usage' | 'gamification';
+  context: Record<string, unknown>;
+  stakeholders: string[];
+}
+
+export interface TrustGuardianOutput {
+  constitutional_assessment: {
+    helps_flourish:     boolean;
+    strengthens_trust:  boolean;
+    creates_value:      boolean;
+    improves_ecosystem: boolean;
+    is_fair:            boolean;
+    is_sustainable:     boolean;
+    proud_in_10_years:  boolean;
+    score: number;  // 0–7
+  };
+  financial_materiality: { score: number; analysis: string };
+  impact_materiality:    { score: number; analysis: string };
+  red_flags: string[];
+  risks: Array<{
+    risk: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    mitigation: string;
+  }>;
+  verdict: 'approved' | 'flagged' | 'rejected';
+  conditions: string[];    // conditions required if flagged
+  recommendation: string;
+  anti_patterns_detected: string[];
+}
+
+// ── Sustainability Navigator ──────────────────────────────────────────────────
+
+export interface SustainabilityNavigatorInput {
+  missionContext: string;
+  activityType: string;
+  participantCount: number;
+  geographicalContext?: string;
+  currentSDGAlignment?: string[];
+}
+
+export interface SustainabilityNavigatorOutput {
+  environmental_impact: {
+    estimate: string;
+    carbon_equivalent?: string;
+    positive_aspects: string[];
+    concerns: string[];
+  };
+  sustainable_alternatives: Array<{
+    alternative: string;
+    rationale: string;
+    impact: string;
+    implementation_effort: 'low' | 'medium' | 'high';
+  }>;
+  sdg_alignment: Array<{
+    goal: string;
+    alignment: string;
+    score: number;
+  }>;
+  behavior_incentives: Array<{
+    behavior: string;
+    mechanism: string;
+    expected_lift: string;
+  }>;
+  circular_economy_opportunities: string[];
+  sustainability_score: number;
+  greenwashing_risk: string;   // explicit flag if claims are not substantiated
+  desiderata_alignment: string[];
+}
+
+// ── Agent Foundry ─────────────────────────────────────────────────────────────
+
+export interface AgentFoundryInput {
+  agentName: string;
+  purpose: string;
+  category: string;
+  stakeholders: string[];
+  problemContext: string;
+  constraints?: string[];
+}
+
+export interface AgentFoundryOutput {
+  agent_spec: {
+    agent_id: string;
+    name: string;
+    category: string;
+    purpose: string;
+    primary_stakeholders: string[];
+    scope_of_authority: string;
+    operational_boundaries: string;
+    primary_objective: string;
+    secondary_objectives: string[];
+    anti_objectives: string[];
+    inputs: Array<{ signal: string; source: string; required: boolean }>;
+    outputs: Array<{ type: string; description: string; explainable: boolean }>;
+    constraints: {
+      ethical: string[];
+      legal: string[];
+      technical: string[];
+      business: string[];
+    };
+    financial_materiality: { assessment: string; score: number; factors: string[] };
+    impact_materiality:    { assessment: string; score: number; factors: string[] };
+    feedback_loops: {
+      reinforcing: string[];
+      balancing: string[];
+      failure_modes: string[];
+      emergent_effects: string[];
+    };
+    desiderata_alignment: string[];
+    governance_controls: string[];
+    success_metrics: string[];
+    monitoring_strategy: string;
+    deployment_notes: string;
+  };
+  constitutional_compliance: {
+    verdict: 'approved' | 'flagged';
+    score: number;
+    notes: string;
+  };
+  estimated_complexity: 'low' | 'medium' | 'high';
+  implementation_roadmap: Array<{
+    phase: number;
+    milestone: string;
+    duration: string;
+    dependencies: string[];
+  }>;
 }
