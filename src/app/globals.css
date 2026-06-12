@@ -305,6 +305,29 @@ body {
   background-color: #050816;
 }
 
+/* Light mode portal overrides */
+:root[data-theme="light"] .portal-shell {
+  background-color: var(--t-bg);
+}
+
+:root[data-theme="light"] .portal-sidebar {
+  background-color: var(--t-surface) !important;
+  border-color: rgba(0,0,0,0.07) !important;
+}
+
+:root[data-theme="light"] .portal-sidebar .liquid-nav {
+  background: rgba(232, 238, 248, 0.92) !important;
+}
+
+:root[data-theme="light"] .portal-topbar {
+  background: rgba(232, 238, 248, 0.95) !important;
+  border-bottom-color: rgba(0,0,0,0.07) !important;
+}
+
+:root[data-theme="light"] .portal-main {
+  background-color: var(--t-bg);
+}
+
 .portal-sidebar {
   /* Desktop: always visible */
   width: 240px;

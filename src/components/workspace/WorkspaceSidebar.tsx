@@ -1,57 +1,76 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Radar, Layers, TrendingUp, BarChart3, Bot, Network,
   UserSquare2, Gift, ShieldCheck, Plug, Code2, CreditCard, Settings,
   LogOut, Building2, ChevronDown, Plus, Sparkles, Zap, Globe,
-  Coins, Cpu, Leaf,
+  Coins, Cpu, Lock, Sun, Moon,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { createClient } from '@/lib/supabase/client';
+import { getDefaultConfig, mergeFeatureConfig } from '@/lib/features';
+import type { TenantFeatureConfig, NavFlags } from '@/lib/features';
 
-const NAV_GROUPS = [
+type NavFlag = keyof NavFlags | null;
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  exact?: boolean;
+  flag: NavFlag;
+  minTier?: 'growth' | 'enterprise';
+}
+
+interface NavGroup {
+  group: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
   {
     group: 'COMMAND',
     items: [
-      { href: '/workspace', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-      { href: '/workspace/mission-control', label: 'Mission Control', icon: Radar },
-      { href: '/workspace/missions', label: 'Mission Studio', icon: Layers },
-      { href: '/workspace/outcomes', label: 'Outcomes', icon: TrendingUp },
+      { href: '/workspace',                label: 'Dashboard',      icon: LayoutDashboard, exact: true, flag: null },
+      { href: '/workspace/mission-control', label: 'Mission Control',icon: Radar,           flag: null },
+      { href: '/workspace/missions',        label: 'Mission Studio', icon: Layers,          flag: null },
+      { href: '/workspace/outcomes',        label: 'Outcomes',       icon: TrendingUp,      flag: 'outcomes' },
     ],
   },
   {
     group: 'INTELLIGENCE',
     items: [
-      { href: '/workspace/analytics', label: 'Analytics', icon: BarChart3 },
-      { href: '/workspace/agents', label: 'AI Agents', icon: Bot },
-      { href: '/workspace/knowledge', label: 'Knowledge Graph', icon: Network },
-      { href: '/workspace/intelligence', label: 'XIL Hub', icon: Cpu },
-      { href: '/workspace/economy', label: 'Economy', icon: Coins },
+      { href: '/workspace/analytics',    label: 'Analytics',       icon: BarChart3, flag: 'analytics',    minTier: 'growth' },
+      { href: '/workspace/agents',       label: 'AI Agents',       icon: Bot,       flag: 'agents',       minTier: 'growth' },
+      { href: '/workspace/knowledge',    label: 'Knowledge Graph', icon: Network,   flag: 'knowledgeGraph',minTier: 'enterprise' },
+      { href: '/workspace/intelligence', label: 'XIL Hub',         icon: Cpu,       flag: 'xilHub',       minTier: 'enterprise' },
+      { href: '/workspace/economy',      label: 'Economy',         icon: Coins,     flag: 'economy',      minTier: 'enterprise' },
     ],
   },
   {
     group: 'ENGAGEMENT',
     items: [
-      { href: '/workspace/audience',    label: 'Audience',    icon: UserSquare2 },
-      { href: '/workspace/rewards',     label: 'Rewards',     icon: Gift },
-      { href: '/workspace/marketplace', label: 'Marketplace', icon: Globe },
+      { href: '/workspace/audience',    label: 'Audience',    icon: UserSquare2, flag: 'audience',    minTier: 'growth' },
+      { href: '/workspace/rewards',     label: 'Rewards',     icon: Gift,        flag: 'rewards',     minTier: 'growth' },
+      { href: '/workspace/marketplace', label: 'Marketplace', icon: Globe,       flag: 'marketplace', minTier: 'growth' },
     ],
   },
   {
     group: 'GOVERNANCE',
     items: [
-      { href: '/workspace/governance', label: 'Governance', icon: ShieldCheck },
-      { href: '/workspace/integrations', label: 'Integrations', icon: Plug },
-      { href: '/workspace/developers', label: 'Developer Portal', icon: Code2 },
+      { href: '/workspace/governance',   label: 'Governance',      icon: ShieldCheck, flag: 'governance',  minTier: 'enterprise' },
+      { href: '/workspace/integrations', label: 'Integrations',    icon: Plug,        flag: null },
+      { href: '/workspace/developers',   label: 'Developer Portal', icon: Code2,       flag: 'developers',  minTier: 'enterprise' },
     ],
   },
   {
     group: 'WORKSPACE',
     items: [
-      { href: '/workspace/billing', label: 'Billing', icon: CreditCard },
-      { href: '/workspace/settings', label: 'Settings', icon: Settings },
+      { href: '/workspace/billing',  label: 'Billing',  icon: CreditCard, flag: null },
+      { href: '/workspace/settings', label: 'Settings', icon: Settings,   flag: null },
     ],
   },
 ];
@@ -77,120 +96,190 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
   const router = useRouter();
   const supabase = createClient();
   const badge = PLAN_BADGE[plan] ?? PLAN_BADGE.starter;
+  const [config, setConfig] = useState<TenantFeatureConfig>(getDefaultConfig(plan));
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('xhunt-theme') as 'dark' | 'light' | null;
+    setTheme(saved ?? 'dark');
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/workspace/features')
+      .then((r) => r.json())
+      .then((data: TenantFeatureConfig) => {
+        if (data?.maturity) setConfig(data);
+      })
+      .catch(() => {
+        setConfig(mergeFeatureConfig(getDefaultConfig(plan), {}));
+      });
+  }, [plan]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
     router.push('/auth/login');
   }
 
+  function toggleTheme() {
+    const next: 'dark' | 'light' = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('xhunt-theme', next);
+  }
+
+  function isNavEnabled(flag: NavFlag): boolean {
+    if (flag === null) return true;
+    return config.nav[flag] === true;
+  }
+
   const initials = (userName ?? orgName ?? 'U').slice(0, 2).toUpperCase();
 
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
         <div className="portal-overlay md:hidden" onClick={onClose} aria-hidden="true" />
       )}
-    <aside
-      className="portal-sidebar liquid-nav bg-[#07101F] border-r border-[#0F1D35] flex flex-col"
-      data-open={isOpen ? 'true' : 'false'}
-    >
-
-      {/* Org Header */}
-      <div className="px-4 py-4 border-b border-[#0F1D35]">
-        <div className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-[#0A1226] cursor-pointer transition-colors group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent/20 to-[#6D5DFD]/20 border border-accent/20 flex items-center justify-center flex-shrink-0">
-            <Building2 size={15} className="text-accent" strokeWidth={1.8} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-[#F0F4FF] truncate leading-tight">{orgName}</p>
-            <p className="text-[10px] text-[#4A5578] mt-0.5">Mission Control</p>
-          </div>
-          <ChevronDown size={13} className="text-[#4A5578] group-hover:text-[#8B9CC0] transition-colors flex-shrink-0" />
-        </div>
-
-        <div className={cn('mt-2 mx-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide', badge.cls)}>
-          <Sparkles size={9} strokeWidth={2.5} />
-          {badge.label}
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="px-4 py-3 border-b border-[#0F1D35]">
-        <Link href="/workspace/missions/new">
-          <button className="flex items-center gap-2 w-full h-9 px-3 bg-accent text-[#060a0e] rounded-xl font-semibold text-[12px] hover:bg-accent-dark transition-colors shadow-[0_4px_16px_rgba(34,255,170,0.25)]">
-            <Plus size={14} strokeWidth={2.5} />
-            New Mission
-          </button>
-        </Link>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-4">
-        {NAV_GROUPS.map(({ group, items }) => (
-          <div key={group}>
-            <p className="px-2 mb-1 text-[9px] font-bold text-[#4A5578] uppercase tracking-[0.1em]">{group}</p>
-            <div className="flex flex-col gap-0.5">
-              {items.map(({ href, label, icon: Icon, exact }) => {
-                const active = exact ? pathname === href : pathname.startsWith(href);
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={cn(
-                      'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-100',
-                      active
-                        ? 'bg-accent/10 text-accent'
-                        : 'text-[#8B9CC0] hover:text-[#F0F4FF] hover:bg-[#0A1226]'
-                    )}
-                  >
-                    <Icon
-                      size={15}
-                      strokeWidth={active ? 2.2 : 1.8}
-                      className={active ? 'text-accent' : 'text-[#4A5578]'}
-                    />
-                    {label}
-                    {active && <div className="ml-auto w-1 h-1 rounded-full bg-accent flex-shrink-0" />}
-                  </Link>
-                );
-              })}
+      <aside
+        className="portal-sidebar liquid-nav bg-[#07101F] border-r border-[#0F1D35] flex flex-col"
+        data-open={isOpen ? 'true' : 'false'}
+      >
+        {/* Org Header */}
+        <div className="px-4 py-4 border-b border-[#0F1D35]">
+          <div className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-[#0A1226] cursor-pointer transition-colors group">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent/20 to-[#6D5DFD]/20 border border-accent/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {config.branding.logoUrl
+                ? <img src={config.branding.logoUrl} alt="" className="w-full h-full object-cover" />
+                : <Building2 size={15} className="text-accent" strokeWidth={1.8} />}
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-[#F0F4FF] truncate leading-tight">
+                {config.branding.appName ?? orgName}
+              </p>
+              <p className="text-[10px] text-[#4A5578] mt-0.5 capitalize">{config.maturity} tier</p>
+            </div>
+            <ChevronDown size={13} className="text-[#4A5578] group-hover:text-[#8B9CC0] transition-colors flex-shrink-0" />
           </div>
-        ))}
-      </nav>
-
-      {/* AI Status Badge */}
-      <div className="px-4 py-3 border-t border-[#0F1D35]">
-        <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-[#6D5DFD]/8 border border-[#6D5DFD]/15">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#22FFAA] breathe flex-shrink-0" />
-          <Zap size={12} className="text-[#A99FFE]" strokeWidth={1.8} />
-          <span className="text-[11px] font-medium text-[#A99FFE]">12 Agents Active</span>
+          <div className={cn('mt-2 mx-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide', badge.cls)}>
+            <Sparkles size={9} strokeWidth={2.5} />
+            {badge.label}
+          </div>
         </div>
-      </div>
 
-      {/* User Profile */}
-      <div className="px-3 py-3 border-t border-[#0F1D35]">
-        <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-[#0A1226] transition-colors group">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#6D5DFD] to-accent flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#060a0e]">
-            {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
-            ) : initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-semibold text-[#F0F4FF] truncate leading-tight">{userName ?? 'Admin'}</p>
-            <p className="text-[10px] text-[#4A5578] capitalize">{userRole.replace('_', ' ')}</p>
-          </div>
-          <button
-            onClick={handleLogout}
-            title="Sign out"
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-[#2a0a0a] hover:text-[#FF5C7A] text-[#4A5578]"
-          >
-            <LogOut size={13} strokeWidth={1.8} />
-          </button>
+        {/* Quick Actions */}
+        <div className="px-4 py-3 border-b border-[#0F1D35]">
+          <Link href="/workspace/missions/new">
+            <button className="flex items-center gap-2 w-full h-9 px-3 bg-accent text-[#060a0e] rounded-xl font-semibold text-[12px] hover:bg-accent-dark transition-colors shadow-[0_4px_16px_rgba(34,255,170,0.25)]"
+              style={config.branding.primaryColor ? { backgroundColor: config.branding.primaryColor, boxShadow: `0 4px 16px ${config.branding.primaryColor}40` } : {}}>
+              <Plus size={14} strokeWidth={2.5} />
+              New Mission
+            </button>
+          </Link>
         </div>
-      </div>
-    </aside>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-4">
+          {NAV_GROUPS.map(({ group, items }) => {
+            const visibleItems = items.filter((item) => isNavEnabled(item.flag));
+            const lockedItems = items.filter((item) => !isNavEnabled(item.flag) && item.flag !== null);
+
+            if (visibleItems.length === 0 && lockedItems.length === 0) return null;
+
+            return (
+              <div key={group}>
+                <p className="px-2 mb-1 text-[9px] font-bold text-[#4A5578] uppercase tracking-[0.1em]">{group}</p>
+                <div className="flex flex-col gap-0.5">
+                  {visibleItems.map(({ href, label, icon: Icon, exact }) => {
+                    const active = exact ? pathname === href : pathname.startsWith(href);
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        className={cn(
+                          'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-100',
+                          active
+                            ? 'bg-accent/10 text-accent'
+                            : 'text-[#8B9CC0] hover:text-[#F0F4FF] hover:bg-[#0A1226]'
+                        )}
+                        style={active && config.branding.primaryColor
+                          ? { backgroundColor: `${config.branding.primaryColor}18`, color: config.branding.primaryColor }
+                          : {}}
+                      >
+                        <Icon
+                          size={15}
+                          strokeWidth={active ? 2.2 : 1.8}
+                          className={active ? 'text-accent' : 'text-[#4A5578]'}
+                          style={active && config.branding.primaryColor ? { color: config.branding.primaryColor } : {}}
+                        />
+                        {label}
+                        {active && <div className="ml-auto w-1 h-1 rounded-full bg-accent flex-shrink-0"
+                          style={config.branding.primaryColor ? { backgroundColor: config.branding.primaryColor } : {}} />}
+                      </Link>
+                    );
+                  })}
+
+                  {/* Locked items — progressive disclosure */}
+                  {lockedItems.map(({ href: _href, label, icon: Icon, minTier }) => (
+                    <div
+                      key={label}
+                      title={`Upgrade to ${minTier ?? 'a higher'} tier to unlock`}
+                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium opacity-35 cursor-not-allowed select-none"
+                    >
+                      <Icon size={15} strokeWidth={1.8} className="text-[#4A5578]" />
+                      {label}
+                      <Lock size={10} className="ml-auto text-[#4A5578] flex-shrink-0" strokeWidth={2} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* AI Status + Theme Toggle */}
+        <div className="px-4 py-3 border-t border-[#0F1D35]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-[#6D5DFD]/8 border border-[#6D5DFD]/15 flex-1 mr-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#22FFAA] breathe flex-shrink-0" />
+              <Zap size={12} className="text-[#A99FFE]" strokeWidth={1.8} />
+              <span className="text-[11px] font-medium text-[#A99FFE]">
+                {config.maturity === 'enterprise' ? '12 Agents' : config.maturity === 'growth' ? '6 Agents' : '2 Agents'} Active
+              </span>
+            </div>
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-[#4A5578] hover:text-[#8B9CC0] hover:bg-[#0A1226] transition-colors flex-shrink-0"
+            >
+              {theme === 'dark'
+                ? <Sun size={13} strokeWidth={1.8} />
+                : <Moon size={13} strokeWidth={1.8} />}
+            </button>
+          </div>
+        </div>
+
+        {/* User Profile */}
+        <div className="px-3 py-3 border-t border-[#0F1D35]">
+          <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-[#0A1226] transition-colors group">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#6D5DFD] to-accent flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#060a0e] overflow-hidden">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
+              ) : initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold text-[#F0F4FF] truncate leading-tight">{userName ?? 'Admin'}</p>
+              <p className="text-[10px] text-[#4A5578] capitalize">{userRole.replace('_', ' ')}</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              title="Sign out"
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-[#2a0a0a] hover:text-[#FF5C7A] text-[#4A5578]"
+            >
+              <LogOut size={13} strokeWidth={1.8} />
+            </button>
+          </div>
+        </div>
+      </aside>
     </>
   );
 }
