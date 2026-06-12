@@ -54,9 +54,9 @@ interface Recommendation {
 
 function computeMatch(hunt: Hunt, profile: ImpactProfile | null): number | null {
   if (!profile) return null;
-  const tl = hunt.tags.map(tag => tag.toLowerCase());
-  const cl = profile.causes.map(c => c.toLowerCase());
-  const sl = profile.strengths.map(s => s.name.toLowerCase());
+  const tl = (hunt.tags ?? []).map(tag => tag.toLowerCase());
+  const cl = (profile.causes ?? []).map(c => c.toLowerCase());
+  const sl = (profile.strengths ?? []).map(s => s.name.toLowerCase());
   let score = 55;
   for (const tag of tl) {
     if (cl.some(c => c.includes(tag) || tag.includes(c))) score += 12;
@@ -101,10 +101,12 @@ function ExploreCard({ hunt, index, completedIds, profile, distanceKm }: {
   distanceKm?: number | null;
 }) {
   const done    = completedIds.includes(hunt.id);
+  const steps   = hunt.steps ?? [];
+  const tags    = hunt.tags ?? [];
   const cash    = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
-  const xp      = estimateXP(hunt.xpReward, hunt.difficulty, hunt.steps.length);
+  const xp      = estimateXP(hunt.xpReward, hunt.difficulty, steps.length);
   const diff    = DIFF_META[hunt.difficulty] ?? DIFF_META.easy;
-  const cat     = resolveCategory(hunt.tags, hunt.category);
+  const cat     = resolveCategory(tags, hunt.category);
   const mtype   = hunt.missionType ? MISSION_TYPE_META[hunt.missionType] : null;
   const dlLabel = deadlineLabel(hunt.deadline);
   const ms      = computeMatch(hunt, profile);
@@ -166,7 +168,7 @@ function ExploreCard({ hunt, index, completedIds, profile, distanceKm }: {
             </div>
 
             <div style={{ display: 'flex', gap: 5, marginBottom: 9, flexWrap: 'wrap' }}>
-              {hunt.tags.slice(0, 3).map(tag => (
+              {tags.slice(0, 3).map(tag => (
                 <span key={tag} style={{ fontSize: 9.5, color: t.txtFaint, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)', padding: '1px 8px', borderRadius: 999 }}>{tag}</span>
               ))}
               {(hunt.sdgGoals?.length ?? 0) > 0 && hunt.sdgGoals!.slice(0, 2).map(g => {
@@ -233,8 +235,8 @@ export default function ExplorePage() {
 
   useEffect(() => {
     const state = loadState();
-    setIds(state.completedHunts.map(h => h.huntId));
-    setHunts(state.hunts);
+    setIds((state.completedHunts ?? []).map(h => h.huntId));
+    setHunts(Array.isArray(state.hunts) ? state.hunts : []);
     setProfile(loadProfile());
     void fetchSupabaseMissions().then(r => { if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } });
 
@@ -255,17 +257,18 @@ export default function ExplorePage() {
 
   const filtered = huntsWithDistance
     .filter(h => {
+      const htags = h.tags ?? [];
       if (query) {
         const q = query.toLowerCase();
-        return h.title.toLowerCase().includes(q)
-          || h.tags.some(tag => tag.toLowerCase().includes(q))
+        return (h.title ?? '').toLowerCase().includes(q)
+          || htags.some(tag => tag.toLowerCase().includes(q))
           || (h.story_context ?? '').toLowerCase().includes(q)
           || (h.missionType ?? '').includes(q);
       }
       const catMatch = category === 'all'
-        || h.tags.some(tag => tag.toLowerCase().includes(category))
+        || htags.some(tag => tag.toLowerCase().includes(category))
         || h.category === category
-        || resolveCategory(h.tags, h.category).id === category;
+        || resolveCategory(htags, h.category).id === category;
       const locMatch = locationFilter === 'all' || h.locationType === locationFilter;
       // Radius filter — only when user coords are known and local filter is active
       const radiusMatch = (() => {

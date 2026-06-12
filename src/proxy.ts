@@ -33,7 +33,7 @@ const isPublicRoute = createRouteMatcher([
 
 const isAuthRoute = createRouteMatcher(['/auth/login(.*)', '/auth/signup(.*)']);
 
-export default clerkMiddleware(async (auth, req) => {
+export const proxy = clerkMiddleware(async (auth, req) => {
   // Redirect already-authenticated users away from login/signup pages
   if (isAuthRoute(req)) {
     try {
