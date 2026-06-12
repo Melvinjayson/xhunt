@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Radar, Layers, TrendingUp, BarChart3, Bot, Network,
   UserSquare2, Gift, ShieldCheck, Plug, Code2, CreditCard, Settings,
   LogOut, Building2, ChevronDown, Plus, Sparkles, Zap, Globe,
+  Coins, Cpu, Leaf,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { createClient } from '@/lib/supabase/client';
@@ -26,6 +27,8 @@ const NAV_GROUPS = [
       { href: '/workspace/analytics', label: 'Analytics', icon: BarChart3 },
       { href: '/workspace/agents', label: 'AI Agents', icon: Bot },
       { href: '/workspace/knowledge', label: 'Knowledge Graph', icon: Network },
+      { href: '/workspace/intelligence', label: 'XIL Hub', icon: Cpu },
+      { href: '/workspace/economy', label: 'Economy', icon: Coins },
     ],
   },
   {
@@ -161,7 +164,7 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
         <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-[#6D5DFD]/8 border border-[#6D5DFD]/15">
           <div className="w-1.5 h-1.5 rounded-full bg-[#22FFAA] breathe flex-shrink-0" />
           <Zap size={12} className="text-[#A99FFE]" strokeWidth={1.8} />
-          <span className="text-[11px] font-medium text-[#A99FFE]">6 Agents Active</span>
+          <span className="text-[11px] font-medium text-[#A99FFE]">12 Agents Active</span>
         </div>
       </div>
 
