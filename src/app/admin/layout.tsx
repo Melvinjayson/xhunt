@@ -18,7 +18,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     async function checkAccess() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace('/auth/admin-login'); return; }
+      if (!user) { router.replace('/sign-in?redirect_url=/admin'); return; }
 
       const { data: profile } = await supabase
         .from('user_profiles')

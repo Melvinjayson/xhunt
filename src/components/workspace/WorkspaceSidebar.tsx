@@ -2,15 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { useClerk } from '@clerk/nextjs';
 import {
-  LayoutDashboard, Radar, Layers, TrendingUp, BarChart3, Bot, Network,
-  UserSquare2, Gift, ShieldCheck, Plug, Code2, CreditCard, Settings,
-  LogOut, Building2, ChevronDown, Plus, Sparkles, Zap, Globe,
-  Coins, Cpu, Lock, Sun, Moon,
+  LayoutDashboard, Layers, Radar, TrendingUp,
+  BarChart3, Bot, Cpu,
+  Coins, Globe,
+  ShieldCheck, Plug,
+  CreditCard, Settings,
+  ChevronDown, Plus, Sparkles, Zap, Building2,
+  Lock, Sun, Moon,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { createClient } from '@/lib/supabase/client';
 import { getDefaultConfig, mergeFeatureConfig } from '@/lib/features';
 import type { TenantFeatureConfig, NavFlags } from '@/lib/features';
 
@@ -25,45 +28,37 @@ interface NavItem {
   minTier?: 'growth' | 'enterprise';
 }
 
-interface NavGroup {
-  group: string;
-  items: NavItem[];
-}
-
-const NAV_GROUPS: NavGroup[] = [
+// Consolidated: 12 items max (starter sees 5, growth 8, enterprise 12)
+const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
   {
-    group: 'COMMAND',
+    group: 'MISSIONS',
     items: [
       { href: '/workspace',                label: 'Dashboard',      icon: LayoutDashboard, exact: true, flag: null },
-      { href: '/workspace/mission-control', label: 'Mission Control',icon: Radar,           flag: null },
       { href: '/workspace/missions',        label: 'Mission Studio', icon: Layers,          flag: null },
+      { href: '/workspace/mission-control', label: 'Mission Control',icon: Radar,           flag: null },
       { href: '/workspace/outcomes',        label: 'Outcomes',       icon: TrendingUp,      flag: 'outcomes' },
     ],
   },
   {
     group: 'INTELLIGENCE',
     items: [
-      { href: '/workspace/analytics',    label: 'Analytics',       icon: BarChart3, flag: 'analytics',    minTier: 'growth' },
-      { href: '/workspace/agents',       label: 'AI Agents',       icon: Bot,       flag: 'agents',       minTier: 'growth' },
-      { href: '/workspace/knowledge',    label: 'Knowledge Graph', icon: Network,   flag: 'knowledgeGraph',minTier: 'enterprise' },
-      { href: '/workspace/intelligence', label: 'XIL Hub',         icon: Cpu,       flag: 'xilHub',       minTier: 'enterprise' },
-      { href: '/workspace/economy',      label: 'Economy',         icon: Coins,     flag: 'economy',      minTier: 'enterprise' },
+      { href: '/workspace/analytics',    label: 'Analytics',  icon: BarChart3, flag: 'analytics',    minTier: 'growth' },
+      { href: '/workspace/agents',       label: 'AI Agents',  icon: Bot,       flag: 'agents',       minTier: 'growth' },
+      { href: '/workspace/intelligence', label: 'XIL Hub',    icon: Cpu,       flag: 'xilHub',       minTier: 'enterprise' },
     ],
   },
   {
-    group: 'ENGAGEMENT',
+    group: 'ECONOMY',
     items: [
-      { href: '/workspace/audience',    label: 'Audience',    icon: UserSquare2, flag: 'audience',    minTier: 'growth' },
-      { href: '/workspace/rewards',     label: 'Rewards',     icon: Gift,        flag: 'rewards',     minTier: 'growth' },
-      { href: '/workspace/marketplace', label: 'Marketplace', icon: Globe,       flag: 'marketplace', minTier: 'growth' },
+      { href: '/workspace/economy',      label: 'Economy',     icon: Coins,  flag: 'economy',      minTier: 'enterprise' },
+      { href: '/workspace/marketplace',  label: 'Marketplace', icon: Globe,  flag: 'marketplace',  minTier: 'growth' },
     ],
   },
   {
-    group: 'GOVERNANCE',
+    group: 'PLATFORM',
     items: [
-      { href: '/workspace/governance',   label: 'Governance',      icon: ShieldCheck, flag: 'governance',  minTier: 'enterprise' },
-      { href: '/workspace/integrations', label: 'Integrations',    icon: Plug,        flag: null },
-      { href: '/workspace/developers',   label: 'Developer Portal', icon: Code2,       flag: 'developers',  minTier: 'enterprise' },
+      { href: '/workspace/governance',   label: 'Governance',  icon: ShieldCheck, flag: 'governance',  minTier: 'enterprise' },
+      { href: '/workspace/integrations', label: 'Integrations',icon: Plug,        flag: null },
     ],
   },
   {
@@ -93,8 +88,7 @@ interface Props {
 
 export default function WorkspaceSidebar({ orgName, plan, userName, userRole, avatarUrl, isOpen = false, onClose }: Props) {
   const pathname = usePathname();
-  const router = useRouter();
-  const supabase = createClient();
+  const { signOut } = useClerk();
   const badge = PLAN_BADGE[plan] ?? PLAN_BADGE.starter;
   const [config, setConfig] = useState<TenantFeatureConfig>(getDefaultConfig(plan));
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -107,17 +101,13 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
   useEffect(() => {
     fetch('/api/workspace/features')
       .then((r) => r.json())
-      .then((data: TenantFeatureConfig) => {
-        if (data?.maturity) setConfig(data);
-      })
-      .catch(() => {
-        setConfig(mergeFeatureConfig(getDefaultConfig(plan), {}));
-      });
+      .then((data: TenantFeatureConfig) => { if (data?.maturity) setConfig(data); })
+      .catch(() => { setConfig(mergeFeatureConfig(getDefaultConfig(plan), {})); });
   }, [plan]);
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push('/auth/login');
+  function isNavEnabled(flag: NavFlag): boolean {
+    if (flag === null) return true;
+    return config.nav[flag] === true;
   }
 
   function toggleTheme() {
@@ -127,12 +117,8 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
     localStorage.setItem('xhunt-theme', next);
   }
 
-  function isNavEnabled(flag: NavFlag): boolean {
-    if (flag === null) return true;
-    return config.nav[flag] === true;
-  }
-
   const initials = (userName ?? orgName ?? 'U').slice(0, 2).toUpperCase();
+  const agentCount = config.maturity === 'enterprise' ? '12' : config.maturity === 'growth' ? '6' : '2';
 
   return (
     <>
@@ -157,7 +143,7 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
               </p>
               <p className="text-[10px] text-[#4A5578] mt-0.5 capitalize">{config.maturity} tier</p>
             </div>
-            <ChevronDown size={13} className="text-[#4A5578] group-hover:text-[#8B9CC0] transition-colors flex-shrink-0" />
+            <ChevronDown size={13} className="text-[#4A5578] group-hover:text-[#8B9CC0] flex-shrink-0" />
           </div>
           <div className={cn('mt-2 mx-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide', badge.cls)}>
             <Sparkles size={9} strokeWidth={2.5} />
@@ -165,11 +151,13 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* New Mission CTA */}
         <div className="px-4 py-3 border-b border-[#0F1D35]">
           <Link href="/workspace/missions/new">
-            <button className="flex items-center gap-2 w-full h-9 px-3 bg-accent text-[#060a0e] rounded-xl font-semibold text-[12px] hover:bg-accent-dark transition-colors shadow-[0_4px_16px_rgba(34,255,170,0.25)]"
-              style={config.branding.primaryColor ? { backgroundColor: config.branding.primaryColor, boxShadow: `0 4px 16px ${config.branding.primaryColor}40` } : {}}>
+            <button
+              className="flex items-center gap-2 w-full h-9 px-3 bg-accent text-[#060a0e] rounded-xl font-semibold text-[12px] hover:bg-accent-dark transition-colors shadow-[0_4px_16px_rgba(34,255,170,0.25)]"
+              style={config.branding.primaryColor ? { backgroundColor: config.branding.primaryColor } : {}}
+            >
               <Plus size={14} strokeWidth={2.5} />
               New Mission
             </button>
@@ -179,51 +167,38 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
         {/* Navigation */}
         <nav className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-4">
           {NAV_GROUPS.map(({ group, items }) => {
-            const visibleItems = items.filter((item) => isNavEnabled(item.flag));
-            const lockedItems = items.filter((item) => !isNavEnabled(item.flag) && item.flag !== null);
-
-            if (visibleItems.length === 0 && lockedItems.length === 0) return null;
+            const enabled = items.filter((i) => isNavEnabled(i.flag));
+            const locked  = items.filter((i) => !isNavEnabled(i.flag) && i.flag !== null);
+            if (enabled.length === 0 && locked.length === 0) return null;
 
             return (
               <div key={group}>
                 <p className="px-2 mb-1 text-[9px] font-bold text-[#4A5578] uppercase tracking-[0.1em]">{group}</p>
                 <div className="flex flex-col gap-0.5">
-                  {visibleItems.map(({ href, label, icon: Icon, exact }) => {
+                  {enabled.map(({ href, label, icon: Icon, exact }) => {
                     const active = exact ? pathname === href : pathname.startsWith(href);
                     return (
-                      <Link
-                        key={href}
-                        href={href}
+                      <Link key={href} href={href}
                         className={cn(
                           'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-100',
-                          active
-                            ? 'bg-accent/10 text-accent'
-                            : 'text-[#8B9CC0] hover:text-[#F0F4FF] hover:bg-[#0A1226]'
+                          active ? 'bg-accent/10 text-accent' : 'text-[#8B9CC0] hover:text-[#F0F4FF] hover:bg-[#0A1226]'
                         )}
                         style={active && config.branding.primaryColor
-                          ? { backgroundColor: `${config.branding.primaryColor}18`, color: config.branding.primaryColor }
-                          : {}}
+                          ? { backgroundColor: `${config.branding.primaryColor}18`, color: config.branding.primaryColor } : {}}
                       >
-                        <Icon
-                          size={15}
-                          strokeWidth={active ? 2.2 : 1.8}
+                        <Icon size={15} strokeWidth={active ? 2.2 : 1.8}
                           className={active ? 'text-accent' : 'text-[#4A5578]'}
-                          style={active && config.branding.primaryColor ? { color: config.branding.primaryColor } : {}}
-                        />
+                          style={active && config.branding.primaryColor ? { color: config.branding.primaryColor } : {}} />
                         {label}
                         {active && <div className="ml-auto w-1 h-1 rounded-full bg-accent flex-shrink-0"
                           style={config.branding.primaryColor ? { backgroundColor: config.branding.primaryColor } : {}} />}
                       </Link>
                     );
                   })}
-
-                  {/* Locked items — progressive disclosure */}
-                  {lockedItems.map(({ href: _href, label, icon: Icon, minTier }) => (
-                    <div
-                      key={label}
-                      title={`Upgrade to ${minTier ?? 'a higher'} tier to unlock`}
-                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium opacity-35 cursor-not-allowed select-none"
-                    >
+                  {locked.map(({ label, icon: Icon, minTier }) => (
+                    <div key={label}
+                      title={`Upgrade to ${minTier ?? 'higher'} tier to unlock`}
+                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium opacity-35 cursor-not-allowed select-none">
                       <Icon size={15} strokeWidth={1.8} className="text-[#4A5578]" />
                       {label}
                       <Lock size={10} className="ml-auto text-[#4A5578] flex-shrink-0" strokeWidth={2} />
@@ -235,24 +210,17 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
           })}
         </nav>
 
-        {/* AI Status + Theme Toggle */}
+        {/* AI Status + Theme */}
         <div className="px-4 py-3 border-t border-[#0F1D35]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-[#6D5DFD]/8 border border-[#6D5DFD]/15 flex-1 mr-2">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-[#6D5DFD]/8 border border-[#6D5DFD]/15 flex-1">
               <div className="w-1.5 h-1.5 rounded-full bg-[#22FFAA] breathe flex-shrink-0" />
               <Zap size={12} className="text-[#A99FFE]" strokeWidth={1.8} />
-              <span className="text-[11px] font-medium text-[#A99FFE]">
-                {config.maturity === 'enterprise' ? '12 Agents' : config.maturity === 'growth' ? '6 Agents' : '2 Agents'} Active
-              </span>
+              <span className="text-[11px] font-medium text-[#A99FFE]">{agentCount} Agents Active</span>
             </div>
-            <button
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[#4A5578] hover:text-[#8B9CC0] hover:bg-[#0A1226] transition-colors flex-shrink-0"
-            >
-              {theme === 'dark'
-                ? <Sun size={13} strokeWidth={1.8} />
-                : <Moon size={13} strokeWidth={1.8} />}
+            <button onClick={toggleTheme} title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-[#4A5578] hover:text-[#8B9CC0] hover:bg-[#0A1226] transition-colors flex-shrink-0">
+              {theme === 'dark' ? <Sun size={13} strokeWidth={1.8} /> : <Moon size={13} strokeWidth={1.8} />}
             </button>
           </div>
         </div>
@@ -261,21 +229,17 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
         <div className="px-3 py-3 border-t border-[#0F1D35]">
           <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-[#0A1226] transition-colors group">
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#6D5DFD] to-accent flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#060a0e] overflow-hidden">
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
-              ) : initials}
+              {avatarUrl
+                ? <img src={avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
+                : initials}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[12px] font-semibold text-[#F0F4FF] truncate leading-tight">{userName ?? 'Admin'}</p>
               <p className="text-[10px] text-[#4A5578] capitalize">{userRole.replace('_', ' ')}</p>
             </div>
-            <button
-              onClick={handleLogout}
-              title="Sign out"
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-[#2a0a0a] hover:text-[#FF5C7A] text-[#4A5578]"
-            >
-              <LogOut size={13} strokeWidth={1.8} />
+            <button onClick={() => signOut({ redirectUrl: '/' })} title="Sign out"
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-[#2a0a0a] hover:text-[#FF5C7A] text-[#4A5578]">
+              <Settings size={13} strokeWidth={1.8} />
             </button>
           </div>
         </div>

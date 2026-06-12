@@ -27,7 +27,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     async function boot() {
       const supabase = createClient();
       const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) { router.replace('/auth/login?next=/workspace'); return; }
+      if (!authUser) { router.replace('/sign-in?redirect_url=/workspace'); return; }
 
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -36,7 +36,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         .single();
 
       if (!profile?.tenant_id || !profile?.onboarding_complete) {
-        router.replace('/onboard');
+        router.replace('/get-started');
         return;
       }
 
