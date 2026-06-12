@@ -30,16 +30,24 @@ const isAuthPageRoute = createRouteMatcher(['/auth/login(.*)', '/auth/signup(.*)
 
 // Next.js 16 uses proxy.ts with a named `proxy` export (not middleware.ts default export)
 export const proxy = clerkMiddleware(async (auth, req) => {
-  const { userId } = await auth();
-
-  // Redirect already-authenticated users away from auth pages
-  if (isAuthPageRoute(req) && userId) {
-    return NextResponse.redirect(new URL('/home', req.url));
+  // Only call auth() for auth pages (to check if user is already signed in)
+  if (isAuthPageRoute(req)) {
+    try {
+      const { userId } = await auth();
+      if (userId) {
+        return NextResponse.redirect(new URL('/home', req.url));
+      }
+    } catch {
+      // If Clerk isn't configured, show the auth page normally
+    }
+    return;
   }
 
-  if (!isPublicRoute(req)) {
-    await auth.protect();
-  }
+  // Public routes pass through without auth check
+  if (isPublicRoute(req)) return;
+
+  // Protected routes: auth.protect() redirects unauthenticated users to sign-in
+  await auth.protect();
 });
 
 export const config = {
