@@ -8,7 +8,7 @@ import {
   LogOut, Building2, ChevronDown, Plus, Sparkles, Zap, Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { createClient } from '@/lib/supabase/client';
+import { useClerk } from '@clerk/nextjs';
 
 const NAV_GROUPS = [
   {
@@ -72,12 +72,11 @@ interface Props {
 export default function WorkspaceSidebar({ orgName, plan, userName, userRole, avatarUrl, isOpen = false, onClose }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = createClient();
+  const { signOut } = useClerk();
   const badge = PLAN_BADGE[plan] ?? PLAN_BADGE.starter;
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push('/auth/login');
+    await signOut({ redirectUrl: '/' });
   }
 
   const initials = (userName ?? orgName ?? 'U').slice(0, 2).toUpperCase();

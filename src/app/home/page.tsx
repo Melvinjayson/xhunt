@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -33,6 +34,7 @@ const QUICK_ACTIONS = [
 
 export default function HomePage() {
   const router = useRouter();
+  const { isLoaded: clerkLoaded, isSignedIn, user: clerkUser } = useUser();
   const [hunts, setHunts]           = useState<Hunt[]>([]);
   const [completedIds, setIds]       = useState<string[]>([]);
   const [activeMissionSteps, setAMS] = useState(0);
@@ -47,22 +49,25 @@ export default function HomePage() {
   const [aiConfig, setAIConfig]      = useState<AIConfig>(DEFAULT_AI_CONFIG);
 
   useEffect(() => {
+    if (!clerkLoaded) return;
+    if (!isSignedIn) { router.replace('/'); return; }
     const state = loadState();
-    if (!state.user?.onboardingComplete) { router.replace('/'); return; }
     const completed = state.completedHunts.map(h => h.huntId);
     setIds(completed);
     setStreak(state.streak);
-    if ((state.user as { name?: string }).name) setUserName((state.user as { name?: string }).name!);
-    setHunts(state.hunts);
+    const localName = (state.user as { name?: string } | undefined)?.name;
+    const clerkName = clerkUser?.fullName ?? clerkUser?.username ?? clerkUser?.primaryEmailAddress?.emailAddress;
+    setUserName(localName ?? clerkName ?? 'Explorer');
+    setHunts(Array.isArray(state.hunts) ? state.hunts : []);
     setProfile(loadProfile());
     setAIConfig(loadAIConfig());
-    const topId = state.hunts.find(h => !completed.includes(h.id))?.id;
+    const topId = (Array.isArray(state.hunts) ? state.hunts : []).find(h => !completed.includes(h.id))?.id;
     if (topId && state.progress[topId]) setAMS(state.progress[topId].completedSteps?.length ?? 0);
     setMounted(true);
     void fetchSupabaseMissions().then(r => { if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } });
     void fetch('/api/subscription/status').then(r => r.json()).then((d: SubStatus) => setSub(d)).catch(() => {});
     void fetch('/api/recommendations?limit=5').then(r => r.ok ? r.json() : null).then(d => { if (d?.recommendations?.length) setRecs(d.recommendations); }).catch(() => {});
-  }, [router]);
+  }, [clerkLoaded, isSignedIn, clerkUser, router]);
 
   if (!mounted) return null;
 

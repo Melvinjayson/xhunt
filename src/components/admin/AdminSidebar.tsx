@@ -9,7 +9,7 @@ import {
   CheckCircle2, DollarSign, Lock
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { createClient } from '@/lib/supabase/client';
+import { useClerk } from '@clerk/nextjs';
 
 const NAV_GROUPS = [
   {
@@ -56,11 +56,10 @@ interface Props {
 export default function AdminSidebar({ isOpen = false, onClose }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = createClient();
+  const { signOut } = useClerk();
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push('/auth/login');
+    await signOut({ redirectUrl: '/' });
   }
 
   return (

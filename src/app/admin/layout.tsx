@@ -2,47 +2,26 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import { Menu, X } from 'lucide-react';
 import AdminSidebar from '@/components/admin/AdminSidebar';
-import { createClient } from '@/lib/supabase/client';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { isLoaded, isSignedIn } = useUser();
   const [authorized, setAuthorized] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
   useEffect(() => {
-    async function checkAccess() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace('/auth/login'); return; }
+    if (!isLoaded) return;
+    if (!isSignedIn) { router.replace('/sign-in'); return; }
+    setAuthorized(true);
+  }, [isLoaded, isSignedIn, router]);
 
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('role, tenant_id, onboarding_complete')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile?.tenant_id || !profile?.onboarding_complete) {
-        router.replace('/onboard');
-        return;
-      }
-
-      const adminRoles = ['platform_admin', 'tenant_admin', 'mission_creator', 'analyst'];
-      if (!adminRoles.includes(profile.role)) {
-        router.replace('/home');
-        return;
-      }
-
-      setAuthorized(true);
-    }
-    checkAccess();
-  }, [router]);
-
-  if (!authorized) {
+  if (!isLoaded || !authorized) {
     return (
       <div className="min-h-screen bg-[#050816] flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
