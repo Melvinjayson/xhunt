@@ -11,28 +11,50 @@ import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
 
 const API_ENDPOINTS = [
-  { method: 'GET',    path: '/api/missions',            desc: 'List all missions for your tenant' },
-  { method: 'POST',   path: '/api/missions',            desc: 'Create a new mission' },
-  { method: 'GET',    path: '/api/missions/{id}',       desc: 'Get mission details' },
-  { method: 'POST',   path: '/api/generate-hunts',      desc: 'AI-generate mission from description' },
-  { method: 'GET',    path: '/api/outcomes/validations',desc: 'List outcome validations' },
-  { method: 'GET',    path: '/api/revenue',             desc: 'Revenue records for your tenant' },
-  { method: 'POST',   path: '/api/agents/insight-analyst', desc: 'Generate AI operational briefing' },
-  { method: 'POST',   path: '/api/agents/mission-architect', desc: 'AI mission design assistance' },
+  // Missions
+  { method: 'GET',    path: '/api/missions',                    desc: 'List all missions for your tenant', group: 'Missions' },
+  { method: 'POST',   path: '/api/missions',                    desc: 'Create a new mission', group: 'Missions' },
+  { method: 'GET',    path: '/api/missions/{id}',               desc: 'Get mission details', group: 'Missions' },
+  { method: 'POST',   path: '/api/generate-hunts',              desc: 'AI-generate mission from description', group: 'Missions' },
+  // Outcomes & Revenue
+  { method: 'GET',    path: '/api/outcomes/validations',        desc: 'List outcome validations', group: 'Outcomes' },
+  { method: 'GET',    path: '/api/revenue',                     desc: 'Revenue records for your tenant', group: 'Revenue' },
+  // AI Agents
+  { method: 'POST',   path: '/api/agents/insight-analyst',      desc: 'Generate AI operational briefing', group: 'AI Agents' },
+  { method: 'POST',   path: '/api/agents/mission-architect',    desc: 'AI mission design assistance', group: 'AI Agents' },
+  { method: 'POST',   path: '/api/agents/experience-designer',  desc: 'Design adaptive participant experiences', group: 'AI Agents' },
+  { method: 'POST',   path: '/api/agents/knowledge-agent',      desc: 'Query the organizational knowledge graph', group: 'AI Agents' },
+  // Economy Protocol
+  { method: 'GET',    path: '/api/economy/contributions',       desc: 'List value contributions for your tenant', group: 'Economy' },
+  { method: 'GET',    path: '/api/economy/trust',               desc: 'Get composite trust score and dimensions', group: 'Economy' },
+  { method: 'GET',    path: '/api/economy/match',               desc: 'Get opportunity matches based on trust profile', group: 'Economy' },
+  { method: 'GET',    path: '/api/economy/governance',          desc: 'Economy governance audit log', group: 'Economy' },
+  // XIL
+  { method: 'GET',    path: '/api/xil',                         desc: 'Get XIL agent registry (view=registry) or constitutional health (view=health)', group: 'XIL' },
+  { method: 'POST',   path: '/api/xil',                         desc: 'Invoke XIL intelligence function (personal/community/marketplace/impact)', group: 'XIL' },
+  // Workspace Features
+  { method: 'GET',    path: '/api/workspace/features',          desc: 'Get tenant feature configuration (nav flags, feature toggles, branding)', group: 'Workspace' },
+  { method: 'PATCH',  path: '/api/workspace/features',          desc: 'Update feature flags, nav visibility, branding or theme for your tenant', group: 'Workspace' },
 ];
 
 const EVENTS = [
-  { name: 'mission.completed',  desc: 'Triggered when a participant completes a mission' },
-  { name: 'mission.started',    desc: 'Triggered when a participant begins a mission' },
-  { name: 'outcome.validated',  desc: 'Triggered when an outcome is validated' },
-  { name: 'reward.issued',      desc: 'Triggered when a reward is issued to a participant' },
-  { name: 'mission.published',  desc: 'Triggered when a mission goes live' },
+  { name: 'mission.completed',        desc: 'Triggered when a participant completes a mission' },
+  { name: 'mission.started',          desc: 'Triggered when a participant begins a mission' },
+  { name: 'mission.published',        desc: 'Triggered when a mission goes live' },
+  { name: 'outcome.validated',        desc: 'Triggered when an outcome is validated' },
+  { name: 'reward.issued',            desc: 'Triggered when a reward is issued to a participant' },
+  { name: 'economy.contribution',     desc: 'Triggered when a value contribution is recorded' },
+  { name: 'economy.trust_updated',    desc: 'Triggered when a trust score is recomputed' },
+  { name: 'economy.match_available',  desc: 'Triggered when a new opportunity match is available' },
+  { name: 'xil.constitutional_flag',  desc: 'Triggered when the XIL constitution flags a concern' },
+  { name: 'feature.config_updated',   desc: 'Triggered when tenant feature config or branding changes' },
 ];
 
 const METHOD_COLOR: Record<string, string> = {
   GET:    'text-[#22FFAA] bg-[#22FFAA]/10',
   POST:   'text-[#6D5DFD] bg-[#6D5DFD]/10',
   PUT:    'text-[#FFB84D] bg-[#FFB84D]/10',
+  PATCH:  'text-[#FFB84D] bg-[#FFB84D]/10',
   DELETE: 'text-[#FF5C7A] bg-[#FF5C7A]/10',
 };
 

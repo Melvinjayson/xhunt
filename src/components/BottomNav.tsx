@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
 import {
   Home, Compass, Target, MessageSquare, User,
-  Users, Trophy, LogOut, Sun, Moon,
+  LogOut, Sun, Moon,
 } from 'lucide-react';
 import { useTotalUnread } from '@/hooks/useMessages';
 import { useState, useEffect } from 'react';
@@ -19,10 +19,7 @@ const PRIMARY_NAV = [
   { href: '/profile',  icon: User,          label: 'Profile'  },
 ];
 
-const SECONDARY_NAV = [
-  { href: '/people',  icon: Users,  label: 'People'  },
-  { href: '/rewards', icon: Trophy, label: 'Rewards' },
-];
+// People → consolidated into /explore; Rewards → consolidated into /profile
 
 function ThemeToggleBtn() {
   const [light, setLight] = useState(false);
@@ -141,25 +138,6 @@ export default function BottomNav() {
             );
           })}
 
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '10px 4px' }} />
-
-          <p style={{ fontSize: 10, fontWeight: 700, color: t.txtFaint, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 10px 8px' }}>Discover</p>
-          {SECONDARY_NAV.map(({ href, icon: Icon, label }) => {
-            const active = pathname === href || pathname.startsWith(href + '/');
-            return (
-              <Link key={href} href={href} style={{
-                textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12,
-                padding: '10px 12px', borderRadius: 12, marginBottom: 2,
-                background: active ? 'rgba(255,255,255,0.05)' : 'transparent',
-                border: '1px solid transparent',
-                transition: 'all .15s',
-              }}>
-                <Icon size={17} strokeWidth={active ? 2.2 : 1.7}
-                  style={{ color: active ? t.txt : t.txtFaint, transition: 'color .15s', flexShrink: 0 }} />
-                <span style={{ fontSize: 14, fontWeight: active ? 600 : 400, color: active ? t.txt : t.txtDim, transition: 'color .15s' }}>{label}</span>
-              </Link>
-            );
-          })}
         </div>
 
         {/* User + controls */}

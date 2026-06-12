@@ -20,8 +20,7 @@ const isPublicRoute = createRouteMatcher([
   '/security(.*)',
   '/terms(.*)',
   '/use-cases(.*)',
-  // Auth
-  '/auth/(.*)',
+  // Auth — Clerk native sign-in/sign-up only; /auth/* pages are removed
   '/sign-in(.*)',
   '/sign-up(.*)',
   // Public APIs
@@ -31,14 +30,19 @@ const isPublicRoute = createRouteMatcher([
   '/api/stripe/webhook(.*)',
 ]);
 
-const isAuthRoute = createRouteMatcher(['/auth/login(.*)', '/auth/signup(.*)']);
+// Redirect already-authenticated users away from Clerk auth pages
+const isAuthRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)']);
 
 export default clerkMiddleware(async (auth, req) => {
-  // Redirect already-authenticated users away from login/signup pages
   if (isAuthRoute(req)) {
     try {
-      const { userId } = await auth();
-      if (userId) return Response.redirect(new URL('/home', req.url));
+      const { userId, sessionClaims } = await auth();
+      if (userId) {
+        // Route to correct surface based on publicMetadata.default_surface
+        const meta = sessionClaims?.publicMetadata as Record<string, string> | undefined;
+        const surface = meta?.default_surface ?? 'home';
+        return Response.redirect(new URL(`/${surface}`, req.url));
+      }
     } catch {
       // Clerk not configured — let through
     }

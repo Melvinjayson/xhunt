@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import { Menu, X } from 'lucide-react';
 import WorkspaceSidebar from '@/components/workspace/WorkspaceSidebar';
 import { createClient } from '@/lib/supabase/client';
@@ -17,26 +18,28 @@ interface WorkspaceUser {
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
   const [user, setUser] = useState<WorkspaceUser | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Close sidebar on route change
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
   useEffect(() => {
+    if (!clerkLoaded) return;
+    if (!clerkUser) { router.replace('/sign-in?redirect_url=/workspace'); return; }
+
     async function boot() {
       const supabase = createClient();
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) { router.replace('/auth/login?next=/workspace'); return; }
 
+      // Look up profile by Clerk user ID (migration 027 added clerk_user_id column)
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('role, tenant_id, display_name, avatar_url, onboarding_complete')
-        .eq('id', authUser.id)
+        .eq('clerk_user_id', clerkUser!.id)
         .single();
 
       if (!profile?.tenant_id || !profile?.onboarding_complete) {
-        router.replace('/onboard');
+        router.replace('/get-started');
         return;
       }
 
@@ -53,15 +56,15 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         .single();
 
       setUser({
-        orgName: tenant?.name ?? 'Your Organization',
-        plan: tenant?.plan ?? 'starter',
+        orgName:  tenant?.name ?? 'Your Organization',
+        plan:     tenant?.plan ?? 'starter',
         userName: profile.display_name,
         userRole: profile.role,
         avatarUrl: profile.avatar_url,
       });
     }
     boot();
-  }, [router]);
+  }, [clerkLoaded, clerkUser, router]);
 
   if (!user) {
     return (
@@ -86,7 +89,6 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         onClose={() => setSidebarOpen(false)}
       />
       <div className="portal-main flex flex-col">
-        {/* Mobile top bar */}
         <header className="portal-topbar">
           <button
             onClick={() => setSidebarOpen(v => !v)}

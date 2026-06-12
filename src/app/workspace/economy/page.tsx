@@ -65,21 +65,25 @@ export default function WorkspaceEconomyPage() {
 
   useEffect(() => {
     async function load() {
-      const [cSumRes, cRes, tRes, mRes] = await Promise.all([
-        fetch('/api/economy/contributions?summary=true'),
-        fetch('/api/economy/contributions?limit=10'),
-        fetch('/api/economy/trust'),
-        fetch('/api/economy/match'),
-      ]);
-      const cSum = await cSumRes.json();
-      const c = await cRes.json();
-      const t = await tRes.json();
-      const m = await mRes.json();
-      setSummary(cSum.summary ?? null);
-      setContributions(c.contributions ?? []);
-      setTrust(t.profile ?? null);
-      setMatches(m.matches ?? []);
-      setLoading(false);
+      try {
+        const [cSumRes, cRes, tRes, mRes] = await Promise.all([
+          fetch('/api/economy/contributions?summary=true'),
+          fetch('/api/economy/contributions?limit=10'),
+          fetch('/api/economy/trust'),
+          fetch('/api/economy/match'),
+        ]);
+        const [cSum, c, t, m] = await Promise.all([
+          cSumRes.json(), cRes.json(), tRes.json(), mRes.json(),
+        ]);
+        setSummary(cSum.summary ?? null);
+        setContributions(c.contributions ?? []);
+        setTrust(t.profile ?? null);
+        setMatches(m.matches ?? []);
+      } catch (err) {
+        console.error('[economy]', err);
+      } finally {
+        setLoading(false);
+      }
     }
     void load();
   }, []);
@@ -429,8 +433,13 @@ function MatchesTab({ matches }: { matches: MatchResult[] }) {
 
   async function recompute() {
     setRecomputing(true);
-    await fetch('/api/economy/match?recompute=true');
-    setRecomputing(false);
+    try {
+      await fetch('/api/economy/match?recompute=true');
+    } catch (err) {
+      console.error('[recompute]', err);
+    } finally {
+      setRecomputing(false);
+    }
   }
 
   return (

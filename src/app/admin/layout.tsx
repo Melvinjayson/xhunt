@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import { Menu, X } from 'lucide-react';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { createClient } from '@/lib/supabase/client';
@@ -9,21 +10,23 @@ import { createClient } from '@/lib/supabase/client';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
   const [authorized, setAuthorized] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
   useEffect(() => {
+    if (!clerkLoaded) return;
+    if (!clerkUser) { router.replace('/sign-in?redirect_url=/admin'); return; }
+
     async function checkAccess() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace('/auth/login'); return; }
 
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('role, tenant_id, onboarding_complete')
-        .eq('id', user.id)
+        .eq('clerk_user_id', clerkUser!.id)
         .single();
 
       if (!profile?.tenant_id || !profile?.onboarding_complete) {
@@ -40,7 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setAuthorized(true);
     }
     checkAccess();
-  }, [router]);
+  }, [clerkLoaded, clerkUser, router]);
 
   if (!authorized) {
     return (
@@ -51,13 +54,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="portal-shell">
+    <div className="portal-shell portal-shell--admin">
       <AdminSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
       <div className="portal-main flex flex-col">
-        {/* Mobile top bar */}
         <header className="portal-topbar">
           <button
             onClick={() => setSidebarOpen(v => !v)}

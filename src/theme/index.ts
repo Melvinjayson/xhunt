@@ -53,3 +53,5 @@ export const xhuntTheme      = xhuntDarkTheme; // backward compat
 
 export { colors }    from './colors';
 export { typography } from './typography';
+export { sp, spacing } from './spacing';
+export { shadows, glows } from './shadows';

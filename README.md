@@ -11,13 +11,37 @@ Turn goals into verified outcomes at scale. X-hunt is a full-stack AI-native pla
 | Framework | Next.js 16.2.7 (App Router, Turbopack) |
 | Language | TypeScript 5 |
 | Styling | Tailwind CSS v4 (`@theme` block in `globals.css`) |
-| Auth | Supabase Auth (`@supabase/ssr`) |
-| Database | Supabase (PostgreSQL + Realtime) |
+| **Auth** | **Clerk** (`@clerk/nextjs` — single auth provider) |
+| Database | Supabase (PostgreSQL + Realtime + RLS) |
 | Payments | Stripe (subscriptions, checkout, webhooks) |
 | AI — Consumer | Groq SDK (`llama-3.1-8b` trial · `llama-3.3-70b` pro) |
-| AI — Admin Agents | Anthropic SDK (Claude) |
+| AI — Agents | Anthropic SDK (Claude) — 12 agents at enterprise tier |
+| Design system | MUI + `src/theme/` (colors, typography, spacing, shadows) |
 | Animations | Framer Motion 12 |
 | Icons | Lucide React |
+
+---
+
+## Architectural Decisions (locked 2026-06-12)
+
+### 1. Single B2B Surface
+`/admin` is for **platform-level operations only**: tenant management and `platform_admin` user controls (4 nav items). All product features — analytics, agents, economy, governance — live in `/workspace` with role-gated visibility and progressive disclosure by maturity tier.
+
+### 2. Design Token Authority
+MUI theme (`src/theme/`) is the single source of truth.
+- **Colors:** `t.*` from `@/theme/colors` — `t.accent=#22FFAA`, `t.ai=#6D5DFD`, `t.bg=#050816`, etc.
+- **Spacing:** `sp.*` from `@/theme/spacing` — 8px base unit
+- **Shadows/glows:** `shadows.*`, `glows.*` from `@/theme/shadows`
+- Tailwind for layout utilities only. ESLint warns on raw hex literals in `src/app/` and `src/components/`.
+
+### 3. Canonical Auth Flow
+Clerk is the single auth provider. Supabase is used for data only.
+```
+/sign-up → Clerk webhook → provisions user_profiles (with clerk_user_id) → /get-started → /home or /workspace
+```
+- Auth redirects go to `/sign-in` or `/sign-up` — never `/auth/*`
+- Layouts look up profile via `clerk_user_id` column (migration 027), not `supabase.auth.getUser()`
+- Middleware at `src/proxy.ts` (not `middleware.ts`) guards all protected routes
 
 ---
 
@@ -27,98 +51,109 @@ Turn goals into verified outcomes at scale. X-hunt is a full-stack AI-native pla
 xhunt/
 ├── src/
 │   ├── app/
-│   │   ├── (marketing)/          # Public marketing site — all unauthenticated
-│   │   │   ├── page.tsx          # Homepage — /
+│   │   ├── (marketing)/          # Public marketing — unauthenticated
+│   │   │   ├── page.tsx          # Homepage /
 │   │   │   ├── consumer/         # /consumer
 │   │   │   ├── enterprise/       # /enterprise
 │   │   │   ├── use-cases/        # /use-cases
 │   │   │   ├── marketplace/      # /marketplace
 │   │   │   ├── mission-control/  # /mission-control
 │   │   │   ├── pricing/          # /pricing
-│   │   │   ├── about/            # /about
-│   │   │   ├── contact/          # /contact
-│   │   │   ├── developers/       # /developers
-│   │   │   └── developers/api/   # /developers/api
-│   │   ├── admin/                # Tenant admin dashboard — role-gated
-│   │   │   ├── layout.tsx        # Role check: platform_admin | tenant_admin | mission_creator | analyst
+│   │   │   ├── developers/       # /developers + /developers/api
+│   │   │   └── blog/, about/, contact/, careers/
+│   │   ├── admin/                # Platform admin — 4 pages only
+│   │   │   ├── layout.tsx        # Clerk useUser() → clerk_user_id lookup → role check
 │   │   │   ├── page.tsx          # /admin — overview
-│   │   │   ├── missions/         # /admin/missions  (list, new, [id])
-│   │   │   ├── agents/           # /admin/agents    — AI agent console
-│   │   │   ├── outcomes/         # /admin/outcomes  — MEI leaderboard
-│   │   │   │   └── validation/   # /admin/outcomes/validation — validation queue
-│   │   │   ├── revenue/          # /admin/revenue   — Revenue Manager
-│   │   │   ├── escrow/           # /admin/escrow    — Escrow Services
-│   │   │   ├── knowledge-graph/  # /admin/knowledge-graph
-│   │   │   ├── analytics/        # /admin/analytics
-│   │   │   ├── governance/       # /admin/governance
-│   │   │   ├── audience/         # /admin/audience
-│   │   │   ├── rewards/          # /admin/rewards
 │   │   │   ├── users/            # /admin/users
+│   │   │   ├── missions/         # /admin/missions (tenant management)
 │   │   │   └── settings/         # /admin/settings
-│   │   ├── api/                  # API routes
-│   │   │   ├── agents/           # AI agent endpoints (6 specialised agents)
-│   │   │   ├── ai-assist/        # Groq-powered chat (rate-limited, tiered)
-│   │   │   ├── adapt-step/       # Adaptive step generation
-│   │   │   ├── generate-hunts/   # Mission generation (Groq)
-│   │   │   ├── mei/compute/      # POST — recompute MEI for all tenant missions
-│   │   │   ├── outcomes/
-│   │   │   │   └── validations/  # GET list + POST create; PATCH [id] (review)
-│   │   │   ├── escrow/           # GET list + POST create; POST [id]/release; POST [id]/dispute
-│   │   │   ├── revenue/          # GET summary + records + POST record; /invoices GET + POST
-│   │   │   ├── recommendations/  # Personalised mission recommendations
-│   │   │   ├── stripe/           # /checkout POST; /webhook POST
-│   │   │   ├── subscription/     # /status GET
-│   │   │   ├── trial/            # /start POST
-│   │   │   ├── live/             # Live session CRUD + step advance
-│   │   │   └── timeline/         # Feed, post, react
-│   │   ├── auth/                 # /auth/login, /signup, /callback
-│   │   ├── home/                 # /home — consumer dashboard
-│   │   ├── missions/             # /missions — mission browser (freemium-gated)
-│   │   ├── hunt/[id]/            # /hunt/:id — active mission
-│   │   ├── complete/[id]/        # /complete/:id — mission completion + share
-│   │   ├── timeline/             # /timeline — TikTok-style experience feed
-│   │   ├── live/[id]/            # /live/:id — live session viewer
-│   │   ├── explore/              # /explore — mission discovery
-│   │   ├── profile/              # /profile — user profile
-│   │   ├── upgrade/              # /upgrade — plan selection (free → trial → pro)
-│   │   ├── get-started/          # /get-started — consumer onboarding
-│   │   └── onboard/              # /onboard — workspace/tenant setup
+│   │   ├── workspace/            # B2B workspace — progressive disclosure by tier
+│   │   │   ├── layout.tsx        # Clerk useUser() → clerk_user_id → role check
+│   │   │   ├── loading.tsx       # Skeleton for route transitions
+│   │   │   ├── page.tsx          # Dashboard
+│   │   │   ├── missions/         # Mission Studio + [id] canvas
+│   │   │   ├── mission-control/  # Mission Control
+│   │   │   ├── outcomes/         # Outcomes (growth+)
+│   │   │   ├── analytics/        # Analytics (growth+)
+│   │   │   ├── agents/           # AI Agents (growth+)
+│   │   │   ├── intelligence/     # XIL Hub (enterprise)
+│   │   │   ├── economy/          # Economy Protocol (enterprise)
+│   │   │   ├── marketplace/      # Marketplace (growth+)
+│   │   │   ├── governance/       # Governance (enterprise)
+│   │   │   ├── integrations/     # Integrations (all tiers)
+│   │   │   ├── billing/          # Billing (all tiers)
+│   │   │   └── settings/         # Settings: profile, features, branding, API
+│   │   ├── api/
+│   │   │   ├── workspace/features/  # GET config · PATCH toggle (admin-role gated)
+│   │   │   ├── agents/           # 6 specialised agent endpoints
+│   │   │   ├── ai-assist/        # Groq chat (rate-limited, tiered)
+│   │   │   ├── economy/          # contributions, trust, match, governance
+│   │   │   ├── xil/              # XIL registry, health, orchestration
+│   │   │   ├── outcomes/validations/  # CRUD + review workflow
+│   │   │   ├── escrow/           # Create, release, dispute
+│   │   │   ├── revenue/          # Summary, records, invoices
+│   │   │   ├── mei/compute/      # Recompute MEI
+│   │   │   ├── stripe/           # checkout, webhook, portal
+│   │   │   └── clerk/            # Clerk webhook provisioning
+│   │   ├── home/                 # /home — consumer dashboard (loading.tsx)
+│   │   ├── missions/             # /missions — browser (freemium-gated)
+│   │   ├── hunt/[id]/            # /hunt/:id — mission execution
+│   │   ├── active/[id]/          # /active/:id — step-by-step mission runner
+│   │   ├── complete/[id]/        # /complete/:id — completion + share
+│   │   ├── timeline/             # TikTok-style experience feed
+│   │   ├── live/[id]/            # Real-time live session (Supabase Realtime)
+│   │   ├── explore/              # Mission discovery (+ People)
+│   │   ├── profile/              # User profile (+ Rewards)
+│   │   ├── messages/             # DMs
+│   │   ├── upgrade/              # Plan selection
+│   │   ├── get-started/          # Consumer onboarding
+│   │   ├── onboard/              # Workspace/tenant setup
+│   │   ├── sign-in/              # Clerk native sign-in
+│   │   └── sign-up/              # Clerk native sign-up
 │   ├── components/
-│   │   ├── marketing/            # Nav.tsx, Footer.tsx (both 'use client')
-│   │   ├── admin/                # AdminSidebar.tsx
-│   │   ├── AIAssistant.tsx       # Floating AI chat (Groq-powered)
-│   │   ├── BottomNav.tsx         # Consumer app bottom nav (5 items)
-│   │   └── HuntCard.tsx          # Mission card component
-│   └── lib/
-│       ├── supabase/             # client.ts, server.ts, types.ts, events.ts
-│       ├── agents/               # auth.ts, prompts.ts, types.ts
-│       ├── ai-router.ts          # Anthropic SDK wrapper
-│       ├── groq.ts               # Groq client + modelForTier()
-│       ├── freemium.ts           # getUserTierInfo()
-│       ├── rate-limit.ts         # checkAndIncrementRateLimit()
-│       ├── stripe.ts             # Stripe client + STRIPE_PRICES
-│       ├── schemas.ts            # Zod schemas
-│       ├── store.ts              # localStorage AppState
-│       ├── mockHunts.ts          # Mock data fallback
-│       ├── types.ts              # Shared types
-│       └── cn.ts                 # clsx + tailwind-merge
-├── supabase/
-│   ├── migrations/
-│   │   ├── 002_sprint2.sql
-│   │   ├── 003_phase2.sql
-│   │   ├── 004_production.sql
-│   │   ├── 005_public_read.sql
-│   │   ├── 006_freemium.sql       # subscription_tier, trial, rate_limit_config
-│   │   ├── 007_stripe.sql         # stripe_customer_id, subscription fields
-│   │   ├── 008_timeline.sql       # experience_posts, live_sessions, post_reactions
-│   │   ├── 009_reminder.sql       # trial_reminder_sent, pg_cron
-│   │   ├── 010_outcomes_validation.sql  # outcome_validations + RLS
-│   │   └── 011_revenue_escrow.sql       # escrow_accounts, escrow_transactions,
-│   │                                    # revenue_records, invoices + RLS
-│   └── functions/
-│       └── trial-reminder/       # Deno edge function — Resend email via pg_cron
+│   │   ├── marketing/            # Nav.tsx (with ThemeToggle), Footer.tsx
+│   │   ├── admin/                # AdminSidebar.tsx (4 items)
+│   │   ├── workspace/            # WorkspaceSidebar.tsx (12 items max, tiered)
+│   │   ├── ThemeToggle.tsx       # Light/dark toggle (localStorage + data-theme)
+│   │   ├── BottomNav.tsx         # Consumer bottom nav (5 items mobile, desktop sidebar)
+│   │   └── AIAssistant.tsx       # Floating AI chat (Groq)
+│   ├── lib/
+│   │   ├── supabase/             # client.ts, server.ts, admin.ts, types.ts, events.ts
+│   │   ├── env.ts                # Zod-validated env vars (assertProductionEnv())
+│   │   ├── features.ts           # TenantFeatureConfig, MATURITY_DEFAULTS, NavFlags
+│   │   ├── freemium.ts           # getUserTierInfo()
+│   │   ├── rate-limit.ts         # checkAndIncrementRateLimit()
+│   │   ├── stripe.ts             # Stripe client + STRIPE_PRICES
+│   │   ├── ai-router.ts          # Anthropic SDK wrapper
+│   │   ├── groq.ts               # Groq client + modelForTier()
+│   │   └── cn.ts                 # clsx + tailwind-merge
+│   └── theme/
+│       ├── colors.ts             # t.* token map
+│       ├── typography.ts         # MUI typography
+│       ├── spacing.ts            # sp.* — 8px base unit
+│       ├── shadows.ts            # shadows.* + glows.*
+│       ├── components.ts         # MUI component overrides
+│       └── index.ts              # Re-exports + xhuntDarkTheme / xhuntLightTheme
+├── supabase/migrations/
+│   ├── 001_initial.sql           # user_profiles, tenants, missions, RLS
+│   ├── 002–005                   # Knowledge graph, production hardening, public read
+│   ├── 006_freemium.sql          # subscription_tier, trial, rate limits
+│   ├── 007_stripe.sql            # Stripe fields on user_profiles
+│   ├── 008_timeline.sql          # experience_posts, live_sessions
+│   ├── 009_reminder.sql          # pg_cron trial reminders
+│   ├── 010_outcomes_validation.sql
+│   ├── 011_revenue_escrow.sql
+│   ├── 012–019                   # Event spine, MEI, marketplace, RLS, social graph
+│   ├── 020_clerk_auth.sql        # clerk_user_id on profiles (initial, wrong table)
+│   ├── 021_proximity.sql
+│   ├── 022_contribution_ledger.sql
+│   ├── 023_trust_graph.sql
+│   ├── 024_portable_identity.sql
+│   ├── 025_opportunity_matching.sql
+│   ├── 026_xil_agent_foundry.sql
+│   └── 027_clerk_bridge.sql      # clerk_user_id + default_surface on user_profiles (fix)
 └── public/
-    └── manifest.json             # PWA manifest
+    └── manifest.json
 ```
 
 ---
@@ -128,151 +163,62 @@ xhunt/
 | Route group | Auth required | Roles |
 |---|---|---|
 | `(marketing)/*` | No | Public |
-| `/get-started`, `/auth/*` | No | Public |
-| `/home`, `/missions`, `/timeline`, `/live/*`, `/hunt/*`, `/complete/*`, `/explore`, `/profile`, `/upgrade` | Yes | Any authenticated user |
-| `/admin/*`, `/onboard` | Yes | platform_admin · tenant_admin · mission_creator · analyst |
-| `/api/outcomes/validations` (PATCH) | Yes | platform_admin · tenant_admin · analyst |
-| `/api/escrow` (POST) | Yes | platform_admin · tenant_admin |
-| `/api/escrow/[id]/release` | Yes | platform_admin · tenant_admin |
-| `/api/escrow/[id]/dispute` | Yes | Any tenant member |
-| `/api/revenue` (POST) | Yes | platform_admin · tenant_admin |
+| `/sign-in`, `/sign-up`, `/get-started` | No | Public |
+| `/home`, `/missions`, `/timeline`, `/live/*`, `/hunt/*`, `/active/*`, `/complete/*`, `/explore`, `/profile`, `/upgrade`, `/messages` | Yes | Any authenticated user |
+| `/workspace/*` | Yes | platform_admin · tenant_admin · mission_creator · analyst |
+| `/admin/*` | Yes | platform_admin · tenant_admin · mission_creator · analyst |
+| `/api/workspace/features` PATCH | Yes | platform_admin · tenant_admin |
+| `/api/outcomes/validations` PATCH | Yes | platform_admin · tenant_admin · analyst |
+| `/api/escrow` POST + release | Yes | platform_admin · tenant_admin |
+| `/api/revenue` POST | Yes | platform_admin · tenant_admin |
 | `/api/stripe/webhook` | No (Stripe signature) | Stripe only |
+| `/api/clerk/*` | No (svix signature) | Clerk only |
 
 ---
 
-## Modules
+## Workspace Progressive Disclosure
 
-### Outcomes Intelligence & Validation
+The workspace sidebar adapts by maturity tier. Feature flags live in `tenants.settings.featureConfig` JSONB and are served by `GET /api/workspace/features`.
 
-Every mission outcome goes through a structured validation pipeline before being counted in the MEI.
-
-**Validation types:** `self_reported` · `peer_verified` · `automated` · `manager_verified`
-
-**Evidence types:** `screenshot` · `document` · `url` · `metric` · `attestation` · `certificate`
-
-**Validation lifecycle:**
-```
-submitted → pending → under_review → approved / rejected / requires_evidence
-```
-
-**Confidence score:** Reviewers assign 0–100% confidence during approval. Scores feed into the MEI `outcome_score` component.
-
-**Admin interface:** `/admin/outcomes/validation` — queue with expand/collapse evidence panels, reviewer notes, confidence slider.
-
-**API:**
-```
-POST   /api/outcomes/validations          Create validation submission
-GET    /api/outcomes/validations          List (filter: status, mission_id)
-GET    /api/outcomes/validations/:id      Single validation detail
-PATCH  /api/outcomes/validations/:id      Review (approve / reject / request evidence)
-```
-
----
-
-### Mission Effectiveness Index (MEI)
-
-Composite score recomputed on demand via `POST /api/mei/compute`.
-
-| Component | Weight | Source |
+| Tier | Visible nav items | Example unlocked features |
 |---|---|---|
-| Completion Rate | 40% | `mission_progress.completed_at` |
-| Engagement Depth | 25% | avg completed steps / target steps |
-| Retention Rate | 20% | users who returned for 2+ missions |
-| Outcome Score | 15% | `outcome_events` / completions |
+| Starter | 5 | Dashboard, Mission Studio, Mission Control, Integrations, Billing |
+| Growth | 8 | + Analytics, AI Agents, Marketplace |
+| Enterprise | 12 | + XIL Hub, Economy Protocol, Governance, Outcomes |
 
-Scores are persisted in `mission_scores` and surfaced in `/admin/outcomes`.
-
----
-
-### Revenue Manager
-
-Tracks all revenue streams, generates invoices, and provides period summaries.
-
-**Revenue categories:** `subscription` · `mission_fee` · `outcome_bonus` · `escrow_release` · `api_usage` · `professional_services`
-
-Escrow releases **automatically** write a `revenue_records` entry with `category: 'escrow_release'`.
-
-Invoice numbers follow the pattern `INV-YYYY-NNNN` (tenant-scoped).
-
-**Admin interface:** `/admin/revenue` — summary cards (Total / MRR / ARR / Open Invoices), category bar chart, records table, invoice modal.
-
-**API:**
-```
-GET    /api/revenue                       Summary + records (filter: category, from, to)
-POST   /api/revenue                       Manual record
-GET    /api/revenue/invoices              Invoice list (filter: status)
-POST   /api/revenue/invoices              Generate invoice with line items
-```
+Locked items are shown greyed-out with an upgrade tooltip. Admins toggle features in **Workspace → Settings → Features**.
 
 ---
 
-### Escrow Services
+## AI Agents (12 at Enterprise)
 
-Outcome-gated payment escrow. Funds are held until release conditions are satisfied.
-
-**Release conditions:**
-
-| Condition | Config |
+| Tier | Agent count |
 |---|---|
-| `mei_threshold` | `{ threshold: 75 }` — release when MEI ≥ threshold |
-| `outcome_count` | `{ count: 10 }` — release when N outcomes validated |
-| `manual_approval` | No config — admin manually releases |
-| `deadline_based` | `{ deadline: "2025-09-30" }` — release at date |
-| `hybrid` | `{ mei_threshold: 70, outcome_count: 5 }` — both conditions |
+| Starter | 2 |
+| Growth | 6 |
+| Enterprise | 12 |
 
-**Escrow lifecycle:**
-```
-created → funded → locked → partially_released / fully_released
-                         ↘ disputed → (admin resolution) → refunded / released
-```
+Six API-level agents (all tiers, rate-limited):
 
-Every action writes an `escrow_transactions` row (audit trail). Release auto-writes `revenue_records`.
-
-**Admin interface:** `/admin/escrow` — progress rings, release/dispute workflow, create modal.
-
-**API:**
-```
-GET    /api/escrow                         List accounts (filter: status, mission_id)
-POST   /api/escrow                         Create escrow account
-POST   /api/escrow/:id/release             Release funds (full or partial)
-POST   /api/escrow/:id/dispute             Open dispute with reason
-```
+| Agent | Route |
+|---|---|
+| Mission Architect | `/api/agents/mission-architect` |
+| Outcome Planner | `/api/agents/outcome-planner` |
+| Experience Designer | `/api/agents/experience-designer` |
+| Behavioral Analyst | `/api/agents/behavioral-analyst` |
+| Knowledge Agent | `/api/agents/knowledge-agent` |
+| Insight Analyst | `/api/agents/insight-analyst` |
 
 ---
 
-### Freemium & Subscriptions
+## Economy Protocol (Enterprise)
 
-| Tier | AI requests/day | Missions | Model |
-|---|---|---|---|
-| `free` | 0 | Public only | — |
-| `trial` | 50 | All incl. premium | llama-3.1-8b |
-| `pro` | 500 | All incl. premium | llama-3.3-70b |
-
-Trial starts via `POST /api/trial/start` (14-day window). Pro upgrade flows through Stripe checkout (`POST /api/stripe/checkout`). Webhook at `POST /api/stripe/webhook` handles subscription lifecycle.
-
----
-
-### AI Agents
-
-Six specialised agents powered by Anthropic Claude (admin) and Groq (consumer):
-
-| Agent | Route | Role |
-|---|---|---|
-| Mission Architect | `/api/agents/mission-architect` | Decomposes goals into structured missions |
-| Outcome Planner | `/api/agents/outcome-planner` | Maps goals to measurable KPIs |
-| Experience Designer | `/api/agents/experience-designer` | Engagement layer, rewards, narrative |
-| Behavioral Analyst | `/api/agents/behavioral-analyst` | Dynamic adaptation from participant signals |
-| Knowledge Agent | `/api/agents/knowledge-agent` | Contextual knowledge surfacing |
-| Insight Analyst | `/api/agents/insight-analyst` | Synthesis and predictive insights |
-
----
-
-### Timeline & Live Sessions
-
-- **`/timeline`** — TikTok-style vertical feed of completions, moments, highlights
-- **`/live/[id]`** — Real-time live session via Supabase Realtime (postgres_changes)
-- **Go Live** — Pro-only; host live mission sessions with step-advance controls
-- **Share Moment** — Any authenticated user can post to the timeline
+| Endpoint | Description |
+|---|---|
+| `GET/POST /api/economy/contributions` | Log + query participant contributions |
+| `GET /api/economy/trust` | Trust graph scores |
+| `POST /api/economy/match` | Opportunity matching |
+| `GET /api/economy/governance` | Governance proposals |
 
 ---
 
@@ -282,7 +228,12 @@ Six specialised agents powered by Anthropic Claude (admin) and Groq (consumer):
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=       # server-only; never expose client-side
+
+# Clerk (single auth provider)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+CLERK_WEBHOOK_SECRET=            # svix signature for /api/clerk webhook
 
 # Stripe
 STRIPE_SECRET_KEY=
@@ -291,8 +242,8 @@ STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 
 # AI
-GROQ_API_KEY=                   # gsk_... — consumer AI (freemium)
-ANTHROPIC_API_KEY=              # sk-ant-... — admin AI agents
+GROQ_API_KEY=                    # gsk_... — consumer AI (freemium)
+ANTHROPIC_API_KEY=               # sk-ant-... — admin AI agents (optional, falls back to Groq)
 
 # Email (trial reminders via edge function)
 RESEND_API_KEY=
@@ -300,28 +251,17 @@ FROM_EMAIL=
 APP_URL=
 ```
 
+All server-side vars are validated at startup by `assertProductionEnv()` in `src/lib/env.ts` (Zod schema — throws in production if missing).
+
 ---
 
-## Database Migrations
+## Freemium Tiers (Consumer)
 
-Apply in order via Supabase dashboard SQL editor or `supabase db push`:
-
-```bash
-supabase db push
-```
-
-| Migration | Content |
-|---|---|
-| `002_sprint2.sql` | Audience segments, reward configs, audit logs, mission approvals |
-| `003_phase2.sql` | Knowledge graph (kg_nodes, kg_edges), mission scores, outcome events/roadmaps |
-| `004_production.sql` | Production hardening, indexes |
-| `005_public_read.sql` | Public read policies for published missions |
-| `006_freemium.sql` | subscription_tier, trial timestamps, AI rate limits |
-| `007_stripe.sql` | Stripe customer/subscription fields on user_profiles |
-| `008_timeline.sql` | experience_posts, live_sessions, post_reactions + REPLICA IDENTITY FULL |
-| `009_reminder.sql` | trial_reminder_sent flag + pg_cron setup comments |
-| `010_outcomes_validation.sql` | outcome_validations table with RLS |
-| `011_revenue_escrow.sql` | escrow_accounts, escrow_transactions, revenue_records, invoices with RLS |
+| Tier | AI requests/day | Model |
+|---|---|---|
+| `free` | 0 | — |
+| `trial` | 50 | llama-3.1-8b |
+| `pro` | 500 | llama-3.3-70b |
 
 ---
 
@@ -331,10 +271,33 @@ supabase db push
 npm install
 npm run dev          # Turbopack dev server → http://localhost:3000
 npm run build        # Production build
-npm run lint
+npm run lint         # ESLint (warns on raw hex literals in src/app/ & src/components/)
+npx tsc --noEmit     # Type check
 ```
 
-> **Note:** This project uses Next.js 16 with breaking changes from 15. `params` in dynamic routes is a `Promise` — use `useParams()` in client components or `await params` in server components. Middleware is at `src/proxy.ts` (not `middleware.ts`). See `AGENTS.md` for full details.
+> **Next.js 16 notes:**
+> - `params` in dynamic routes is a `Promise` — use `useParams()` in client components or `await params` in server components.
+> - Middleware is at `src/proxy.ts` (not `middleware.ts`).
+> - See `AGENTS.md` for full architectural constraints.
+
+---
+
+## Database Migrations
+
+```bash
+supabase db push
+```
+
+Run migrations in order (001 → 027). Migration 027 is required to bridge Clerk auth — it adds `clerk_user_id` and `default_surface` to `user_profiles`.
+
+---
+
+## PWA
+
+`public/manifest.json` is present. Add to `/public/` for full PWA support:
+- `icon-192.png`
+- `icon-512.png`
+- `og-image.png` (1200×630)
 
 ---
 
@@ -343,14 +306,5 @@ npm run lint
 ```bash
 supabase functions deploy trial-reminder
 # Requires: RESEND_API_KEY, FROM_EMAIL, APP_URL in Supabase secrets
-# Triggered daily by pg_cron (see 009_reminder.sql)
+# Triggered daily by pg_cron (see migration 009)
 ```
-
----
-
-## PWA
-
-`public/manifest.json` is present. Add the following assets to `/public/` for full PWA support:
-- `icon-192.png`
-- `icon-512.png`
-- `og-image.png`
