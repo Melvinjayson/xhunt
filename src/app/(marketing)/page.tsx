@@ -3,8 +3,6 @@
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
-import { Spotlight } from '@/components/ui/spotlight';
-import { SplineScene } from '@/components/ui/splite';
 import {
   ArrowRight, ChevronRight, Shield, CheckCircle2,
   Clock, Award, Wallet, Users, Camera, MapPin,
@@ -631,29 +629,8 @@ export default function RootPage() {
             backgroundImage: 'linear-gradient(rgba(34,255,170,1) 1px,transparent 1px),linear-gradient(90deg,rgba(34,255,170,1) 1px,transparent 1px)',
             backgroundSize: '52px 52px',
           }} />
-          <div className="absolute top-1/2 right-[8%] -translate-y-1/2 w-[600px] h-[600px] bg-[#22FFAA]/5 blur-[140px] rounded-full" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#6D5DFD]/4 blur-[100px] rounded-full" />
         </div>
-
-        {/* ─ Hero visual: interactive 3D scene ─ */}
-        <motion.div
-          initial={{ opacity: 0, x: 60, scale: 0.96 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          transition={{ duration: 1.1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="hidden lg:block absolute right-[-4%] bottom-0 w-[52%] h-[88vh] z-10">
-          <Spotlight className="-top-10 left-20" fill="#22FFAA" />
-          {/* Ambient glow */}
-          <div className="absolute inset-0 pointer-events-none"
-            style={{ background: 'radial-gradient(ellipse 70% 60% at 55% 50%, rgba(0,200,130,0.18) 0%, rgba(0,120,90,0.07) 50%, transparent 75%)', filter: 'blur(40px)' }} />
-          {/* Interactive Spline 3D scene */}
-          <SplineScene
-            scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-            className="w-full h-full"
-          />
-          {/* Ground glow */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[420px] h-[80px] rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(ellipse, rgba(34,255,170,.22) 0%, transparent 70%)', filter: 'blur(28px)' }} />
-        </motion.div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-20 lg:py-28 w-full">
           <div className="max-w-[620px]">
@@ -910,7 +887,7 @@ export default function RootPage() {
           <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[500px] h-[500px] bg-[#22FFAA]/4 blur-[120px] rounded-full" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#050816] via-[#050816]/80 to-transparent" />
         </div>
-        <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 lg:px-8 text-left">
+        <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <motion.p variants={fadeUp} className="text-[11px] font-bold text-[#4A5578] uppercase tracking-widest mb-5">Ready to start?</motion.p>
           <motion.h2 variants={fadeUp} custom={0.07}
             className="text-[clamp(2.2rem,5vw,3.8rem)] font-black text-[#F0F4FF] leading-[1.04] tracking-tighter mb-5">

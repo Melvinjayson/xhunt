@@ -302,7 +302,15 @@ export default function MissionsPage() {
     });
   }, [router]);
 
-  if (!mounted) return null;
+  if (!mounted) return (
+    <div style={{ minHeight: '100vh', background: BG, padding: '80px 16px' }}>
+      <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} style={{ height: 140, borderRadius: 20, background: SURF, opacity: 0.5, border: `1px solid rgba(240,244,255,0.04)` }} />
+        ))}
+      </div>
+    </div>
+  );
 
   const canPremium   = subStatus?.canAccessPremiumMissions ?? false;
   const activeHunts  = hunts.filter((h) => !completedIds.includes(h.id));

@@ -76,11 +76,9 @@ export async function apiUpdateProfile(updates: {
   avatar_url?: string;
   default_surface?: string;
 }): Promise<AuthUser> {
-  const BACKEND = process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:8000';
-  const res = await fetch(`${BACKEND}/users/me`, {
+  const res = await fetch('/api/auth/profile', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
     body: JSON.stringify(updates),
   });
   if (!res.ok) throw new Error('Failed to update profile');
