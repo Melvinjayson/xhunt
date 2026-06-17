@@ -16,28 +16,41 @@ const AT_OPTS = {
   path: '/',
 };
 
-function setCookiesFromBackend(res: NextResponse, token: string, expiresIn: number) {
-  const maxAge = expiresIn;
-  res.cookies.set('__xhunt_session', token, { ...SESSION_OPTS, maxAge });
-  res.cookies.set('__xhunt_at', token, { ...AT_OPTS, maxAge });
-}
-
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
-  const upstream = await fetch(`${BACKEND}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${BACKEND}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    console.error('[login] backend unreachable:', BACKEND, e);
+    return NextResponse.json(
+      { detail: 'Auth service is unavailable. Please try again in a moment.' },
+      { status: 503 },
+    );
+  }
 
-  const data = await upstream.json();
+  let data: Record<string, unknown>;
+  try {
+    data = await upstream.json();
+  } catch {
+    return NextResponse.json(
+      { detail: `Login failed (${upstream.status})` },
+      { status: upstream.status },
+    );
+  }
 
   if (!upstream.ok) {
     return NextResponse.json(data, { status: upstream.status });
   }
 
+  const token = data.token as { access_token: string; expires_in: number };
   const res = NextResponse.json(data);
-  setCookiesFromBackend(res, data.token.access_token, data.token.expires_in);
+  res.cookies.set('__xhunt_session', token.access_token, { ...SESSION_OPTS, maxAge: token.expires_in });
+  res.cookies.set('__xhunt_at', token.access_token, { ...AT_OPTS, maxAge: token.expires_in });
   return res;
 }

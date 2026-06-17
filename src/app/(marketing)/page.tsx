@@ -3,13 +3,13 @@
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
-import {
-  ArrowRight, ChevronRight, Shield, CheckCircle2,
+import { ArrowRight, ChevronRight, Shield, CheckCircle2,
   Clock, Award, Wallet, Users, Camera, MapPin,
   Zap, Star, TrendingUp, BarChart3,
   Dumbbell, UtensilsCrossed, Trees, Laptop,
 } from 'lucide-react';
 import { Radar, IconContainer } from '@/components/ui/radar';
+import { Globe } from '@/components/ui/globe';
 import OnboardingSplash from '@/components/OnboardingSplash';
 
 /* ─── animation helpers ─── */
@@ -630,6 +630,11 @@ export default function RootPage() {
             backgroundSize: '52px 52px',
           }} />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#6D5DFD]/4 blur-[100px] rounded-full" />
+        </div>
+
+        {/* ─ Globe ─ */}
+        <div className="hidden lg:block absolute right-[-6%] top-1/2 -translate-y-1/2 w-[54%] aspect-square z-0">
+          <Globe />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-20 lg:py-28 w-full">

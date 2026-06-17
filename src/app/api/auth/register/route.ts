@@ -20,24 +20,41 @@ const AT_OPTS = {
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
-  const upstream = await fetch(`${BACKEND}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${BACKEND}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    console.error('[register] backend unreachable:', BACKEND, e);
+    return NextResponse.json(
+      { detail: 'Account service is unavailable. Please try again in a moment.' },
+      { status: 503 },
+    );
+  }
 
-  const data = await upstream.json();
+  let data: Record<string, unknown>;
+  try {
+    data = await upstream.json();
+  } catch {
+    return NextResponse.json(
+      { detail: `Registration failed (${upstream.status})` },
+      { status: upstream.status },
+    );
+  }
 
   if (!upstream.ok) {
     return NextResponse.json(data, { status: upstream.status });
   }
 
-  const maxAge = data.token.expires_in;
+  const token = data.token as { access_token: string; expires_in: number };
+  const maxAge = token.expires_in;
   const res = NextResponse.json(data, { status: 201 });
-  res.cookies.set('__xhunt_session', data.token.access_token, { ...SESSION_OPTS, maxAge });
-  res.cookies.set('__xhunt_at', data.token.access_token, { ...AT_OPTS, maxAge });
+  res.cookies.set('__xhunt_session', token.access_token, { ...SESSION_OPTS, maxAge });
+  res.cookies.set('__xhunt_at', token.access_token, { ...AT_OPTS, maxAge });
 
-  // Fire welcome email non-blocking; registration still succeeds if email fails
   sendEmail({
     to: body.email as string,
     template: 'welcome',
