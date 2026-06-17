@@ -4,84 +4,103 @@ import createGlobe, { COBEOptions } from 'cobe';
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
-const GLOBE_CONFIG: COBEOptions = {
-  width: 800,
-  height: 800,
+type MarkerDef = { location: [number, number]; size: number };
+type ArcDef    = { from: [number, number]; to: [number, number] };
+
+const MARKERS: MarkerDef[] = [
+  { location: [14.5995, 120.9842], size: 0.012 }, // Manila
+  { location: [19.076, 72.8777],   size: 0.018 }, // Mumbai
+  { location: [23.8103, 90.4125],  size: 0.010 }, // Dhaka
+  { location: [30.0444, 31.2357],  size: 0.014 }, // Cairo
+  { location: [39.9042, 116.4074], size: 0.016 }, // Beijing
+  { location: [-23.5505, -46.6333],size: 0.018 }, // São Paulo
+  { location: [19.4326, -99.1332], size: 0.018 }, // Mexico City
+  { location: [40.7128, -74.006],  size: 0.018 }, // New York
+  { location: [34.6937, 135.5022], size: 0.010 }, // Osaka
+  { location: [41.0082, 28.9784],  size: 0.012 }, // Istanbul
+  { location: [51.5074, -0.1278],  size: 0.016 }, // London
+  { location: [-33.8688, 151.2093],size: 0.012 }, // Sydney
+  { location: [1.3521, 103.8198],  size: 0.010 }, // Singapore
+  { location: [55.7558, 37.6176],  size: 0.013 }, // Moscow
+  { location: [-1.2921, 36.8219],  size: 0.010 }, // Nairobi
+];
+
+// Opportunity-network arcs connecting hubs globally
+const ARCS: ArcDef[] = [
+  { from: [51.5074, -0.1278],   to: [40.7128, -74.006]   }, // London ↔ New York
+  { from: [40.7128, -74.006],   to: [-23.5505, -46.6333] }, // New York ↔ São Paulo
+  { from: [51.5074, -0.1278],   to: [-1.2921, 36.8219]   }, // London ↔ Nairobi
+  { from: [-1.2921, 36.8219],   to: [30.0444, 31.2357]   }, // Nairobi ↔ Cairo
+  { from: [30.0444, 31.2357],   to: [41.0082, 28.9784]   }, // Cairo ↔ Istanbul
+  { from: [19.076, 72.8777],    to: [1.3521, 103.8198]   }, // Mumbai ↔ Singapore
+  { from: [1.3521, 103.8198],   to: [34.6937, 135.5022]  }, // Singapore ↔ Osaka
+  { from: [39.9042, 116.4074],  to: [34.6937, 135.5022]  }, // Beijing ↔ Osaka
+  { from: [-33.8688, 151.2093], to: [1.3521, 103.8198]   }, // Sydney ↔ Singapore
+  { from: [40.7128, -74.006],   to: [51.5074, -0.1278]   }, // (return arc rendered offset)
+];
+
+const BASE_CONFIG: Omit<COBEOptions, 'width' | 'height'> = {
   devicePixelRatio: 2,
   phi: 0,
   theta: 0.3,
   dark: 1,
-  diffuse: 0.6,
-  mapSamples: 20000,
-  mapBrightness: 6,
-  // Ocean base matching #050816 palette
-  baseColor: [0.08, 0.10, 0.22],
-  // #22FFAA accent markers
+  diffuse: 0.5,
+  mapSamples: 22000,
+  mapBrightness: 5,
+  baseColor: [0.06, 0.08, 0.18],
   markerColor: [34 / 255, 255 / 255, 170 / 255],
-  // Subtle green atmospheric glow
-  glowColor: [0.04, 0.20, 0.14],
-  markers: [
-    { location: [14.5995, 120.9842], size: 0.03 },
-    { location: [19.076, 72.8777],   size: 0.1  },
-    { location: [23.8103, 90.4125],  size: 0.05 },
-    { location: [30.0444, 31.2357],  size: 0.07 },
-    { location: [39.9042, 116.4074], size: 0.08 },
-    { location: [-23.5505, -46.6333],size: 0.1  },
-    { location: [19.4326, -99.1332], size: 0.1  },
-    { location: [40.7128, -74.006],  size: 0.1  },
-    { location: [34.6937, 135.5022], size: 0.05 },
-    { location: [41.0082, 28.9784],  size: 0.06 },
-    { location: [51.5074, -0.1278],  size: 0.08 },
-    { location: [-33.8688, 151.2093],size: 0.06 },
-    { location: [1.3521, 103.8198],  size: 0.04 },
-    { location: [55.7558, 37.6176],  size: 0.07 },
-    { location: [-1.2921, 36.8219],  size: 0.04 },
-  ],
+  glowColor: [0.03, 0.15, 0.10],
+  markers: MARKERS,
+  arcs: ARCS.map(a => ({ from: a.from, to: a.to })),
+  arcColor: [34 / 255, 255 / 255, 170 / 255],
+  arcWidth: 0.6,
+  arcHeight: 0.28,
 };
 
-export function Globe({
-  className,
-  config = GLOBE_CONFIG,
-}: {
-  className?: string;
-  config?: COBEOptions;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const phiRef = useRef(0);
-  const widthRef = useRef(0);
-  const pointerInteracting = useRef<number | null>(null);
+export function Globe({ className }: { className?: string }) {
+  const canvasRef       = useRef<HTMLCanvasElement>(null);
+  const phiRef          = useRef(0);
+  const widthRef        = useRef(0);
+  const pointerRef      = useRef<number | null>(null);
   const pointerMovement = useRef(0);
-  const rRef = useRef(0);
+  const rRef            = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const updateSize = () => {
-      widthRef.current = canvas.offsetWidth;
-    };
+    const updateSize = () => { widthRef.current = canvas.offsetWidth; };
     window.addEventListener('resize', updateSize);
     updateSize();
 
     const globe = createGlobe(canvas, {
-      ...config,
-      width: widthRef.current * 2,
+      ...BASE_CONFIG,
+      width:  widthRef.current * 2,
       height: widthRef.current * 2,
     });
 
     let raf: number;
     const animate = () => {
-      if (pointerInteracting.current === null) phiRef.current += 0.003;
+      if (pointerRef.current === null) phiRef.current += 0.003;
+
+      // Pulse marker sizes using a sine wave with per-marker phase offset
+      const t = Date.now() / 900;
+      const pulsedMarkers = MARKERS.map((m, i) => ({
+        ...m,
+        size: m.size * (0.55 + 0.45 * Math.abs(Math.sin(t + i * 0.7))),
+      }));
+
       globe.update({
-        phi: phiRef.current + rRef.current,
-        width: widthRef.current * 2,
-        height: widthRef.current * 2,
+        phi:     phiRef.current + rRef.current,
+        width:   widthRef.current * 2,
+        height:  widthRef.current * 2,
+        markers: pulsedMarkers,
       });
       raf = requestAnimationFrame(animate);
     };
     raf = requestAnimationFrame(animate);
 
-    setTimeout(() => { canvas.style.opacity = '1'; }, 100);
+    setTimeout(() => { canvas.style.opacity = '1'; }, 120);
 
     return () => {
       globe.destroy();
@@ -91,33 +110,33 @@ export function Globe({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className={cn('absolute inset-0 mx-auto aspect-square w-full max-w-[700px]', className)}>
+    <div className={cn('absolute inset-0 mx-auto aspect-square w-full', className)}>
       <canvas
         ref={canvasRef}
         className="size-full opacity-0 transition-opacity duration-700"
         style={{ contain: 'layout paint size', cursor: 'grab' }}
         onPointerDown={(e) => {
-          pointerInteracting.current = e.clientX - pointerMovement.current;
+          pointerRef.current = e.clientX - pointerMovement.current;
           (e.currentTarget as HTMLCanvasElement).style.cursor = 'grabbing';
         }}
         onPointerUp={() => {
-          pointerInteracting.current = null;
-          (canvasRef.current as HTMLCanvasElement | null)!.style.cursor = 'grab';
+          pointerRef.current = null;
+          if (canvasRef.current) canvasRef.current.style.cursor = 'grab';
         }}
         onPointerOut={() => {
-          pointerInteracting.current = null;
+          pointerRef.current = null;
           if (canvasRef.current) canvasRef.current.style.cursor = 'grab';
         }}
         onMouseMove={(e) => {
-          if (pointerInteracting.current !== null) {
-            const delta = e.clientX - pointerInteracting.current;
+          if (pointerRef.current !== null) {
+            const delta = e.clientX - pointerRef.current;
             pointerMovement.current = delta;
             rRef.current = delta / 200;
           }
         }}
         onTouchMove={(e) => {
-          if (e.touches[0] && pointerInteracting.current !== null) {
-            const delta = e.touches[0].clientX - pointerInteracting.current;
+          if (e.touches[0] && pointerRef.current !== null) {
+            const delta = e.touches[0].clientX - pointerRef.current;
             pointerMovement.current = delta;
             rRef.current = delta / 200;
           }

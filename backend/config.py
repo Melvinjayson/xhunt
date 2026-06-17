@@ -4,10 +4,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', extra='ignore')
 
-    supabase_url: str
-    supabase_service_role_key: str
+    # Optional at startup — validated at request time so the service starts
+    # even when env vars haven't been added to Render yet.
+    supabase_url: str = ''
+    supabase_service_role_key: str = ''
 
-    jwt_secret: str
+    jwt_secret: str = 'change-this-secret-in-production-minimum-32-chars!'
     jwt_algorithm: str = 'HS256'
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
@@ -18,12 +20,8 @@ class Settings(BaseSettings):
 
     app_env: str = 'development'
 
-    # URL of the deployed Next.js app — used by workers to call back internal endpoints
     next_public_app_url: str = 'https://xhunt.app'
-
-    # Shared secret for internal cron/worker → Next.js API calls
     cron_secret: str = ''
-
     groq_api_key: str = ''
 
     @property

@@ -632,54 +632,55 @@ export default function RootPage() {
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#6D5DFD]/4 blur-[100px] rounded-full" />
         </div>
 
-        {/* ─ Globe ─ */}
-        <div className="hidden lg:block absolute right-[-6%] top-1/2 -translate-y-1/2 w-[54%] aspect-square z-0">
+        {/* ─ Globe — 2× size, right-anchored ─ */}
+        <div className="hidden lg:block absolute right-[-18%] top-1/2 -translate-y-1/2 w-[80%] aspect-square z-0">
           <Globe />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-20 lg:py-28 w-full">
-          <div className="max-w-[620px]">
+          <div className="max-w-[600px]">
               <motion.div
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
                 className="inline-flex items-center gap-2.5 mb-8"
                 style={{ background: 'rgba(34,255,170,.06)', border: '1px solid rgba(34,255,170,.15)', borderRadius: 999, padding: '6px 16px' }}>
                 <div className="w-1.5 h-1.5 bg-[#22FFAA] rounded-full animate-pulse" />
-                <span className="text-[11px] font-semibold text-[#22FFAA] tracking-wider uppercase">Free to start · No followers needed</span>
+                <span className="text-[11px] font-semibold text-[#22FFAA] tracking-wider uppercase">Participation infrastructure · Open to all</span>
               </motion.div>
 
               <motion.h1
                 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
                 className="text-[clamp(2.8rem,5.5vw,4.8rem)] font-black text-[#F0F4FF] leading-[1.04] tracking-tighter mb-6">
-                Brands pay you
-                <br />to do real things.
+                Your time.
+                <br />Your skills.
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#22FFAA] to-[#6D5DFD]">
-                  AI confirms it.
+                  Verified. Rewarded.
                 </span>
               </motion.h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.22 }}
-                className="text-[1.08rem] text-[#8B9CC0] leading-relaxed max-w-[540px] mb-3">
-                Pick a mission — hit the gym, explore your city, try a product.
-                Upload your proof. AI validates it in seconds. Escrow releases automatically.
-                <strong className="text-[#F0F4FF]"> No followers, no content skills, no pitch decks.</strong>
+                className="text-[1.08rem] text-[#8B9CC0] leading-relaxed max-w-[520px] mb-3">
+                X-Hunt is the participation infrastructure that converts your everyday
+                contributions into <strong className="text-[#F0F4FF]">opportunity, reputation, and real income</strong> —
+                while helping organisations mobilise communities and achieve
+                verified outcomes at scale.
               </motion.p>
 
               <motion.p
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
                 className="text-[13px] text-[#4A5578] mb-10">
-                You just do the thing. We verify it. They pay you.
+                No followers. No pitch decks. No credentials required. Just participate.
               </motion.p>
 
               <motion.div
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.38 }}
                 className="flex flex-wrap gap-x-8 gap-y-3 mb-12">
                 {[
-                  { value: '4,200+', label: 'Open missions right now' },
-                  { value: '$67', label: 'Average payout per mission' },
-                  { value: '94%', label: 'Payout success rate' },
-                  { value: '<60s', label: 'Average AI validation time' },
+                  { value: '4,200+', label: 'Active missions' },
+                  { value: '$2.4M+', label: 'Rewards distributed' },
+                  { value: '340+',   label: 'Organisations' },
+                  { value: '94%',    label: 'Verified completion rate' },
                 ].map((m) => (
                   <div key={m.label}>
                     <p className="text-[1.5rem] font-black text-[#F0F4FF] tracking-tight leading-none mb-1">{m.value}</p>
@@ -691,22 +692,22 @@ export default function RootPage() {
               <motion.div
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.46 }}
                 className="flex flex-wrap gap-3">
-                <Link href="/home"
+                <Link href="/sign-up"
                   className="flex items-center gap-2.5 h-13 px-7 bg-[#22FFAA] text-[#050816] rounded-xl text-[15px] font-bold shadow-[0_0_28px_rgba(34,255,170,0.3)] hover:shadow-[0_0_44px_rgba(34,255,170,0.5)] transition-all duration-200">
-                  Find a mission now <ArrowRight size={16} strokeWidth={2.8} />
+                  Start participating free <ArrowRight size={16} strokeWidth={2.8} />
                 </Link>
-                <Link href="/missions"
+                <Link href="/enterprise"
                   className="flex items-center gap-2.5 h-13 px-6 border text-[#8B9CC0] rounded-xl text-[15px] font-semibold hover:text-[#F0F4FF] transition-all duration-200"
                   style={{ background: 'rgba(255,255,255,.04)', borderColor: 'rgba(255,255,255,.09)' }}>
-                  See what&apos;s open
+                  For organisations <ChevronRight size={15} strokeWidth={2.5} />
                 </Link>
               </motion.div>
 
               <motion.p
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.62 }}
                 className="mt-5 text-[12px] text-[#4A5578]">
-                Already hunting?{' '}
-                <Link href="/home" className="text-[#22FFAA] underline underline-offset-2 hover:opacity-80 transition-opacity">
+                Already a member?{' '}
+                <Link href="/sign-in" className="text-[#22FFAA] underline underline-offset-2 hover:opacity-80 transition-opacity">
                   Open your dashboard →
                 </Link>
               </motion.p>
