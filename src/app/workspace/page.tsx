@@ -11,6 +11,8 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/cn';
+import Chip from '@mui/material/Chip';
+import LinearProgress from '@mui/material/LinearProgress';
 
 interface DashboardData {
   activeMissions: number;
@@ -381,23 +383,30 @@ export default function WorkspaceDashboard() {
                     className="grid grid-cols-4 gap-0 px-5 py-3.5 hover:bg-[#0D1530] transition-colors group items-center"
                   >
                     <p className="text-[13px] font-medium text-[#F0F4FF] truncate pr-4 group-hover:text-accent transition-colors">{m.title}</p>
-                    <span className={cn(
-                      'inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full w-fit',
-                      m.status === 'active' ? 'text-[#22FFAA] bg-[#22FFAA]/10'
-                      : m.status === 'draft' ? 'text-[#FFB84D] bg-[#FFB84D]/10'
-                      : 'text-[#8B9CC0] bg-[#0D1530]'
-                    )}>
-                      {m.status === 'active' && <span className="w-1 h-1 rounded-full bg-[#22FFAA] mr-1.5 breathe" />}
-                      {m.status.charAt(0).toUpperCase() + m.status.slice(1)}
-                    </span>
-                    <span className={cn(
-                      'text-[11px] font-bold px-2 py-0.5 rounded-full w-fit',
-                      m.difficulty === 'easy' ? 'text-[#22FFAA] bg-[#22FFAA]/10'
-                      : m.difficulty === 'medium' ? 'text-[#FFB84D] bg-[#FFB84D]/10'
-                      : 'text-[#FF5C7A] bg-[#FF5C7A]/10'
-                    )}>
-                      {m.difficulty.charAt(0).toUpperCase() + m.difficulty.slice(1)}
-                    </span>
+                    <Chip
+                      label={m.status.charAt(0).toUpperCase() + m.status.slice(1)}
+                      size="small"
+                      icon={m.status === 'active' ? <span className="w-1.5 h-1.5 rounded-full bg-[#22FFAA] breathe ml-1" /> : undefined}
+                      sx={{
+                        fontSize: 11, fontWeight: 700, height: 20,
+                        color: m.status === 'active' ? '#22FFAA' : m.status === 'draft' ? '#FFB84D' : '#8B9CC0',
+                        bgcolor: m.status === 'active' ? 'rgba(34,255,170,0.1)' : m.status === 'draft' ? 'rgba(255,184,77,0.1)' : 'rgba(13,21,48,0.8)',
+                        border: 'none',
+                        '& .MuiChip-label': { px: 1 },
+                        '& .MuiChip-icon': { ml: 0.5, mr: -0.5 },
+                      }}
+                    />
+                    <Chip
+                      label={m.difficulty.charAt(0).toUpperCase() + m.difficulty.slice(1)}
+                      size="small"
+                      sx={{
+                        fontSize: 11, fontWeight: 700, height: 20,
+                        color: m.difficulty === 'easy' ? '#22FFAA' : m.difficulty === 'medium' ? '#FFB84D' : '#FF5C7A',
+                        bgcolor: m.difficulty === 'easy' ? 'rgba(34,255,170,0.1)' : m.difficulty === 'medium' ? 'rgba(255,184,77,0.1)' : 'rgba(255,92,122,0.1)',
+                        border: 'none',
+                        '& .MuiChip-label': { px: 1 },
+                      }}
+                    />
                     <div className="flex items-center gap-2">
                       <span className="text-[13px] font-semibold text-[#F0F4FF] tabular-nums">{m.completions}</span>
                       <ArrowRight size={13} className="text-[#4A5578] group-hover:text-accent transition-colors ml-auto" strokeWidth={2} />
@@ -534,21 +543,21 @@ export default function WorkspaceDashboard() {
               { label: 'Completion Rate', value: completionRate, color: '#22FFAA', max: 100 },
               { label: 'Engagement Index', value: Math.min(data!.avgMei, 100), color: '#6D5DFD', max: 100 },
               { label: 'Reward Conversion', value: data!.rewardEvents > 0 && data!.completions > 0 ? Math.min(Math.round((data!.rewardEvents / data!.completions) * 100), 100) : 0, color: '#FFB84D', max: 100 },
-            ].map(({ label, value, color, max }) => (
+            ].map(({ label, value, color }) => (
               <div key={label}>
                 <div className="flex items-center justify-between mb-1.5">
                   <p className="text-[12px] text-[#8B9CC0]">{label}</p>
                   <p className="text-[12px] font-bold tabular-nums" style={{ color }}>{value}%</p>
                 </div>
-                <div className="h-1.5 bg-[#0D1530] rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(value / max) * 100}%` }}
-                    transition={{ delay: 0.5, duration: 0.8 }}
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: color }}
-                  />
-                </div>
+                <LinearProgress
+                  variant="determinate"
+                  value={value}
+                  sx={{
+                    height: 6, borderRadius: 3,
+                    backgroundColor: 'rgba(13,21,48,0.8)',
+                    '& .MuiLinearProgress-bar': { borderRadius: 3, backgroundColor: color },
+                  }}
+                />
               </div>
             ))}
           </div>

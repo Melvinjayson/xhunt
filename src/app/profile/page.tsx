@@ -12,6 +12,8 @@ import BottomNav from '@/components/BottomNav';
 import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import { loadState, clearState, loadProfile } from '@/lib/store';
 import { useAuth } from '@/lib/auth/context';
+import Chip from '@mui/material/Chip';
+import LinearProgress from '@mui/material/LinearProgress';
 import type { CompletedHunt, ImpactProfile } from '@/lib/types';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
@@ -193,10 +195,10 @@ export default function ProfilePage() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 800, color: TXT, letterSpacing: '-.02em' }}>{name}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: tierColor, background: `${tierColor}14`, border: `1px solid ${tierColor}28`, borderRadius: 999, padding: '2px 10px' }}>{tierLabel}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <Chip label={tierLabel} size="small" sx={{ fontSize: 11, fontWeight: 700, height: 22, color: tierColor, bgcolor: `${tierColor}14`, border: `1px solid ${tierColor}28`, '& .MuiChip-label': { px: 1.25 } }} />
                 {impactProfile?.archetype && (
-                  <span style={{ fontSize: 11, fontWeight: 600, color: aColor, background: `${aColor}12`, border: `1px solid ${aColor}22`, borderRadius: 999, padding: '2px 10px' }}>{impactProfile.archetype}</span>
+                  <Chip label={impactProfile.archetype} size="small" sx={{ fontSize: 11, fontWeight: 600, height: 22, color: aColor, bgcolor: `${aColor}12`, border: `1px solid ${aColor}22`, '& .MuiChip-label': { px: 1.25 } }} />
                 )}
               </div>
             </div>
@@ -350,20 +352,25 @@ export default function ProfilePage() {
               {impactProfile.strengths.length > 0 && (
                 <div className="liquid-glass" style={{ ...XGLASS, borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
                   <p style={{ margin: '0 0 12px', fontSize: 10, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Top Strengths</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {impactProfile.strengths.slice(0, 4).map((s) => (
                       <div key={s.name}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
                           <span style={{ fontSize: 11, color: DIM, fontWeight: 600 }}>{s.name}</span>
                           <span style={{ fontSize: 11, color: aColor, fontWeight: 800 }}>{s.score}%</span>
                         </div>
-                        <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,.05)', overflow: 'hidden' }}>
-                          <motion.div
-                            initial={{ width: 0 }} animate={{ width: `${s.score}%` }}
-                            transition={{ duration: 0.7, ease: 'easeOut' }}
-                            style={{ height: '100%', borderRadius: 3, background: `linear-gradient(90deg, ${aColor}80, ${aColor})` }}
-                          />
-                        </div>
+                        <LinearProgress
+                          variant="determinate"
+                          value={s.score}
+                          sx={{
+                            height: 5, borderRadius: 3,
+                            backgroundColor: 'rgba(255,255,255,0.05)',
+                            '& .MuiLinearProgress-bar': {
+                              borderRadius: 3,
+                              background: `linear-gradient(90deg, ${aColor}80, ${aColor})`,
+                            },
+                          }}
+                        />
                       </div>
                     ))}
                   </div>
@@ -376,7 +383,7 @@ export default function ProfilePage() {
                     <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Causes</p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                       {impactProfile.causes.map((c) => (
-                        <span key={c} style={{ fontSize: 9.5, fontWeight: 700, color: ACCENT, background: `${ACCENT}10`, border: `1px solid ${ACCENT}20`, borderRadius: 999, padding: '2px 8px' }}>{c}</span>
+                        <Chip key={c} label={c} size="small" sx={{ fontSize: 10, fontWeight: 700, height: 20, color: ACCENT, bgcolor: `${ACCENT}10`, border: `1px solid ${ACCENT}20`, '& .MuiChip-label': { px: 1 } }} />
                       ))}
                     </div>
                   </div>
