@@ -10,9 +10,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import BottomNav from '@/components/BottomNav';
-import { createClient } from '@/lib/supabase/client';
+
 import { emitEvent, syncProgress, emitRewardClaimed } from '@/lib/supabase/events';
 import { loadState } from '@/lib/store';
+import { useAuth } from '@/lib/auth/context';
 import type { Hunt, Step } from '@/lib/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -36,6 +37,7 @@ const STEP_META: Record<string, { label: string; bg: string; text: string; borde
 export default function MissionExecutionPage() {
   const { id } = useParams<{ id: string }>();
   const router  = useRouter();
+  const { user, isLoaded } = useAuth();
 
   const [phase, setPhase]         = useState<Phase>('loading');
   const [mission, setMission]     = useState<Hunt | null>(null);
@@ -49,10 +51,11 @@ export default function MissionExecutionPage() {
   const startedAtRef              = useRef('');
 
   useEffect(() => {
+    if (!isLoaded) return;
     async function boot() {
+      if (!user) { router.replace(`/sign-in?redirect_url=/missions/${id}`); return; }
+      const { createClient } = await import('@/lib/supabase/client');
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace(`/auth/login?next=/missions/${id}`); return; }
 
       // Non-UUID IDs come from localStorage (AI-generated missions).
       // Skip Supabase and load from local state directly.
@@ -100,7 +103,7 @@ export default function MissionExecutionPage() {
       const { data: prog } = await supabase
         .from('mission_progress')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .eq('mission_id', id)
         .maybeSingle();
 
@@ -122,7 +125,7 @@ export default function MissionExecutionPage() {
       setPhase('intro');
     }
     boot();
-  }, [id, router]);
+  }, [id, router, user, isLoaded]);
 
   async function startMission() {
     if (!mission) return;

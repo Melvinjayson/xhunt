@@ -74,13 +74,14 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  // Pass user id downstream for API routes
-  const res = NextResponse.next();
+  // Forward user identity as request headers so API routes can read them
+  const reqHeaders = new Headers(req.headers);
   if (session) {
-    res.headers.set('x-user-id', session['sub'] as string);
-    res.headers.set('x-user-role', (session['app_role'] ?? session['role']) as string);
+    reqHeaders.set('x-user-id', session['sub'] as string);
+    reqHeaders.set('x-user-email', (session['email'] as string) ?? '');
+    reqHeaders.set('x-user-role', (session['app_role'] ?? session['role']) as string ?? 'explorer');
   }
-  return res;
+  return NextResponse.next({ request: { headers: reqHeaders } });
 }
 
 export const config = {

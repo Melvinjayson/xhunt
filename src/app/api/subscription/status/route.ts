@@ -1,26 +1,20 @@
-import { createClient } from '@/lib/supabase/server';
+import { type NextRequest } from 'next/server';
+import { getSessionUser } from '@/lib/auth/session';
 import { getUserTierInfo } from '@/lib/freemium';
 
-export async function GET() {
+const FREE_DEFAULTS = {
+  tier: 'free', isTrialActive: false, trialDaysLeft: 0,
+  trialEndsAt: null, canUseAI: false, canAccessPremiumMissions: false,
+  aiRequestsPerDay: 0, hasUsedTrial: false,
+};
+
+export async function GET(req: NextRequest) {
   try {
-    const sb = await createClient();
-    const { data: { user } } = await sb.auth.getUser();
-
-    if (!user) {
-      return Response.json({
-        tier: 'free', isTrialActive: false, trialDaysLeft: 0,
-        trialEndsAt: null, canUseAI: false, canAccessPremiumMissions: false,
-        aiRequestsPerDay: 0, hasUsedTrial: false,
-      });
-    }
-
+    const user = await getSessionUser(req);
+    if (!user) return Response.json(FREE_DEFAULTS);
     const info = await getUserTierInfo(user.id);
     return Response.json(info);
   } catch {
-    return Response.json({
-      tier: 'free', isTrialActive: false, trialDaysLeft: 0,
-      trialEndsAt: null, canUseAI: false, canAccessPremiumMissions: false,
-      aiRequestsPerDay: 0, hasUsedTrial: false,
-    });
+    return Response.json(FREE_DEFAULTS);
   }
 }
