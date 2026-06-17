@@ -7,7 +7,7 @@ import {
   FileText, Link2, BarChart2, Star, Shield, Award, Loader2, RefreshCw,
   Search, MessageSquare
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import type { DbOutcomeValidation, ValidationStatus, ValidationEvidence } from '@/lib/supabase/types';
 import { cn } from '@/lib/cn';
 
@@ -53,12 +53,11 @@ export default function OutcomeValidationPage() {
   const [reviewPayload, setReviewPayload] = useState<ReviewPayload>({ status: 'approved' });
   const [submitting, setSubmitting] = useState(false);
 
-  const supabase = createClient();
+  const { user, isLoaded } = useAuth();
 
   const loadValidations = useCallback(async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!isLoaded || !user) { setLoading(false); return; }
     const params = new URLSearchParams();
     if (statusFilter !== 'all') params.set('status', statusFilter);
     const res = await fetch(`/api/outcomes/validations?${params}`);
@@ -67,7 +66,7 @@ export default function OutcomeValidationPage() {
       setValidations(json.validations ?? []);
     }
     setLoading(false);
-  }, [statusFilter]);
+  }, [statusFilter, user, isLoaded]);
 
   useEffect(() => { loadValidations(); }, [loadValidations]);
 

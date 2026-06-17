@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Target, Users, CheckCircle2, Trophy, Plus, ArrowRight, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import type { DbMission, DbTenant } from '@/lib/supabase/types';
 import { cn } from '@/lib/cn';
 
@@ -22,12 +23,12 @@ export default function AdminOverviewPage() {
   const [completions, setCompletions] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
 
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -51,7 +52,7 @@ export default function AdminOverviewPage() {
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, [supabase, user, isLoaded]);
 
   const activeMissions = missions.filter((m) => m.status === 'active').length;
 

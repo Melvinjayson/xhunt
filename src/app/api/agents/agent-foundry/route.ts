@@ -4,6 +4,7 @@ import { AGENT_SYSTEM_PROMPTS } from '@/lib/agents/prompts';
 import type { AgentFoundryInput, AgentFoundryOutput } from '@/lib/agents/types';
 import { requireTenantAgent } from '@/lib/agents/auth';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionUser } from '@/lib/auth/session';
 
 const client = new Anthropic();
 
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   // Agent Foundry is admin-only — it defines new agents, which is a governance action
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser(req);
   if (user) {
     const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', user.id).single();
     if (profile && !ADMIN_ROLES.has(profile.role as string)) {

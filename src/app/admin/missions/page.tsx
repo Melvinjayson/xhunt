@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Plus, Search, Target, Pencil, Trash2, Filter, Sparkles, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import type { DbMission } from '@/lib/supabase/types';
 import { cn } from '@/lib/cn';
 
@@ -30,11 +31,11 @@ export default function AdminMissionsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [seeding, setSeeding] = useState(false);
 
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   async function loadMissions() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!isLoaded || !user) return;
 
     const { data: profile } = await supabase
       .from('user_profiles')

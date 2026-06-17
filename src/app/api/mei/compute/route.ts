@@ -1,13 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { DbMissionProgress, DbOutcomeEvent } from '@/lib/supabase/types';
+import { getSessionUser } from '@/lib/auth/session';
 
 function clamp(v: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, v));
 }
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const user = await getSessionUser(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,9 +23,6 @@ export async function POST() {
       },
     }
   );
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { data: profile } = await supabase
     .from('user_profiles')

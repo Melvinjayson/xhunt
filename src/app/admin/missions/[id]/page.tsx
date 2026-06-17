@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import type { DbMission, DbStep, DbAudienceSegment, DbRewardConfig, DbMissionApproval, MissionStatus } from '@/lib/supabase/types';
 import { cn } from '@/lib/cn';
 
@@ -58,6 +59,7 @@ export default function MissionDetailPage() {
   const [pendingApproval, setPendingApproval] = useState<DbMissionApproval | null>(null);
   const [govLoading, setGovLoading] = useState(false);
 
+  const { user } = useAuth();
   const supabase = createClient();
 
   const load = useCallback(async () => {
@@ -200,7 +202,6 @@ export default function MissionDetailPage() {
   async function submitForReview() {
     if (!mission) return;
     setGovLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setGovLoading(false); return; }
     await supabase.from('mission_approvals').insert({ mission_id: missionId, tenant_id: mission.tenant_id, status: 'pending', reviewer_id: null, notes: null });
     await supabase.from('audit_log').insert({ tenant_id: mission.tenant_id, user_id: user.id, action: 'mission_submitted_for_review', resource_type: 'mission', resource_id: missionId, metadata: { title: mission.title } });

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/auth/context';
 import { motion } from 'framer-motion';
 import {
   UserSquare2, Plus, Search, Users, Tag, Filter, ChevronRight,
@@ -34,12 +35,12 @@ export default function AudiencePage() {
   const [newDesc, setNewDesc] = useState('');
   const [saving, setSaving] = useState(false);
   const [tenantId, setTenantId] = useState<string | null>(null);
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
       if (!profile?.tenant_id) return;
       setTenantId(profile.tenant_id);
@@ -54,12 +55,11 @@ export default function AudiencePage() {
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, [supabase, user, isLoaded]);
 
   async function createSegment() {
     if (!newName.trim() || !tenantId) return;
     setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
     const { data } = await supabase.from('audience_segments').insert({
       tenant_id: tenantId,
       name: newName.trim(),

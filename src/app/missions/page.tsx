@@ -14,6 +14,7 @@ import BottomNav from '@/components/BottomNav';
 import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import { loadState, saveState, loadProfile } from '@/lib/store';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
+import { MOCK_HUNTS } from '@/lib/mockHunts';
 import {
   DIFF_META, MISSION_TYPE_META, ORG_TYPE_META, SDG_META,
   estimateCashReward, estimateXP, deadlineLabel, spotsLabel, resolveCategory,
@@ -291,14 +292,14 @@ export default function MissionsPage() {
     if (!state.user?.onboardingComplete) { router.replace('/get-started'); return; }
     setIds(state.completedHunts.map((h) => h.huntId));
     setStreak(state.streak);
-    setHunts(state.hunts);
+    setHunts(state.hunts.length > 0 ? state.hunts : MOCK_HUNTS);
     setProfile(loadProfile());
     setMounted(true);
     void fetch('/api/subscription/status').then((r) => r.json())
       .then((d: SubStatus) => setSub(d))
       .catch(() => setSub({ canAccessPremiumMissions: false, isTrialActive: false, trialDaysLeft: 0, tier: 'free', hasUsedTrial: false }));
     void fetchSupabaseMissions().then((r) => {
-      if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); }
+      if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } else if (!state.hunts.length) { setHunts(MOCK_HUNTS); }
     });
   }, [router]);
 

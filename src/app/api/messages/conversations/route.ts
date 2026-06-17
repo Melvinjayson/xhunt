@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getSessionUser } from '@/lib/auth/session';
 
 // POST /api/messages/conversations
 // Find or create a conversation.
 // Body: { type: 'direct' | 'mission' | 'team', mission_id?, participant_ids?, name? }
 // Returns: { conversation_id: string }
 
-export async function POST(req: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export async function POST(req: NextRequest) {
+  const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json() as {

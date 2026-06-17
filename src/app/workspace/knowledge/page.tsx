@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/lib/auth/context';
 import { motion } from 'framer-motion';
 import {
   Network, Search, Filter, Plus, Users, Target, TrendingUp, Award,
@@ -41,12 +42,12 @@ export default function KnowledgePage() {
   const [selected, setSelected] = useState<DbKgNode | null>(null);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
       if (!profile?.tenant_id) return;
 
@@ -60,7 +61,7 @@ export default function KnowledgePage() {
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, [supabase, user, isLoaded]);
 
   const filtered = nodes.filter((n) => {
     if (typeFilter !== 'all' && n.node_type !== typeFilter) return false;

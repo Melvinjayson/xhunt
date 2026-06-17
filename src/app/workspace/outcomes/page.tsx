@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/auth/context';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, CheckCircle2, Award, BarChart3, Users, ArrowUpRight,
@@ -85,12 +86,12 @@ export default function OutcomesPage() {
   const [generating, setGenerating]     = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [missionSearch, setSearch]      = useState('');
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
       if (!profile?.tenant_id) return;
 
@@ -116,7 +117,7 @@ export default function OutcomesPage() {
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, [supabase, user, isLoaded]);
 
   async function generateNarrative() {
     if (!summary) return;

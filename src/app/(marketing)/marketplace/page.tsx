@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/cn';
 import { IMPACT_CATEGORIES, SDG_META, estimateCashReward } from '@/lib/missionCategories';
 
@@ -190,11 +191,11 @@ function ApplyModal({ listingId, onClose }: { listingId: string; onClose: () => 
   const [applying,  setApplying]  = useState(false);
   const [applied,   setApplied]   = useState(false);
   const supabase = createClient();
+  const { user } = useAuth();
 
   async function submit() {
     setApplying(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { window.location.href = '/auth/login'; return; }
+    if (!user) { window.location.href = '/sign-in'; return; }
 
     // Get listing's mission_id
     const { data: listing } = await supabase.from('marketplace_listings').select('mission_id,tenant_id').eq('id', listingId).single();

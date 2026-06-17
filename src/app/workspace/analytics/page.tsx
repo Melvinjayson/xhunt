@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/auth/context';
 import { motion } from 'framer-motion';
 import {
   BarChart3, TrendingUp, Users, Target, CheckCircle2, Award,
@@ -48,12 +49,12 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30d');
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
       if (!profile?.tenant_id) return;
 
@@ -132,7 +133,7 @@ export default function AnalyticsPage() {
       setLoading(false);
     }
     load();
-  }, [supabase, period]);
+  }, [supabase, period, user, isLoaded]);
 
   if (loading) {
     return (

@@ -7,6 +7,7 @@ import {
   CheckCircle2, Activity, ArrowUpRight
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import type { DbMissionScore, DbMission, DbOutcomeEvent } from '@/lib/supabase/types';
 import { cn } from '@/lib/cn';
 
@@ -49,12 +50,12 @@ export default function AdminOutcomesPage() {
   const [computing, setComputing] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
 
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   async function loadData() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!isLoaded || !user) return;
     const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
     if (!profile?.tenant_id) return;
 

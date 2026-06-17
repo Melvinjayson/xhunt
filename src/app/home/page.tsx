@@ -17,6 +17,7 @@ import { AIInsightCard, type Recommendation } from '@/components/home/AIInsightC
 import { ActivityFeed } from '@/components/home/ActivityFeed';
 import { loadState, saveState, loadProfile } from '@/lib/store';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
+import { MOCK_HUNTS } from '@/lib/mockHunts';
 import { computeMatchScore, greeting } from '@/lib/missionHelpers';
 import { loadAIConfig, DEFAULT_AI_CONFIG, type AIConfig } from '@/lib/aiConfig';
 import { t } from '@/theme/colors';
@@ -53,13 +54,14 @@ export default function HomePage() {
     setIds(completed);
     setStreak(state.streak);
     if ((state.user as { name?: string }).name) setUserName((state.user as { name?: string }).name!);
-    setHunts(state.hunts);
+    const initialHunts = state.hunts.length > 0 ? state.hunts : MOCK_HUNTS.slice(0, 6);
+    setHunts(initialHunts);
     setProfile(loadProfile());
     setAIConfig(loadAIConfig());
-    const topId = state.hunts.find(h => !completed.includes(h.id))?.id;
+    const topId = initialHunts.find(h => !completed.includes(h.id))?.id;
     if (topId && state.progress[topId]) setAMS(state.progress[topId].completedSteps?.length ?? 0);
     setMounted(true);
-    void fetchSupabaseMissions().then(r => { if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } });
+    void fetchSupabaseMissions().then(r => { if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } else if (!state.hunts.length) { setHunts(MOCK_HUNTS.slice(0, 6)); } });
     void fetch('/api/subscription/status').then(r => r.json()).then((d: SubStatus) => setSub(d)).catch(() => {});
     void fetch('/api/recommendations?limit=5').then(r => r.ok ? r.json() : null).then(d => { if (d?.recommendations?.length) setRecs(d.recommendations); }).catch(() => {});
   }, [router]);

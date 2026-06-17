@@ -12,6 +12,7 @@ import BottomNav from '@/components/BottomNav';
 import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import { loadState, saveState, loadProfile } from '@/lib/store';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
+import { MOCK_HUNTS } from '@/lib/mockHunts';
 import {
   IMPACT_CATEGORIES, MISSION_TYPE_META, DIFF_META, SDG_META,
   estimateCashReward, estimateXP, deadlineLabel, resolveCategory,
@@ -234,9 +235,10 @@ export default function ExplorePage() {
   useEffect(() => {
     const state = loadState();
     setIds(state.completedHunts.map(h => h.huntId));
-    setHunts(state.hunts);
+    const initialHunts = state.hunts.length > 0 ? state.hunts : MOCK_HUNTS;
+    setHunts(initialHunts);
     setProfile(loadProfile());
-    void fetchSupabaseMissions().then(r => { if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } });
+    void fetchSupabaseMissions().then(r => { if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } else if (!state.hunts.length) { setHunts(MOCK_HUNTS); } });
 
     const recUrl = proximity.coords
       ? `/api/recommendations?limit=5&lat=${proximity.coords.lat}&lng=${proximity.coords.lng}`

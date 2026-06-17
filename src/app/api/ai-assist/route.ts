@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionUser } from '@/lib/auth/session';
 import { getUserTierInfo } from '@/lib/freemium';
 import { checkAndIncrementRateLimit } from '@/lib/rate-limit';
 import groq, { modelForTier } from '@/lib/groq';
@@ -17,10 +18,10 @@ const BodySchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const sb = await createClient();
-    const { data: { user } } = await sb.auth.getUser();
+    const user = await getSessionUser(req);
 
     if (!user) {
-      return Response.json({ error: 'auth_required', upgradeUrl: '/auth/login' }, { status: 401 });
+      return Response.json({ error: 'auth_required', upgradeUrl: '/sign-in' }, { status: 401 });
     }
 
     const body = await req.json();

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/lib/auth/context';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, Users, CheckCircle2, BarChart3, Sparkles,
@@ -54,6 +55,7 @@ const EDIT_STEP_TYPES = [
 export default function MissionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   const [mission, setMission]     = useState<MissionDetail | null>(null);
@@ -70,8 +72,7 @@ export default function MissionDetailPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
 
       const [missionRes, scoreRes, progressRes] = await Promise.all([
         supabase.from('missions').select('*').eq('id', id).single(),
@@ -94,7 +95,7 @@ export default function MissionDetailPage() {
       setLoading(false);
     }
     load();
-  }, [id, supabase, router]);
+  }, [id, supabase, router, user, isLoaded]);
 
   async function updateStatus(status: string) {
     if (!mission) return;

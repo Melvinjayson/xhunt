@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Save, Loader2, CheckCircle2, AlertCircle, Building2, Globe, Tag } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import type { DbTenant } from '@/lib/supabase/types';
 
 const ORG_TYPES = ['brand', 'enterprise', 'education', 'community'] as const;
@@ -17,12 +18,12 @@ export default function AdminSettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
 
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -46,7 +47,7 @@ export default function AdminSettingsPage() {
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, [supabase, user, isLoaded]);
 
   async function handleSave() {
     if (!tenant || !name.trim()) return;

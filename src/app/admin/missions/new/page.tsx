@@ -8,6 +8,7 @@ import {
   Loader2, Check, AlertCircle, ChevronDown, Send
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/cn';
 import type { DbStep, MissionStatus } from '@/lib/supabase/types';
 import type { MissionArchitectInput } from '@/lib/agents/types';
@@ -30,6 +31,7 @@ function newStep(): DbStep {
 export default function NewMissionPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { user } = useAuth();
 
   // Mode
   const [mode, setMode] = useState<Mode>('ai');
@@ -100,7 +102,6 @@ export default function NewMissionPage() {
     setSaveError('');
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
       if (!profile?.tenant_id) throw new Error('No tenant');
@@ -160,7 +161,6 @@ export default function NewMissionPage() {
     setSaveError('');
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
       const { data: profile } = await supabase
