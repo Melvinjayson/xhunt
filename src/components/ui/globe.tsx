@@ -8,35 +8,34 @@ type MarkerDef = { location: [number, number]; size: number };
 type ArcDef    = { from: [number, number]; to: [number, number] };
 
 const MARKERS: MarkerDef[] = [
-  { location: [14.5995, 120.9842], size: 0.012 }, // Manila
-  { location: [19.076, 72.8777],   size: 0.018 }, // Mumbai
-  { location: [23.8103, 90.4125],  size: 0.010 }, // Dhaka
-  { location: [30.0444, 31.2357],  size: 0.014 }, // Cairo
-  { location: [39.9042, 116.4074], size: 0.016 }, // Beijing
-  { location: [-23.5505, -46.6333],size: 0.018 }, // São Paulo
-  { location: [19.4326, -99.1332], size: 0.018 }, // Mexico City
-  { location: [40.7128, -74.006],  size: 0.018 }, // New York
-  { location: [34.6937, 135.5022], size: 0.010 }, // Osaka
-  { location: [41.0082, 28.9784],  size: 0.012 }, // Istanbul
-  { location: [51.5074, -0.1278],  size: 0.016 }, // London
-  { location: [-33.8688, 151.2093],size: 0.012 }, // Sydney
-  { location: [1.3521, 103.8198],  size: 0.010 }, // Singapore
-  { location: [55.7558, 37.6176],  size: 0.013 }, // Moscow
-  { location: [-1.2921, 36.8219],  size: 0.010 }, // Nairobi
+  { location: [14.5995, 120.9842], size: 0.005 }, // Manila
+  { location: [19.076, 72.8777],   size: 0.007 }, // Mumbai
+  { location: [23.8103, 90.4125],  size: 0.004 }, // Dhaka
+  { location: [30.0444, 31.2357],  size: 0.006 }, // Cairo
+  { location: [39.9042, 116.4074], size: 0.007 }, // Beijing
+  { location: [-23.5505, -46.6333],size: 0.007 }, // São Paulo
+  { location: [19.4326, -99.1332], size: 0.007 }, // Mexico City
+  { location: [40.7128, -74.006],  size: 0.008 }, // New York
+  { location: [34.6937, 135.5022], size: 0.004 }, // Osaka
+  { location: [41.0082, 28.9784],  size: 0.005 }, // Istanbul
+  { location: [51.5074, -0.1278],  size: 0.007 }, // London
+  { location: [-33.8688, 151.2093],size: 0.005 }, // Sydney
+  { location: [1.3521, 103.8198],  size: 0.004 }, // Singapore
+  { location: [55.7558, 37.6176],  size: 0.005 }, // Moscow
+  { location: [-1.2921, 36.8219],  size: 0.004 }, // Nairobi
 ];
 
-// Opportunity-network arcs connecting hubs globally
 const ARCS: ArcDef[] = [
-  { from: [51.5074, -0.1278],   to: [40.7128, -74.006]   }, // London ↔ New York
-  { from: [40.7128, -74.006],   to: [-23.5505, -46.6333] }, // New York ↔ São Paulo
-  { from: [51.5074, -0.1278],   to: [-1.2921, 36.8219]   }, // London ↔ Nairobi
-  { from: [-1.2921, 36.8219],   to: [30.0444, 31.2357]   }, // Nairobi ↔ Cairo
-  { from: [30.0444, 31.2357],   to: [41.0082, 28.9784]   }, // Cairo ↔ Istanbul
-  { from: [19.076, 72.8777],    to: [1.3521, 103.8198]   }, // Mumbai ↔ Singapore
-  { from: [1.3521, 103.8198],   to: [34.6937, 135.5022]  }, // Singapore ↔ Osaka
-  { from: [39.9042, 116.4074],  to: [34.6937, 135.5022]  }, // Beijing ↔ Osaka
-  { from: [-33.8688, 151.2093], to: [1.3521, 103.8198]   }, // Sydney ↔ Singapore
-  { from: [40.7128, -74.006],   to: [51.5074, -0.1278]   }, // (return arc rendered offset)
+  { from: [51.5074, -0.1278],   to: [40.7128, -74.006]   }, // London → New York
+  { from: [40.7128, -74.006],   to: [-23.5505, -46.6333] }, // New York → São Paulo
+  { from: [51.5074, -0.1278],   to: [-1.2921, 36.8219]   }, // London → Nairobi
+  { from: [-1.2921, 36.8219],   to: [30.0444, 31.2357]   }, // Nairobi → Cairo
+  { from: [30.0444, 31.2357],   to: [41.0082, 28.9784]   }, // Cairo → Istanbul
+  { from: [19.076, 72.8777],    to: [1.3521, 103.8198]   }, // Mumbai → Singapore
+  { from: [1.3521, 103.8198],   to: [34.6937, 135.5022]  }, // Singapore → Osaka
+  { from: [39.9042, 116.4074],  to: [34.6937, 135.5022]  }, // Beijing → Osaka
+  { from: [-33.8688, 151.2093], to: [1.3521, 103.8198]   }, // Sydney → Singapore
+  { from: [40.7128, -74.006],   to: [51.5074, -0.1278]   }, // New York → London
 ];
 
 const BASE_CONFIG: Omit<COBEOptions, 'width' | 'height'> = {
@@ -44,17 +43,17 @@ const BASE_CONFIG: Omit<COBEOptions, 'width' | 'height'> = {
   phi: 0,
   theta: 0.3,
   dark: 1,
-  diffuse: 0.5,
+  diffuse: 0.3,
   mapSamples: 22000,
-  mapBrightness: 5,
-  baseColor: [0.06, 0.08, 0.18],
-  markerColor: [34 / 255, 255 / 255, 170 / 255],
-  glowColor: [0.03, 0.15, 0.10],
+  mapBrightness: 3,
+  baseColor: [0.05, 0.07, 0.16],
+  markerColor: [0.10, 0.72, 0.48],
+  glowColor: [0.02, 0.10, 0.07],
   markers: MARKERS,
   arcs: ARCS.map(a => ({ from: a.from, to: a.to })),
-  arcColor: [34 / 255, 255 / 255, 170 / 255],
-  arcWidth: 0.6,
-  arcHeight: 0.28,
+  arcColor: [0.10, 0.80, 0.52],
+  arcWidth: 0.5,
+  arcHeight: 0.3,
 };
 
 export function Globe({ className }: { className?: string }) {
@@ -83,18 +82,23 @@ export function Globe({ className }: { className?: string }) {
     const animate = () => {
       if (pointerRef.current === null) phiRef.current += 0.003;
 
-      // Pulse marker sizes using a sine wave with per-marker phase offset
-      const t = Date.now() / 900;
+      const t = Date.now() / 1000;
+
+      // Per-marker pulse: sine wave with phase offset per marker
       const pulsedMarkers = MARKERS.map((m, i) => ({
         ...m,
-        size: m.size * (0.55 + 0.45 * Math.abs(Math.sin(t + i * 0.7))),
+        size: m.size * (0.5 + 0.5 * Math.abs(Math.sin(t * 1.1 + i * 0.8))),
       }));
 
+      // Arc height bounces between 0.15 and 0.45 over ~4 s cycle
+      const arcHeight = 0.15 + 0.30 * (0.5 + 0.5 * Math.sin(t * 1.5));
+
       globe.update({
-        phi:     phiRef.current + rRef.current,
-        width:   widthRef.current * 2,
-        height:  widthRef.current * 2,
-        markers: pulsedMarkers,
+        phi:       phiRef.current + rRef.current,
+        width:     widthRef.current * 2,
+        height:    widthRef.current * 2,
+        markers:   pulsedMarkers,
+        arcHeight,
       });
       raf = requestAnimationFrame(animate);
     };

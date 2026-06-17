@@ -632,8 +632,8 @@ export default function RootPage() {
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#6D5DFD]/4 blur-[100px] rounded-full" />
         </div>
 
-        {/* ─ Globe — 2× size, right-anchored ─ */}
-        <div className="hidden lg:block absolute right-[-18%] top-1/2 -translate-y-1/2 w-[80%] aspect-square z-0">
+        {/* ─ Globe ─ */}
+        <div className="hidden lg:block absolute right-[-8%] top-1/2 -translate-y-1/2 w-[42%] aspect-square z-0">
           <Globe />
         </div>
 
@@ -649,28 +649,25 @@ export default function RootPage() {
 
               <motion.h1
                 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
-                className="text-[clamp(2.8rem,5.5vw,4.8rem)] font-black text-[#F0F4FF] leading-[1.04] tracking-tighter mb-6">
-                Your time.
-                <br />Your skills.
+                className="text-[clamp(2.4rem,4.8vw,4.2rem)] font-black text-[#F0F4FF] leading-[1.08] tracking-tighter mb-6">
+                Get paid for completing
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#22FFAA] to-[#6D5DFD]">
-                  Verified. Rewarded.
+                  simple real-world tasks.
                 </span>
               </motion.h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.22 }}
-                className="text-[1.08rem] text-[#8B9CC0] leading-relaxed max-w-[520px] mb-3">
-                X-Hunt is the participation infrastructure that converts your everyday
-                contributions into <strong className="text-[#F0F4FF]">opportunity, reputation, and real income</strong> —
-                while helping organisations mobilise communities and achieve
-                verified outcomes at scale.
+                className="text-[1.15rem] text-[#8B9CC0] leading-relaxed max-w-[480px] mb-3">
+                Go places. Try things. Give feedback. Attend events.{' '}
+                <strong className="text-[#F0F4FF]">Earn rewards.</strong>
               </motion.p>
 
               <motion.p
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
                 className="text-[13px] text-[#4A5578] mb-10">
-                No followers. No pitch decks. No credentials required. Just participate.
+                No experience needed. No pitch decks. Just show up and get rewarded.
               </motion.p>
 
               <motion.div
