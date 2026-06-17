@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/cn';
 import { geocodeCity } from '@/lib/proximity';
 
@@ -43,6 +44,8 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 
 export default function NewMissionPage() {
   const router = useRouter();
+  const { user, isLoaded } = useAuth();
+  const supabase = createClient();
 
   const [title, setTitle]           = useState('');
   const [story, setStory]           = useState('');
@@ -82,9 +85,7 @@ export default function NewMissionPage() {
   useEffect(() => {
     async function loadSegments() {
       setSegLoading(true);
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setSegLoading(false); return; }
+      if (!isLoaded || !user) { setSegLoading(false); return; }
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
       if (!profile?.tenant_id) { setSegLoading(false); return; }
       const { data } = await supabase.from('audience_segments').select('id, name, member_count').eq('tenant_id', profile.tenant_id).order('name');
@@ -92,7 +93,7 @@ export default function NewMissionPage() {
       setSegLoading(false);
     }
     loadSegments();
-  }, []);
+  }, [user, isLoaded]);
 
   function addStep() {
     setSteps((prev) => [...prev, { id: Date.now(), type: 'action', instruction: '', success_criteria: '' }]);
@@ -227,8 +228,6 @@ export default function NewMissionPage() {
     setError('');
     setSaving(true);
 
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setError('Not authenticated.'); setSaving(false); return; }
     const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
     if (!profile?.tenant_id) { setError('No organization found.'); setSaving(false); return; }

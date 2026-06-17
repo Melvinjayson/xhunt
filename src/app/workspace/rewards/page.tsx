@@ -8,6 +8,7 @@ import {
   ChevronRight, RefreshCw
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/cn';
 import type { DbRewardConfig, DbRewardEvent } from '@/lib/supabase/types';
 
@@ -33,12 +34,12 @@ export default function RewardsPage() {
   const [newPoints, setNewPoints] = useState('100');
   const [saving, setSaving] = useState(false);
   const [tenantId, setTenantId] = useState<string | null>(null);
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
       if (!profile?.tenant_id) return;
       setTenantId(profile.tenant_id);
@@ -52,7 +53,7 @@ export default function RewardsPage() {
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, [supabase, user, isLoaded]);
 
   async function toggleActive(id: string, is_active: boolean) {
     await supabase.from('reward_configs').update({ is_active: !is_active }).eq('id', id);
@@ -62,7 +63,6 @@ export default function RewardsPage() {
   async function createReward() {
     if (!newName.trim() || !tenantId) return;
     setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
     const value = newType === 'points' ? { points: parseInt(newPoints) || 100 } : {};
     const { data } = await supabase.from('reward_configs').insert({
       tenant_id: tenantId,

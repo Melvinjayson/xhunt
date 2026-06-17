@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, ArrowRight, Loader2, Users, Briefcase, GraduationCap, Zap, AlertCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 
 const ORG_TYPES = [
   { id: 'brand',      label: 'Brand / Marketing',    icon: Zap,            desc: 'Customer engagement campaigns' },
@@ -24,6 +25,7 @@ const CARD: React.CSSProperties = { background: '#0A1226', border: '1px solid rg
 
 export default function OnboardPage() {
   const router  = useRouter();
+  const { user: authUser, isLoaded } = useAuth();
   const [step, setStep]     = useState<1 | 2>(1);
   const [orgName, setOrgName] = useState('');
   const [orgType, setOrgType] = useState('');
@@ -32,16 +34,15 @@ export default function OnboardPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    async function checkAuth() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace('/sign-in'); return; }
-      const { data: profile } = await supabase.from('user_profiles').select('tenant_id, onboarding_complete').eq('id', user.id).single();
-      if (profile?.tenant_id && profile?.onboarding_complete) { router.replace('/workspace'); return; }
-      setMounted(true);
-    }
-    checkAuth();
-  }, [router]);
+    if (!isLoaded) return;
+    if (!authUser) { router.replace('/sign-in'); return; }
+    const supabase = createClient();
+    supabase.from('user_profiles').select('tenant_id, onboarding_complete').eq('id', authUser.id).single()
+      .then(({ data: profile }) => {
+        if (profile?.tenant_id && profile?.onboarding_complete) { router.replace('/workspace'); return; }
+        setMounted(true);
+      });
+  }, [router, authUser, isLoaded]);
 
   if (!mounted) return null;
 

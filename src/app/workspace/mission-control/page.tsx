@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/cn';
 import type { DbMission, DbMissionScore } from '@/lib/supabase/types';
 
@@ -77,12 +78,12 @@ export default function MissionControlPage() {
   const [search, setSearch]     = useState('');
   const [selected, setSelected] = useState<MissionRow | null>(null);
   const [intel, setIntel]       = useState<IntelPanel | null>(null);
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
 
       const { data: profile } = await supabase
         .from('user_profiles').select('tenant_id').eq('id', user.id).single();
@@ -139,7 +140,7 @@ export default function MissionControlPage() {
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, [supabase, user, isLoaded]);
 
   async function loadIntel(mission: MissionRow) {
     setSelected(mission);

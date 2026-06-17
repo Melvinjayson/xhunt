@@ -10,6 +10,7 @@ import {
   Sun, Moon, Upload, Sparkles,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/cn';
 import ThemeToggle from '@/components/ThemeToggle';
 import type { DbTenant, DbUserProfile } from '@/lib/supabase/types';
@@ -142,13 +143,13 @@ export default function SettingsPage() {
   const [brandSaved, setBrandSaved] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     async function load() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!isLoaded || !user) return;
         setCurrentUserId(user.id);
 
         const { data: profile } = await supabase

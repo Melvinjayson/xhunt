@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/cn';
 import type { DbRevenueRecord, DbInvoice } from '@/lib/supabase/types';
 
@@ -49,12 +50,12 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [currentPlan, setCurrentPlan] = useState<string>('starter');
   const [totalUsers, setTotalUsers] = useState(0);
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
       if (!profile?.tenant_id) return;
 
@@ -72,7 +73,7 @@ export default function BillingPage() {
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, [supabase, user, isLoaded]);
 
   const totalRevenue = revenues.reduce((s, r) => s + r.amount_cents, 0) / 100;
   const thisMonthRevenue = revenues
