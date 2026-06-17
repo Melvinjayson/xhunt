@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   Target, Users, CheckCircle2, TrendingUp, Zap, ArrowRight, ArrowUpRight,
   RefreshCw, Sparkles, AlertTriangle, Lightbulb, Activity, Clock,
-  ChevronRight, BarChart3, Award
+  ChevronRight, BarChart3, Award, Building2
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -86,7 +86,7 @@ export default function WorkspaceDashboard() {
         .select('tenant_id')
         .eq('id', user.id)
         .single();
-      if (!profile?.tenant_id) return;
+      if (!profile?.tenant_id) { setLoading(false); return; }
       setTenantId(profile.tenant_id);
 
       const [tenantRes, missionsRes, progressRes, usersRes, scoresRes, rewardsRes] = await Promise.all([
@@ -208,6 +208,26 @@ export default function WorkspaceDashboard() {
           <Skeleton className="col-span-1 xl:col-span-2 h-80 rounded-2xl" />
           <Skeleton className="h-80 rounded-2xl" />
         </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="p-8 flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <div className="w-16 h-16 rounded-2xl bg-[#22FFAA]/10 border border-[#22FFAA]/20 flex items-center justify-center mb-6">
+          <Building2 size={28} strokeWidth={1.5} className="text-[#22FFAA]" />
+        </div>
+        <h2 className="text-[22px] font-bold text-[#F0F4FF] mb-2">No workspace yet</h2>
+        <p className="text-[#8B9CC0] text-[14px] max-w-md mb-8">
+          Set up your organization to access Mission Control, Analytics, and the full enterprise suite.
+        </p>
+        <Link href="/onboard">
+          <button className="flex items-center gap-2 h-10 px-6 bg-[#22FFAA] text-[#050816] rounded-xl font-bold text-[13px] shadow-[0_4px_20px_rgba(34,255,170,0.3)] hover:opacity-90 transition-opacity">
+            <Zap size={14} strokeWidth={2.5} />
+            Create your workspace
+          </button>
+        </Link>
       </div>
     );
   }
