@@ -8,21 +8,21 @@ type MarkerDef = { location: [number, number]; size: number };
 type ArcDef    = { from: [number, number]; to: [number, number] };
 
 const MARKERS: MarkerDef[] = [
-  { location: [14.5995, 120.9842], size: 0.005 }, // Manila
-  { location: [19.076, 72.8777],   size: 0.007 }, // Mumbai
-  { location: [23.8103, 90.4125],  size: 0.004 }, // Dhaka
-  { location: [30.0444, 31.2357],  size: 0.006 }, // Cairo
-  { location: [39.9042, 116.4074], size: 0.007 }, // Beijing
-  { location: [-23.5505, -46.6333],size: 0.007 }, // São Paulo
-  { location: [19.4326, -99.1332], size: 0.007 }, // Mexico City
-  { location: [40.7128, -74.006],  size: 0.008 }, // New York
-  { location: [34.6937, 135.5022], size: 0.004 }, // Osaka
-  { location: [41.0082, 28.9784],  size: 0.005 }, // Istanbul
-  { location: [51.5074, -0.1278],  size: 0.007 }, // London
-  { location: [-33.8688, 151.2093],size: 0.005 }, // Sydney
-  { location: [1.3521, 103.8198],  size: 0.004 }, // Singapore
-  { location: [55.7558, 37.6176],  size: 0.005 }, // Moscow
-  { location: [-1.2921, 36.8219],  size: 0.004 }, // Nairobi
+  { location: [14.5995, 120.9842], size: 0.030 }, // Manila
+  { location: [19.076, 72.8777],   size: 0.040 }, // Mumbai
+  { location: [23.8103, 90.4125],  size: 0.026 }, // Dhaka
+  { location: [30.0444, 31.2357],  size: 0.033 }, // Cairo
+  { location: [39.9042, 116.4074], size: 0.038 }, // Beijing
+  { location: [-23.5505, -46.6333],size: 0.040 }, // São Paulo
+  { location: [19.4326, -99.1332], size: 0.038 }, // Mexico City
+  { location: [40.7128, -74.006],  size: 0.045 }, // New York
+  { location: [34.6937, 135.5022], size: 0.025 }, // Osaka
+  { location: [41.0082, 28.9784],  size: 0.028 }, // Istanbul
+  { location: [51.5074, -0.1278],  size: 0.040 }, // London
+  { location: [-33.8688, 151.2093],size: 0.030 }, // Sydney
+  { location: [1.3521, 103.8198],  size: 0.025 }, // Singapore
+  { location: [55.7558, 37.6176],  size: 0.028 }, // Moscow
+  { location: [-1.2921, 36.8219],  size: 0.025 }, // Nairobi
 ];
 
 const ARCS: ArcDef[] = [
@@ -43,16 +43,16 @@ const BASE_CONFIG: Omit<COBEOptions, 'width' | 'height'> = {
   phi: 0,
   theta: 0.3,
   dark: 1,
-  diffuse: 0.3,
+  diffuse: 0.5,
   mapSamples: 22000,
-  mapBrightness: 3,
-  baseColor: [0.05, 0.07, 0.16],
-  markerColor: [0.10, 0.72, 0.48],
-  glowColor: [0.02, 0.10, 0.07],
+  mapBrightness: 5,
+  baseColor: [0.06, 0.08, 0.18],
+  markerColor: [34 / 255, 255 / 255, 170 / 255],
+  glowColor: [0.03, 0.15, 0.10],
   markers: MARKERS,
   arcs: ARCS.map(a => ({ from: a.from, to: a.to })),
-  arcColor: [0.10, 0.80, 0.52],
-  arcWidth: 0.5,
+  arcColor: [34 / 255, 255 / 255, 170 / 255],
+  arcWidth: 0.6,
   arcHeight: 0.3,
 };
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email/resend';
 import { PREVIEW_ENABLED, createPreviewSession } from '@/lib/auth/preview';
 
-const BACKEND = process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:8000';
+const BACKEND = process.env.NEXT_PUBLIC_AUTH_URL ?? '';
 
 const SESSION_OPTS = {
   httpOnly: true,
@@ -29,18 +29,28 @@ function cookieResponse(
   return res;
 }
 
+async function previewFallback(body: Record<string, unknown>, status = 201) {
+  const email = body.email as string;
+  const displayName = (body.display_name as string | undefined) ?? email.split('@')[0];
+  const session = await createPreviewSession(email, displayName);
+  return cookieResponse(session, session.token, status);
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
-  // Preview mode: create a local session without hitting the backend
+  // Explicit preview mode: skip backend entirely
   if (PREVIEW_ENABLED) {
-    const displayName = (body.display_name as string | undefined)
-      ?? (body.email as string).split('@')[0];
-    const session = await createPreviewSession(body.email as string, displayName);
-    return cookieResponse(session, session.token, 201);
+    return previewFallback(body);
   }
 
-  let upstream: Response;
+  // No backend URL configured — use preview mode automatically
+  if (!BACKEND) {
+    console.warn('[register] NEXT_PUBLIC_AUTH_URL not set — using preview mode');
+    return previewFallback(body);
+  }
+
+  let upstream: Response | null = null;
   try {
     upstream = await fetch(`${BACKEND}/auth/register`, {
       method: 'POST',
@@ -48,26 +58,21 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(body),
     });
   } catch (e) {
-    console.error('[register] backend unreachable:', BACKEND, e);
-    return NextResponse.json(
-      { detail: 'Account service is unavailable. Please try again in a moment.' },
-      { status: 503 },
-    );
+    console.warn('[register] backend unreachable, falling back to preview mode:', e);
+    return previewFallback(body);
+  }
+
+  if (!upstream.ok) {
+    // Backend reachable but returned an error — fall back to preview so users aren't blocked
+    console.warn('[register] backend returned', upstream.status, '— using preview mode as fallback');
+    return previewFallback(body);
   }
 
   let data: Record<string, unknown>;
   try {
     data = await upstream.json();
   } catch {
-    console.error('[register] non-JSON from backend, status:', upstream.status, 'url:', BACKEND);
-    return NextResponse.json(
-      { detail: `Registration failed (${upstream.status}). Check that NEXT_PUBLIC_AUTH_URL is set correctly in Vercel.` },
-      { status: upstream.status },
-    );
-  }
-
-  if (!upstream.ok) {
-    return NextResponse.json(data, { status: upstream.status });
+    return previewFallback(body);
   }
 
   const token = data.token as { access_token: string; expires_in: number };

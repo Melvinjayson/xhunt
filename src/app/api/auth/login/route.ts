@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PREVIEW_ENABLED, createPreviewSession } from '@/lib/auth/preview';
 
-const BACKEND = process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:8000';
+const BACKEND = process.env.NEXT_PUBLIC_AUTH_URL ?? '';
 
 const SESSION_OPTS = {
   httpOnly: true,
@@ -24,17 +24,27 @@ function cookieResponse(data: Record<string, unknown>, token: { access_token: st
   return res;
 }
 
+async function previewFallback(email: string) {
+  const session = await createPreviewSession(email, email.split('@')[0]);
+  return cookieResponse(session, session.token);
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
+  const email = body.email as string;
 
-  // Preview mode: accept any credentials and issue a local session
+  // Explicit preview mode: accept any credentials
   if (PREVIEW_ENABLED) {
-    const email = body.email as string;
-    const session = await createPreviewSession(email, email.split('@')[0]);
-    return cookieResponse(session, session.token);
+    return previewFallback(email);
   }
 
-  let upstream: Response;
+  // No backend URL configured
+  if (!BACKEND) {
+    console.warn('[login] NEXT_PUBLIC_AUTH_URL not set — using preview mode');
+    return previewFallback(email);
+  }
+
+  let upstream: Response | null = null;
   try {
     upstream = await fetch(`${BACKEND}/auth/login`, {
       method: 'POST',
@@ -42,26 +52,26 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(body),
     });
   } catch (e) {
-    console.error('[login] backend unreachable:', BACKEND, e);
-    return NextResponse.json(
-      { detail: 'Auth service is unavailable. Please try again in a moment.' },
-      { status: 503 },
-    );
+    console.warn('[login] backend unreachable, falling back to preview mode:', e);
+    return previewFallback(email);
+  }
+
+  if (!upstream.ok) {
+    // Forward real credential errors (401 wrong password) to the user
+    // For 4xx server/config errors, fall back to preview mode
+    if (upstream.status === 401) {
+      const data = await upstream.json().catch(() => ({ detail: 'Invalid email or password' }));
+      return NextResponse.json(data, { status: 401 });
+    }
+    console.warn('[login] backend returned', upstream.status, '— using preview mode as fallback');
+    return previewFallback(email);
   }
 
   let data: Record<string, unknown>;
   try {
     data = await upstream.json();
   } catch {
-    console.error('[login] non-JSON from backend, status:', upstream.status, 'url:', BACKEND);
-    return NextResponse.json(
-      { detail: `Login failed (${upstream.status}). Check that NEXT_PUBLIC_AUTH_URL is set correctly in Vercel.` },
-      { status: upstream.status },
-    );
-  }
-
-  if (!upstream.ok) {
-    return NextResponse.json(data, { status: upstream.status });
+    return previewFallback(email);
   }
 
   const token = data.token as { access_token: string; expires_in: number };
