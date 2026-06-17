@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, ArrowRight, Sparkles, Brain, Shield, Lock } from 'lucide-react';
 import { saveState, loadState, saveProfile } from '@/lib/store';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import type { ImpactProfile } from '@/lib/types';
 
 /* ─── design tokens ─── */
@@ -189,6 +190,7 @@ function ImpactDNAReveal({ profile, onContinue }: { profile: ImpactProfile; onCo
 /* ─── Main page ─── */
 export default function GetStartedPage() {
   const router = useRouter();
+  const { user: authUser, isLoaded } = useAuth();
   const [authChecked, setAuthChecked] = useState(false);
   const [userId, setUserId]           = useState<string | null>(null);
   const [messages, setMessages]       = useState<Message[]>([]);
@@ -204,38 +206,35 @@ export default function GetStartedPage() {
 
   // ── Auth guard ───────────────────────────────────────────────────────────
   useEffect(() => {
-    async function checkAuth() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.replace('/auth/signup?next=/get-started');
-        return;
-      }
-      setUserId(user.id);
-
-      // Check if already onboarded (localStorage fast-path)
-      const state = loadState();
-      if (state.user?.onboardingComplete) {
-        router.replace('/home');
-        return;
-      }
-
-      // Also check DB in case localStorage was cleared
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('onboarding_complete')
-        .eq('id', user.id)
-        .single();
-
-      if (profile?.onboarding_complete) {
-        router.replace('/home');
-        return;
-      }
-
-      setAuthChecked(true);
+    if (!isLoaded) return;
+    if (!authUser) {
+      router.replace('/sign-up?next=/get-started');
+      return;
     }
-    checkAuth();
-  }, [router]);
+    setUserId(authUser.id);
+
+    // Check if already onboarded (localStorage fast-path)
+    const state = loadState();
+    if (state.user?.onboardingComplete) {
+      router.replace('/home');
+      return;
+    }
+
+    // Also check DB in case localStorage was cleared
+    const supabase = createClient();
+    supabase
+      .from('user_profiles')
+      .select('onboarding_complete')
+      .eq('id', authUser.id)
+      .single()
+      .then(({ data: profile }) => {
+        if (profile?.onboarding_complete) {
+          router.replace('/home');
+          return;
+        }
+        setAuthChecked(true);
+      });
+  }, [router, authUser, isLoaded]);
 
   // Seed Xeno's opening message
   useEffect(() => {

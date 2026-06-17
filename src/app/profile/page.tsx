@@ -11,6 +11,7 @@ import Link from 'next/link';
 import BottomNav from '@/components/BottomNav';
 import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import { loadState, clearState, loadProfile } from '@/lib/store';
+import { useAuth } from '@/lib/auth/context';
 import type { CompletedHunt, ImpactProfile } from '@/lib/types';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
@@ -64,6 +65,7 @@ function isUUID(id: string) {
 /* ── Page ───────────────────────────────────────────────────────────────── */
 export default function ProfilePage() {
   const router = useRouter();
+  const { user: authUser, isLoaded } = useAuth();
   const [interests, setInterests]       = useState<string[]>([]);
   const [completedHunts, setCompleted]  = useState<CompletedHunt[]>([]);
   const [streak, setStreak]             = useState(0);
@@ -87,22 +89,20 @@ export default function ProfilePage() {
     void fetch('/api/subscription/status').then((r) => r.json()).then((d) => setSub(d as typeof subStatus)).catch(() => {});
 
     void (async () => {
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !authUser) return;
       setLoading(true);
       try {
         const { createClient } = await import('@/lib/supabase/client');
         const sb = createClient();
-        const { data: { user } } = await sb.auth.getUser();
-        if (!user) { setLoading(false); return; }
 
-        const { data: profile } = await sb.from('user_profiles').select('display_name, interests').eq('id', user.id).single();
+        const { data: profile } = await sb.from('user_profiles').select('display_name, interests').eq('id', authUser.id).single();
         if (profile?.display_name) setName(profile.display_name);
         if (profile?.interests?.length) setInterests(profile.interests);
 
         const { data: progress } = await sb
           .from('mission_progress')
           .select('mission_id, completed_at')
-          .eq('user_id', user.id)
+          .eq('user_id', authUser.id)
           .not('completed_at', 'is', null)
           .order('completed_at', { ascending: false });
 
@@ -134,7 +134,7 @@ export default function ProfilePage() {
       } catch { /* silent */ }
       setLoading(false);
     })();
-  }, [router]);
+  }, [router, authUser, isLoaded]);
 
   if (!mounted) return null;
 
