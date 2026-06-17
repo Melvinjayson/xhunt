@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 
 const T = {
   bg:       '#050816',
@@ -68,6 +69,7 @@ const STEP_TYPE_META = {
 export default function LiveSessionPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { user: authUser } = useAuth();
   const [session, setSession] = useState<SessionData | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,8 +93,7 @@ export default function LiveSessionPage() {
         loadSession(),
         fetch('/api/subscription/status'),
       ]);
-      const { data: { user } } = await supabase.auth.getUser();
-      setUserId(user?.id ?? null);
+      setUserId(authUser?.id ?? null);
 
       if (subRes.ok) {
         const s = await subRes.json();
