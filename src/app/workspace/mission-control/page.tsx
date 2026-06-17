@@ -87,7 +87,7 @@ export default function MissionControlPage() {
 
       const { data: profile } = await supabase
         .from('user_profiles').select('tenant_id').eq('id', user.id).single();
-      if (!profile?.tenant_id) return;
+      if (!profile?.tenant_id) { setLoading(false); return; }
 
       const [missionsRes, scoresRes, progressRes] = await Promise.all([
         supabase.from('missions').select('*').eq('tenant_id', profile.tenant_id).order('updated_at', { ascending: false }),

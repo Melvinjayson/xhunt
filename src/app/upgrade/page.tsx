@@ -67,7 +67,7 @@ function UpgradePageInner() {
     try {
       const res  = await fetch('/api/stripe/checkout', { method: 'POST' });
       const data = await res.json() as { url?: string; error?: string };
-      if (!res.ok) { if (res.status === 401) { router.push('/auth/login?next=/upgrade'); return; } setError(data.error ?? 'Something went wrong.'); return; }
+      if (!res.ok) { if (res.status === 401) { router.push('/sign-in?next=/upgrade'); return; } setError(data.error ?? 'Something went wrong.'); return; }
       if (data.url) window.location.href = data.url;
     } catch { setError('Network error — please try again.'); }
     finally { setUpgrading(false); }
@@ -78,7 +78,7 @@ function UpgradePageInner() {
     try {
       const res  = await fetch('/api/trial/start', { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) { if (res.status === 401) { router.push('/auth/login?next=/upgrade'); return; } setError((data as { error?: string }).error ?? 'Something went wrong.'); return; }
+      if (!res.ok) { if (res.status === 401) { router.push('/sign-in?next=/upgrade'); return; } setError((data as { error?: string }).error ?? 'Something went wrong.'); return; }
       setTierInfo((prev) => prev ? { ...prev, tier: 'trial', isTrialActive: true, trialDaysLeft: 14, canUseAI: true } : prev);
     } catch { setError('Network error — please try again.'); }
     finally { setStarting(false); }

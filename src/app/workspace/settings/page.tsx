@@ -154,7 +154,7 @@ export default function SettingsPage() {
 
         const { data: profile } = await supabase
           .from('user_profiles').select('tenant_id').eq('id', user.id).single();
-        if (!profile?.tenant_id) return;
+        if (!profile?.tenant_id) { setLoading(false); return; }
         setTenantId(profile.tenant_id);
 
         const [tenantRes, usersRes, ssoRes] = await Promise.all([

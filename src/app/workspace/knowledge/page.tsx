@@ -49,7 +49,7 @@ export default function KnowledgePage() {
     async function load() {
       if (!isLoaded || !user) return;
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
-      if (!profile?.tenant_id) return;
+      if (!profile?.tenant_id) { setLoading(false); return; }
 
       const [nodesRes, edgesRes] = await Promise.all([
         supabase.from('kg_nodes').select('*').eq('tenant_id', profile.tenant_id).limit(100),

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import { useMessages } from '@/hooks/useMessages';
 import type { ConversationWithDetails } from '@/lib/supabase/types';
 
@@ -154,22 +155,21 @@ export default function ChatPage() {
   const { id: conversationId } = useParams<{ id: string }>();
   const router = useRouter();
 
-  const [userId,   setUserId]   = useState<string | null>(null);
+  const { user: authUser, isLoaded } = useAuth();
   const [conv,     setConv]     = useState<ConversationWithDetails | null>(null);
   const [convErr,  setConvErr]  = useState('');
   const [content,  setContent]  = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLTextAreaElement>(null);
 
+  const userId = authUser?.id ?? null;
   const { messages, loading, sending, sendMessage } = useMessages(conversationId, userId);
 
-  // Auth
+  // Auth guard
   useEffect(() => {
-    createClient().auth.getUser().then(({ data }) => {
-      if (!data.user) { router.replace(`/auth/login?next=/messages/${conversationId}`); return; }
-      setUserId(data.user.id);
-    });
-  }, [conversationId, router]);
+    if (!isLoaded) return;
+    if (!authUser) { router.replace(`/sign-in?next=/messages/${conversationId}`); }
+  }, [isLoaded, authUser, conversationId, router]);
 
   // Load conversation details
   useEffect(() => {

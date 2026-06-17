@@ -11,6 +11,8 @@ import {
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
+import LinearProgress from '@mui/material/LinearProgress';
+import Chip from '@mui/material/Chip';
 
 interface AnalyticsData {
   totalMissions: number;
@@ -56,7 +58,7 @@ export default function AnalyticsPage() {
     async function load() {
       if (!isLoaded || !user) return;
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
-      if (!profile?.tenant_id) return;
+      if (!profile?.tenant_id) { setLoading(false); return; }
 
       const [missionsRes, progressRes, usersRes, scoresRes, rewardsRes] = await Promise.all([
         supabase.from('missions').select('id, title, status, difficulty').eq('tenant_id', profile.tenant_id),
@@ -286,15 +288,15 @@ export default function AnalyticsPage() {
                     <span className="text-[#8B9CC0] capitalize">{status}</span>
                     <span className="font-bold tabular-nums" style={{ color }}>{count}</span>
                   </div>
-                  <div className="h-1.5 bg-[#0D1530] rounded-full">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 0.8, delay: 0.3 }}
-                      className="h-full rounded-full"
-                      style={{ backgroundColor: color }}
-                    />
-                  </div>
+                  <LinearProgress
+                    variant="determinate"
+                    value={pct}
+                    sx={{
+                      height: 5, borderRadius: 3,
+                      backgroundColor: 'rgba(13,21,48,0.8)',
+                      '& .MuiLinearProgress-bar': { borderRadius: 3, backgroundColor: color },
+                    }}
+                  />
                 </div>
               );
             })}
@@ -330,9 +332,16 @@ export default function AnalyticsPage() {
                   <div className="flex items-center gap-4 flex-shrink-0">
                     <span className="text-[12px] text-[#8B9CC0]">{m.completions} completions</span>
                     {m.mei !== null && (
-                      <span className={cn('text-[11px] font-bold px-2 py-0.5 rounded-full',
-                        m.mei >= 70 ? 'text-[#22FFAA] bg-[#22FFAA]/10' : m.mei >= 40 ? 'text-[#FFB84D] bg-[#FFB84D]/10' : 'text-[#FF5C7A] bg-[#FF5C7A]/10'
-                      )}>MEI {m.mei}</span>
+                      <Chip
+                        label={`MEI ${m.mei}`}
+                        size="small"
+                        sx={{
+                          fontSize: 11, fontWeight: 700, height: 20,
+                          color: m.mei >= 70 ? '#22FFAA' : m.mei >= 40 ? '#FFB84D' : '#FF5C7A',
+                          bgcolor: m.mei >= 70 ? 'rgba(34,255,170,0.1)' : m.mei >= 40 ? 'rgba(255,184,77,0.1)' : 'rgba(255,92,122,0.1)',
+                          '& .MuiChip-label': { px: 1 },
+                        }}
+                      />
                     )}
                     <ChevronRight size={13} className="text-[#4A5578] group-hover:text-accent transition-colors" strokeWidth={2} />
                   </div>
@@ -362,15 +371,15 @@ export default function AnalyticsPage() {
                     <span className="text-[12px] font-bold" style={{ color }}>{label}</span>
                     <span className="text-[11px] text-[#8B9CC0] tabular-nums">{d.completed}/{d.total}</span>
                   </div>
-                  <div className="h-1.5 bg-[#0D1530] rounded-full mb-1">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${rate}%` }}
-                      transition={{ duration: 0.8, delay: 0.4 }}
-                      className="h-full rounded-full"
-                      style={{ backgroundColor: color }}
-                    />
-                  </div>
+                  <LinearProgress
+                    variant="determinate"
+                    value={rate}
+                    sx={{
+                      height: 5, borderRadius: 3, mb: 0.5,
+                      backgroundColor: 'rgba(13,21,48,0.8)',
+                      '& .MuiLinearProgress-bar': { borderRadius: 3, backgroundColor: color },
+                    }}
+                  />
                   <p className="text-[10px] font-bold" style={{ color }}>{rate}% completion rate</p>
                 </div>
               );

@@ -57,7 +57,7 @@ export default function BillingPage() {
     async function load() {
       if (!isLoaded || !user) return;
       const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
-      if (!profile?.tenant_id) return;
+      if (!profile?.tenant_id) { setLoading(false); return; }
 
       const [tenantRes, revenueRes, invoiceRes, usersRes] = await Promise.all([
         supabase.from('tenants').select('plan').eq('id', profile.tenant_id).single(),
