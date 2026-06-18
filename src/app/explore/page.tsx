@@ -6,11 +6,11 @@ import Link from 'next/link';
 import {
   Brain, Search, X, Clock, DollarSign, Star, Award,
   ShieldCheck, Building2, Zap, SlidersHorizontal, Target,
-  MapPin, Navigation,
+  MapPin, Navigation, Bookmark, BookmarkCheck,
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
-import { loadState, saveState, loadProfile } from '@/lib/store';
+import { loadState, saveState, loadProfile, toggleSavedHunt } from '@/lib/store';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
 import { MOCK_HUNTS } from '@/lib/mockHunts';
 import {
@@ -97,11 +97,14 @@ function AIRecCard({ rec }: { rec: Recommendation }) {
   );
 }
 
-function ExploreCard({ hunt, index, completedIds, profile, distanceKm }: {
+function ExploreCard({ hunt, index, completedIds, profile, distanceKm, savedHunts, onToggleSave }: {
   hunt: Hunt; index: number; completedIds: string[]; profile: ImpactProfile | null;
   distanceKm?: number | null;
+  savedHunts: string[];
+  onToggleSave: (id: string) => void;
 }) {
   const done    = completedIds.includes(hunt.id);
+  const isSaved = savedHunts.includes(hunt.id);
   const cash    = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
   const xp      = estimateXP(hunt.xpReward, hunt.difficulty, hunt.steps.length);
   const diff    = DIFF_META[hunt.difficulty] ?? DIFF_META.easy;
@@ -140,6 +143,13 @@ function ExploreCard({ hunt, index, completedIds, profile, distanceKm }: {
                   {hunt.locationCity}
                 </span>
               )}
+              {/* Bookmark */}
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSave(hunt.id); }}
+                style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: isSaved ? t.accent : t.txtFaint, display: 'flex', alignItems: 'center' }}
+              >
+                {isSaved ? <BookmarkCheck size={15} strokeWidth={2} /> : <Bookmark size={15} strokeWidth={1.8} />}
+              </button>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, marginBottom: 7 }}>
@@ -218,6 +228,7 @@ export default function ExplorePage() {
   const [query, setQuery]         = useState('');
   const [hunts, setHunts]         = useState<Hunt[]>([]);
   const [completedIds, setIds]    = useState<string[]>([]);
+  const [savedHunts, setSavedHunts] = useState<string[]>([]);
   const [recs, setRecs]           = useState<Recommendation[]>([]);
   const [recsLoading, setRL]      = useState(true);
   const [profile, setProfile]     = useState<ImpactProfile | null>(null);
@@ -235,6 +246,7 @@ export default function ExplorePage() {
   useEffect(() => {
     const state = loadState();
     setIds(state.completedHunts.map(h => h.huntId));
+    setSavedHunts(state.savedHunts ?? []);
     const initialHunts = state.hunts.length > 0 ? state.hunts : MOCK_HUNTS;
     setHunts(initialHunts);
     setProfile(loadProfile());
@@ -308,13 +320,13 @@ export default function ExplorePage() {
 
   return (
     <div className="consumer-app" style={{ minHeight: '100vh', paddingBottom: 100, background: t.bg }}>
-      <div style={{ maxWidth: 430, margin: '0 auto' }}>
+      <div style={{ maxWidth: 680, margin: '0 auto' }}>
 
         {/* Sticky header */}
         <div style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(5,8,22,.94)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,.06)', padding: '52px 20px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900, color: t.txt, letterSpacing: '-.03em' }}>Explore</h1>
+              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 900, color: t.txt, letterSpacing: '-.03em' }}>Explore</h1>
               {proximity.coords && (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 999, background: `${t.accent}0A`, border: `1px solid ${t.accent}18` }}>
                   <Navigation size={9} strokeWidth={2.5} style={{ color: t.accent }} />
@@ -519,6 +531,11 @@ export default function ExplorePage() {
                   completedIds={completedIds}
                   profile={profile}
                   distanceKm={hunt.distanceKm}
+                  savedHunts={savedHunts}
+                  onToggleSave={(id) => {
+                    toggleSavedHunt(id);
+                    setSavedHunts(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+                  }}
                 />
               ))}
             </div>

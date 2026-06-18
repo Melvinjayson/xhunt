@@ -104,6 +104,15 @@ function MatchRing({ score, color }: { score: number; color: string }) {
   );
 }
 
+/* ─── verification requirements helper ─── */
+function verificationRequirements(hunt: Hunt): string[] {
+  const reqs: string[] = ['Written response required for each step'];
+  if (hunt.steps.some(s => s.type === 'submission')) reqs.push('Photo or file upload required for submission steps');
+  if (hunt.missionType === 'fieldwork' || hunt.locationType === 'local') reqs.push('Location check-in or on-site verification required');
+  if (hunt.missionType === 'research') reqs.push('Source citations or links required for research steps');
+  return reqs;
+}
+
 /* ─── page ─── */
 export default function HuntDetailPage() {
   const params  = useParams();
@@ -515,6 +524,24 @@ export default function HuntDetailPage() {
                 )}
               </div>
             )}
+          </section>
+
+          {/* ── VERIFICATION REQUIREMENTS ── */}
+          <section style={{ marginBottom: 20 }}>
+            <div style={{ borderRadius: 16, padding: '16px', background: SURF, border: '1px solid rgba(255,255,255,.07)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <ShieldCheck size={15} strokeWidth={2} style={{ color: ACCENT }} />
+                <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: TXT }}>Verification Requirements</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {verificationRequirements(hunt).map((req, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <CheckCircle2 size={12} strokeWidth={2.5} style={{ color: ACCENT, marginTop: 2, flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: DIM, lineHeight: 1.5 }}>{req}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </section>
 
           {/* ── DISCUSSION TEASER ── */}

@@ -14,7 +14,7 @@ import { t } from '@/theme/colors';
 const PRIMARY_NAV = [
   { href: '/home',     icon: Home,          label: 'Home'     },
   { href: '/explore',  icon: Compass,       label: 'Explore'  },
-  { href: '/missions', icon: Target,        label: 'Missions', accent: true },
+  { href: '/missions', icon: Target,        label: 'My Missions', accent: true },
   { href: '/messages', icon: MessageSquare, label: 'Messages', badge: true },
   { href: '/profile',  icon: User,          label: 'Profile'  },
 ];

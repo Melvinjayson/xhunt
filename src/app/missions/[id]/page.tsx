@@ -6,13 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Target, Clock, Zap, Trophy,
   ArrowRight, Sparkles, AlertCircle, Loader2, SkipForward,
-  Building2, ShieldCheck, RotateCcw, MessageSquare,
+  Building2, ShieldCheck, RotateCcw, MessageSquare, Upload,
 } from 'lucide-react';
 import Link from 'next/link';
 import BottomNav from '@/components/BottomNav';
 
 import { emitEvent, syncProgress, emitRewardClaimed } from '@/lib/supabase/events';
-import { loadState } from '@/lib/store';
+import { loadState, setVerificationStatus } from '@/lib/store';
 import { useAuth } from '@/lib/auth/context';
 import type { Hunt, Step } from '@/lib/types';
 
@@ -48,7 +48,20 @@ export default function MissionExecutionPage() {
   const [saving, setSaving]       = useState(false);
   const [loadErr, setLoadErr]     = useState('');
   const [chatConvId, setChatConvId] = useState<string | null>(null);
+  const [proofFile, setProofFile]   = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
   const startedAtRef              = useRef('');
+
+  function handleProofFile(file: File | null) {
+    setProofFile(file);
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => setProofPreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setProofPreview(null);
+    }
+  }
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -188,6 +201,7 @@ export default function MissionExecutionPage() {
       emitEvent('mission_completed', { missionId: id, metadata: { total_steps: mission.steps.length } });
       emitRewardClaimed(id, mission.reward);
       void fetch('/api/mei/compute', { method: 'POST' });
+      setVerificationStatus(id, 'submitted');
       setDoneIds(newDone);
       setPhase('complete');
     } else {
@@ -511,6 +525,22 @@ export default function MissionExecutionPage() {
                 onFocus={(e) => { e.target.style.borderColor = 'rgba(34,255,170,0.3)'; }}
                 onBlur={(e)  => { e.target.style.borderColor = stepErr ? 'rgba(255,92,122,0.4)' : 'rgba(255,255,255,0.08)'; }}
               />
+              {step.type === 'submission' && (
+                <div style={{ marginTop: 10 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '10px 14px', borderRadius: 12, border: '1px dashed rgba(34,255,170,0.25)', background: 'rgba(34,255,170,0.03)' }}>
+                    <Upload size={15} strokeWidth={2} style={{ color: '#22FFAA' }} />
+                    <span style={{ fontSize: 13, color: DIM, flex: 1 }}>
+                      {proofFile ? proofFile.name : 'Attach proof (photo, PDF, screenshot)'}
+                    </span>
+                    <input type="file" accept="image/*,.pdf" style={{ display: 'none' }}
+                      onChange={e => handleProofFile(e.target.files?.[0] ?? null)} />
+                  </label>
+                  {proofPreview && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={proofPreview} alt="proof preview" style={{ marginTop: 8, height: 80, borderRadius: 8, objectFit: 'cover' }} />
+                  )}
+                </div>
+              )}
               {stepErr && (
                 <p style={{ fontSize: 12, color: '#FF5C7A', marginTop: 7, display: 'flex', alignItems: 'center', gap: 5 }}>
                   <AlertCircle size={12} strokeWidth={2} />{stepErr}

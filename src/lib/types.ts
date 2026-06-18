@@ -94,6 +94,23 @@ export interface HuntProgress {
   completedSteps: number[];
   startedAt: string;
   completedAt?: string;
+  proofFile?: string;
+}
+
+export type VerificationStatus =
+  | 'submitted'
+  | 'ai_reviewing'
+  | 'manual_review'
+  | 'approved'
+  | 'rejected'
+  | 'needs_info';
+
+export interface VerificationRecord {
+  huntId: string;
+  status: VerificationStatus;
+  submittedAt: string;
+  reviewedAt?: string;
+  feedback?: string;
 }
 
 export interface UserProfile {
@@ -137,4 +154,6 @@ export interface AppState {
   progress: Record<string, HuntProgress>;
   completedHunts: CompletedHunt[];
   streak: number;
+  savedHunts: string[];
+  verificationStatus: Record<string, VerificationRecord>;
 }

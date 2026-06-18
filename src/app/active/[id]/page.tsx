@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Check, SkipForward, X, Sparkles, Loader2 } from 'lucide-react';
 import AIAssistant from '@/components/AIAssistant';
 import { cn } from '@/lib/cn';
-import { loadState, saveState } from '@/lib/store';
+import { loadState, saveState, setVerificationStatus } from '@/lib/store';
 
 import type { Hunt, HuntProgress, Step } from '@/lib/types';
 import { emitEvent, emitTypedEvent, syncProgress, markStepStart, measureDuration } from '@/lib/supabase/events';
@@ -106,6 +106,7 @@ export default function ActiveHuntPage() {
       saveState({ ...state, progress: { ...state.progress, [huntId]: updatedProgress }, completedHunts: newCompleted, streak: (state.streak || 0) + 1 });
       syncProgress(huntId, updatedProgress);
       emitTypedEvent('mission_completed', huntId, {});
+      setVerificationStatus(huntId, 'submitted');
       router.push(`/complete/${huntId}`);
     } else {
       const nextIndex = progress.currentStepIndex + 1;
@@ -132,7 +133,7 @@ export default function ActiveHuntPage() {
       step_type:  rawStep.type,
       reason:     'user_skipped',
     });
-    if (isLastStep) { router.push(`/complete/${huntId}`); return; }
+    if (isLastStep) { setVerificationStatus(huntId, 'submitted'); router.push(`/complete/${huntId}`); return; }
     const nextSkipIndex = progress.currentStepIndex + 1;
     const nextSkipStep  = hunt.steps[nextSkipIndex];
     const updatedProgress: HuntProgress = { ...progress, currentStepIndex: nextSkipIndex };

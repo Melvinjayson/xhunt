@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { loadState } from '@/lib/store';
-import type { CompletedHunt } from '@/lib/types';
+import type { CompletedHunt, VerificationRecord, Hunt } from '@/lib/types';
+import { estimateCashReward } from '@/lib/missionCategories';
 
 function parseReward(r: string): number {
   return parseFloat(r.replace(/[^0-9.]/g, '')) || 0;
@@ -69,6 +70,7 @@ export default function RewardsPage() {
   const [hunterScore, setScore]       = useState(0);
   const [subStatus, setSub]           = useState<SubStatus | null>(null);
   const [mounted, setMounted]         = useState(false);
+  const [pendingRewards, setPendingRewards] = useState<{ record: VerificationRecord; hunt: Hunt }[]>([]);
 
   useEffect(() => {
     const state = loadState();
@@ -77,6 +79,14 @@ export default function RewardsPage() {
     setName((state.user as { name?: string })?.name ?? null);
     setScore((state.user as { hunterScore?: number })?.hunterScore ?? 0);
     setMounted(true);
+    const vMap = state.verificationStatus ?? {};
+    const allHunts = state.hunts ?? [];
+    const pendingStatuses = ['submitted', 'ai_reviewing', 'manual_review'];
+    const pendingItems = Object.values(vMap)
+      .filter(r => pendingStatuses.includes(r.status))
+      .map(r => ({ record: r, hunt: allHunts.find(h => h.id === r.huntId) ?? null }))
+      .filter((x): x is { record: VerificationRecord; hunt: Hunt } => x.hunt !== null);
+    setPendingRewards(pendingItems);
     void fetch('/api/subscription/status')
       .then(r => r.json())
       .then((d: SubStatus) => setSub(d))
@@ -241,6 +251,34 @@ export default function RewardsPage() {
             </div>
           )}
         </div>
+
+        {/* ─── Pending verification ─── */}
+        {pendingRewards.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <Clock size={16} style={{ color: T.amber }} /> Pending Verification
+            </h2>
+            <div style={{ borderRadius: 16, background: T.card, border: `1px solid ${T.line}`, overflow: 'hidden' }}>
+              {pendingRewards.map(({ hunt, record }, i) => (
+                <div key={hunt.id} style={{ padding: '12px 14px', borderBottom: i < pendingRewards.length - 1 ? `1px solid ${T.line}` : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,184,77,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Clock size={15} style={{ color: T.amber }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: T.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hunt.title}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 11, color: T.amber, fontWeight: 600 }}>
+                      {record.status === 'ai_reviewing' ? '🤖 AI Reviewing' : record.status === 'manual_review' ? '👁 In Review' : '📬 Submitted'}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: T.amber }}>~${estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType)}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 10, color: T.dim }}>pending</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ─── Recent payouts ─── */}
         {completedHunts.length > 0 && (

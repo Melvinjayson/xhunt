@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Trophy, Share2, ArrowRight, Home, Clock, Zap, Sparkles, Radio, CheckCircle2 } from 'lucide-react';
-import { loadState } from '@/lib/store';
+import { loadState, getVerificationStatus, setVerificationStatus } from '@/lib/store';
 import { getTagGradient } from '@/lib/mockHunts';
 import type { Hunt } from '@/lib/types';
 import { cn } from '@/lib/cn';
@@ -24,6 +24,14 @@ const DIFFICULTY_COLOR: Record<string, string> = {
   medium: '#FFB84D',
   hard:   '#FF5C7A',
 };
+
+const VERI_STAGES = [
+  { id: 'submitted',     label: 'Submitted',    desc: 'Your responses are in',             icon: '📬' },
+  { id: 'ai_reviewing',  label: 'AI Review',    desc: 'AI is checking your work · ~2 min', icon: '🤖' },
+  { id: 'manual_review', label: 'Human Review', desc: 'Reviewer checking · up to 24 hrs',  icon: '👁️' },
+  { id: 'approved',      label: 'Approved',     desc: 'Reward confirmed & issued',          icon: '✅' },
+];
+const STAGE_ORDER = ['submitted', 'ai_reviewing', 'manual_review', 'approved'];
 
 interface Recommendation {
   id: string;
@@ -65,6 +73,7 @@ export default function CompletePage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [sharing, setSharing] = useState(false);
   const [shared, setShared] = useState(false);
+  const [veriStatus, setVeriStatus] = useState<string>('submitted');
 
   useEffect(() => {
     const state = loadState();
@@ -83,6 +92,17 @@ export default function CompletePage() {
     }
     setMounted(true);
     setTimeout(() => setShowConfetti(true), 100);
+
+    const record = getVerificationStatus(huntId);
+    const currentStatus = record?.status ?? 'submitted';
+    setVeriStatus(currentStatus);
+    if (currentStatus === 'submitted') {
+      const t = setTimeout(() => {
+        setVerificationStatus(huntId, 'ai_reviewing');
+        setVeriStatus('ai_reviewing');
+      }, 3000);
+      return () => clearTimeout(t);
+    }
 
     void fetch(`/api/recommendations?mission_id=${huntId}&limit=3`)
       .then((r) => (r.ok ? r.json() : null))
@@ -210,6 +230,41 @@ export default function CompletePage() {
               <p className="text-[12px] font-medium mt-1" style={{ color: '#7d8b8e' }}>{s.label}</p>
             </div>
           ))}
+        </motion.div>
+
+        {/* Verification Timeline */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85 }}
+          className="rounded-2xl p-5 mb-6"
+          style={{ background: '#07101F', border: '1px solid rgba(255,255,255,.07)' }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider mb-4" style={{ color: '#8B9CC0' }}>Verification Status</p>
+          <div className="flex flex-col gap-3">
+            {VERI_STAGES.map((stage) => {
+              const currentIdx = STAGE_ORDER.indexOf(veriStatus);
+              const stageIdx   = STAGE_ORDER.indexOf(stage.id);
+              const done   = stageIdx < currentIdx;
+              const active = stageIdx === currentIdx;
+              return (
+                <div key={stage.id} className="flex items-start gap-3">
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                    background: done ? 'rgba(34,255,170,.15)' : active ? 'rgba(255,184,77,.12)' : 'rgba(255,255,255,.04)',
+                    border: `1.5px solid ${done ? '#22FFAA' : active ? '#FFB84D' : 'rgba(255,255,255,.08)'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
+                  }}>
+                    {done ? '✓' : stage.icon}
+                  </div>
+                  <div style={{ flex: 1, paddingTop: 3 }}>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: done || active ? 700 : 500,
+                      color: done ? '#22FFAA' : active ? '#FFB84D' : '#4A5578' }}>
+                      {stage.label}
+                      {active && <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.4, repeat: Infinity }}
+                        style={{ display: 'inline-block', marginLeft: 6, width: 5, height: 5, borderRadius: '50%', background: '#FFB84D', verticalAlign: 'middle' }} />}
+                    </p>
+                    <p style={{ margin: '1px 0 0', fontSize: 11, color: '#4A5578' }}>{stage.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </motion.div>
 
         {/* Recommendations */}

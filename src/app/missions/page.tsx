@@ -8,18 +8,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Target, Clock, Zap, Trophy, CheckCircle2, ShieldCheck, Building2,
   Lock, Sparkles, Bell, DollarSign, Star, Users, Calendar,
-  Brain, TrendingUp, Award, MapPin, ChevronRight, Bookmark,
+  Brain, TrendingUp, Award, MapPin, ChevronRight, Bookmark, BookmarkCheck, Clock as ClockIcon,
 } from 'lucide-react';
+import LinearProgress from '@mui/material/LinearProgress';
 import BottomNav from '@/components/BottomNav';
 import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
-import { loadState, saveState, loadProfile } from '@/lib/store';
+import { loadState, saveState, loadProfile, toggleSavedHunt, getVerificationStatus } from '@/lib/store';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
 import { MOCK_HUNTS } from '@/lib/mockHunts';
 import {
   DIFF_META, MISSION_TYPE_META, ORG_TYPE_META, SDG_META,
   estimateCashReward, estimateXP, deadlineLabel, spotsLabel, resolveCategory,
 } from '@/lib/missionCategories';
-import type { Hunt, ImpactProfile } from '@/lib/types';
+import type { Hunt, ImpactProfile, VerificationRecord } from '@/lib/types';
 
 /* ─── Unsplash thumbnails ─── */
 const MISSION_IMAGES: Record<string, string> = {
@@ -70,17 +71,41 @@ function matchScore(hunt: Hunt, profile: ImpactProfile | null): number | null {
 }
 
 /* ─── tabs ─── */
-const TABS = ['All', 'Active', 'Applied', 'Completed'] as const;
+const TABS = ['All', 'Active', 'Pending', 'Saved', 'Completed'] as const;
 type Tab = typeof TABS[number];
 
 /* ─── interface ─── */
 interface SubStatus { canAccessPremiumMissions: boolean; isTrialActive: boolean; trialDaysLeft: number; tier: string; hasUsedTrial: boolean; }
 function isPremium(h: Hunt) { return h.isVerified || !!h.tenantName; }
 
+/* ─── verification badge ─── */
+const VERI_META: Record<string, { label: string; color: string; bg: string }> = {
+  submitted:      { label: 'Submitted',     color: '#60A5FA', bg: 'rgba(96,165,250,.1)'  },
+  ai_reviewing:   { label: 'AI Reviewing',  color: '#FFB84D', bg: 'rgba(255,184,77,.1)'  },
+  manual_review:  { label: 'In Review',     color: '#A99FFE', bg: 'rgba(109,93,253,.1)'  },
+  approved:       { label: 'Approved ✓',    color: '#22FFAA', bg: 'rgba(34,255,170,.1)'  },
+  rejected:       { label: 'Rejected',      color: '#FF5C7A', bg: 'rgba(255,92,122,.1)'  },
+  needs_info:     { label: 'Needs Info',    color: '#FFB84D', bg: 'rgba(255,184,77,.1)'  },
+};
+
+function VerificationBadge({ status }: { status: string }) {
+  const meta = VERI_META[status] ?? VERI_META.submitted;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: meta.color, background: meta.bg, border: `1px solid ${meta.color}25`, borderRadius: 8, padding: '3px 9px' }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: meta.color, display: 'inline-block' }} />
+      {meta.label}
+    </span>
+  );
+}
+
 /* ─── rich mission card ─── */
-function MissionCard({ hunt, done, locked, profile, index }: {
+function MissionCard({ hunt, done, locked, profile, index, savedHunts, onToggleSave, verificationRecord, stepProgress }: {
   hunt: Hunt; done: boolean; locked: boolean;
   profile: ImpactProfile | null; index: number;
+  savedHunts: string[];
+  onToggleSave: (id: string) => void;
+  verificationRecord?: VerificationRecord | null;
+  stepProgress?: { currentStepIndex: number; completedSteps: number[] } | null;
 }) {
   const cash    = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
   const xp      = estimateXP(hunt.xpReward, hunt.difficulty, hunt.steps.length);
@@ -286,6 +311,9 @@ export default function MissionsPage() {
   const [mounted, setMounted]     = useState(false);
   const [subStatus, setSub]       = useState<SubStatus | null>(null);
   const [profile, setProfile]     = useState<ImpactProfile | null>(null);
+  const [savedHunts, setSavedHunts] = useState<string[]>([]);
+  const [verificationMap, setVMap] = useState<Record<string, VerificationRecord>>({});
+  const [progress, setProgress]   = useState<Record<string, { currentStepIndex: number; completedSteps: number[] }>>({});
 
   useEffect(() => {
     const state = loadState();
@@ -295,6 +323,9 @@ export default function MissionsPage() {
     setHunts(state.hunts.length > 0 ? state.hunts : MOCK_HUNTS);
     setProfile(loadProfile());
     setMounted(true);
+    setSavedHunts(state.savedHunts ?? []);
+    setVMap(state.verificationStatus ?? {});
+    setProgress(state.progress ?? {});
     void fetch('/api/subscription/status').then((r) => r.json())
       .then((d: SubStatus) => setSub(d))
       .catch(() => setSub({ canAccessPremiumMissions: false, isTrialActive: false, trialDaysLeft: 0, tier: 'free', hasUsedTrial: false }));
@@ -316,7 +347,16 @@ export default function MissionsPage() {
   const canPremium   = subStatus?.canAccessPremiumMissions ?? false;
   const activeHunts  = hunts.filter((h) => !completedIds.includes(h.id));
   const doneHunts    = hunts.filter((h) =>  completedIds.includes(h.id));
-  const filtered     = tab === 'Active' ? activeHunts : tab === 'Completed' ? doneHunts : tab === 'Applied' ? [] : hunts;
+  const pendingHunts = hunts.filter((h) => {
+    const v = verificationMap[h.id];
+    return v && ['submitted', 'ai_reviewing', 'manual_review'].includes(v.status);
+  });
+  const savedHuntsList = hunts.filter((h) => savedHunts.includes(h.id));
+  const filtered = tab === 'Active' ? activeHunts
+    : tab === 'Completed' ? doneHunts
+    : tab === 'Pending' ? pendingHunts
+    : tab === 'Saved' ? savedHuntsList
+    : hunts;
 
   /* aggregate econometrics */
   const totalCashAvailable = activeHunts.reduce((acc, h) => acc + estimateCashReward(h.cashReward, h.difficulty, h.missionType), 0);
@@ -360,7 +400,7 @@ export default function MissionsPage() {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
             <div>
               <span style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: FAINT, marginBottom: 4 }}>Mission Marketplace</span>
-              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 900, letterSpacing: '-.03em', color: TXT }}>Missions</h1>
+              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 900, letterSpacing: '-.03em', color: TXT }}>My Missions</h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {streak > 0 && (
@@ -421,9 +461,10 @@ export default function MissionsPage() {
           <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 999, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', marginBottom: 20 }}>
             {TABS.map((t) => {
               const active = tab === t;
+              const count = t === 'Pending' ? pendingHunts.length : t === 'Saved' ? savedHuntsList.length : null;
               return (
                 <button key={t} onClick={() => setTab(t)} style={{ flex: 1, height: 38, borderRadius: 999, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, letterSpacing: '-.01em', transition: 'all .18s', ...(active ? { background: ACCENT, boxShadow: `0 0 20px ${ACCENT}35`, color: BG } : { background: 'transparent', color: DIM }) }}>
-                  {t}
+                  {t}{count != null && count > 0 ? ` (${count})` : ''}
                 </button>
               );
             })}
@@ -437,12 +478,14 @@ export default function MissionsPage() {
               <Target size={44} strokeWidth={1.2} style={{ color: FAINT, marginBottom: 16 }} />
               <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: TXT }}>
                 {tab === 'Completed' ? 'Nothing completed yet'
-                  : tab === 'Applied' ? 'No applications yet'
+                  : tab === 'Pending' ? 'No pending submissions'
+                  : tab === 'Saved' ? 'No saved missions'
                   : 'No missions here'}
               </p>
               <p style={{ margin: '6px 0 0', fontSize: 13, color: DIM }}>
                 {tab === 'Completed' ? 'Finish a mission to see it here.'
-                  : tab === 'Applied' ? 'Apply to a mission to track it.'
+                  : tab === 'Pending' ? 'Submit a mission to track its verification status.'
+                  : tab === 'Saved' ? 'Bookmark missions from Explore to save them here.'
                   : 'Check back soon for new opportunities.'}
               </p>
             </div>
@@ -453,7 +496,16 @@ export default function MissionsPage() {
                 const locked = isPremium(hunt) && !canPremium && !done;
                 return (
                   <div key={hunt.id} onClick={() => handleClick(hunt)} style={{ cursor: 'pointer' }}>
-                    <MissionCard hunt={hunt} done={done} locked={locked} profile={profile} index={i} />
+                    <MissionCard
+                      hunt={hunt} done={done} locked={locked} profile={profile} index={i}
+                      savedHunts={savedHunts}
+                      onToggleSave={(huntId) => {
+                        toggleSavedHunt(huntId);
+                        setSavedHunts(prev => prev.includes(huntId) ? prev.filter(x => x !== huntId) : [...prev, huntId]);
+                      }}
+                      verificationRecord={verificationMap[hunt.id] ?? null}
+                      stepProgress={progress[hunt.id] ?? null}
+                    />
                   </div>
                 );
               })}

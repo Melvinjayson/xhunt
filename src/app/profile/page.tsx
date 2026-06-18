@@ -79,6 +79,9 @@ export default function ProfilePage() {
   const [skills, setSkills]             = useState<SkillData[]>([]);
   const [categories, setCategories]     = useState<CategoryData[]>([]);
   const [copied, setCopied]             = useState(false);
+  const [completionRate, setCompletionRate]     = useState(0);
+  const [verificationRate, setVerificationRate] = useState(0);
+  const [trustScore, setTrustScore]             = useState(0);
 
   useEffect(() => {
     const state = loadState();
@@ -88,6 +91,17 @@ export default function ProfilePage() {
     setStreak(state.streak);
     setMounted(true);
     setProfile(loadProfile());
+
+    const completedCount = state.completedHunts.length;
+    const totalStarted   = Object.keys(state.progress).length;
+    const vMap           = state.verificationStatus ?? {};
+    const submittedCount = Object.values(vMap).length;
+    const approvedCount  = Object.values(vMap).filter(v => v.status === 'approved').length;
+    const cr = Math.round((completedCount / Math.max(totalStarted, 1)) * 100);
+    const vr = Math.round((approvedCount  / Math.max(submittedCount, 1)) * 100);
+    setCompletionRate(cr);
+    setVerificationRate(vr);
+    setTrustScore(Math.round((cr * 0.5) + (vr * 0.3) + (((loadProfile()?.impactScore) ?? 0) * 0.2)));
     void fetch('/api/subscription/status').then((r) => r.json()).then((d) => setSub(d as typeof subStatus)).catch(() => {});
 
     void (async () => {
@@ -222,6 +236,20 @@ export default function ProfilePage() {
         </div>
 
         <div style={{ padding: '20px' }}>
+
+          {/* ── Participation Passport Metrics ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 20 }}>
+            {[
+              { label: 'Completion Rate', value: `${completionRate}%`,   color: ACCENT },
+              { label: 'Verification',    value: `${verificationRate}%`, color: AI     },
+              { label: 'Trust Score',     value: String(trustScore),     color: WARN   },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ padding: '12px', borderRadius: 14, background: SURFACE, border: '1px solid rgba(255,255,255,.07)', textAlign: 'center' }}>
+                <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color, letterSpacing: '-.02em', lineHeight: 1 }}>{value}</p>
+                <p style={{ margin: '4px 0 0', fontSize: 9.5, color: FAINT, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.05em' }}>{label}</p>
+              </div>
+            ))}
+          </div>
 
           {/* ── Skills Intelligence ── */}
           {skills.length > 0 && (
