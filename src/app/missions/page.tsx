@@ -429,7 +429,7 @@ export default function MissionsPage() {
                 <div key={label} style={{ textAlign: 'center' }}>
                   <Icon size={13} strokeWidth={2} style={{ color, marginBottom: 4 }} />
                   <div style={{ fontSize: 17, fontWeight: 900, color, letterSpacing: '-.02em', lineHeight: 1 }}>{value}</div>
-                  <div style={{ fontSize: 9.5, color: FAINT, marginTop: 3 }}>{sub}</div>
+                  <div style={{ fontSize: 9.5, color: DIM, marginTop: 3 }}>{sub}</div>
                 </div>
               ))}
             </div>
@@ -452,7 +452,7 @@ export default function MissionsPage() {
             ].map((s) => (
               <div key={s.label} className="liquid-glass" style={{ ...XGLASS, borderRadius: 14, padding: '10px 8px', textAlign: 'center' }}>
                 <div style={{ fontSize: 20, fontWeight: 900, color: s.color, letterSpacing: '-.02em' }}>{s.value}</div>
-                <div style={{ fontSize: 9.5, fontWeight: 600, color: FAINT, marginTop: 2, textTransform: 'uppercase', letterSpacing: '.06em' }}>{s.label}</div>
+                <div style={{ fontSize: 9.5, fontWeight: 600, color: DIM, marginTop: 2, textTransform: 'uppercase', letterSpacing: '.06em' }}>{s.label}</div>
               </div>
             ))}
           </div>

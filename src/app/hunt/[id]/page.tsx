@@ -19,18 +19,7 @@ import {
   resolveCategory,
 } from '@/lib/missionCategories';
 import type { Hunt, ImpactProfile } from '@/lib/types';
-
-/* ─── tokens ─── */
-const BG     = '#050816';
-const CARD   = '#0A1226';
-const SURF   = '#07101F';
-const ACCENT = '#22FFAA';
-const AI_CLR = '#6D5DFD';
-const WARN   = '#FFB84D';
-const ERR    = '#FF5C7A';
-const TXT    = '#F0F4FF';
-const DIM    = '#8B9CC0';
-const FAINT  = '#4A5578';
+import { t } from '@/theme/colors';
 
 const XGLASS: React.CSSProperties = LIQUID_GLASS_STYLE;
 
@@ -66,10 +55,10 @@ function Deliverable({ text, index }: { text: string; index: number }) {
   return (
     <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.06 }}
       style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(34,255,170,.04)', border: '1px solid rgba(34,255,170,.1)' }}>
-      <div style={{ width: 20, height: 20, borderRadius: 6, background: `${ACCENT}18`, border: `1px solid ${ACCENT}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-        <span style={{ fontSize: 9, fontWeight: 800, color: ACCENT }}>{index + 1}</span>
+      <div style={{ width: 20, height: 20, borderRadius: 6, background: `${t.accent}18`, border: `1px solid ${t.accent}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+        <span style={{ fontSize: 9, fontWeight: 800, color: t.accent }}>{index + 1}</span>
       </div>
-      <span style={{ fontSize: 13, color: DIM, lineHeight: 1.5, flex: 1 }}>{text}</span>
+      <span style={{ fontSize: 13, color: t.txtDim, lineHeight: 1.5, flex: 1 }}>{text}</span>
     </motion.div>
   );
 }
@@ -139,8 +128,8 @@ export default function HuntDetailPage() {
 
   if (!mounted) return null;
   if (!hunt) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: BG }}>
-      <p style={{ color: FAINT, fontSize: 14 }}>Mission not found.</p>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: t.bg }}>
+      <p style={{ color: t.txtFaint, fontSize: 14 }}>Mission not found.</p>
     </div>
   );
 
@@ -158,23 +147,23 @@ export default function HuntDetailPage() {
   /* match score from impact profile */
   let matchScore: number | null = null;
   if (profile) {
-    const tagLower   = hunt.tags.map((t) => t.toLowerCase());
+    const tagLower   = hunt.tags.map((tag) => tag.toLowerCase());
     const causeLower = profile.causes.map((c) => c.toLowerCase());
     const skillLower = profile.strengths.map((s) => s.name.toLowerCase());
     let s = 55;
-    for (const t of tagLower) {
-      if (causeLower.some((c) => c.includes(t) || t.includes(c))) s += 12;
-      if (skillLower.some((k) => k.includes(t) || t.includes(k))) s += 8;
+    for (const tag of tagLower) {
+      if (causeLower.some((c) => c.includes(tag) || tag.includes(c))) s += 12;
+      if (skillLower.some((k) => k.includes(tag) || tag.includes(k))) s += 8;
     }
     s += Math.round((profile.impactScore / 100) * 10);
     matchScore = Math.min(98, s);
   }
 
-  const matchColor = matchScore == null ? DIM : matchScore >= 80 ? ACCENT : matchScore >= 65 ? WARN : DIM;
+  const matchColor = matchScore == null ? t.txtDim : matchScore >= 80 ? t.accent : matchScore >= 65 ? t.warning : t.txtDim;
 
   /* hero gradient from category color */
   const heroFrom = cat.color + '18';
-  const heroTo   = AI_CLR + '0A';
+  const heroTo   = t.ai + '0A';
 
   const deliverables: string[] = hunt.deliverables ?? [
     'Written report or summary of findings',
@@ -185,26 +174,26 @@ export default function HuntDetailPage() {
   const skills: string[] = hunt.requiredSkills ?? hunt.tags.slice(0, 4);
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: TXT }}>
+    <div style={{ minHeight: '100vh', background: t.bg, color: t.txt }}>
       <div style={{ maxWidth: 480, margin: '0 auto' }}>
 
         {/* ── HERO ── */}
         <div style={{ position: 'relative', minHeight: 260, background: `linear-gradient(160deg, ${heroFrom} 0%, ${heroTo} 100%)`, overflow: 'hidden' }}>
           {/* ambient glow */}
           <div style={{ position: 'absolute', top: -60, right: -40, width: 240, height: 240, borderRadius: '50%', background: `radial-gradient(circle, ${cat.color}22 0%, transparent 65%)`, pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: -30, left: -30, width: 160, height: 160, borderRadius: '50%', background: `radial-gradient(circle, ${AI_CLR}14 0%, transparent 65%)`, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: -30, left: -30, width: 160, height: 160, borderRadius: '50%', background: `radial-gradient(circle, ${t.ai}14 0%, transparent 65%)`, pointerEvents: 'none' }} />
 
           {/* back + actions */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '52px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
             <button onClick={() => router.back()} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(5,8,22,.7)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <ArrowLeft size={17} strokeWidth={2} style={{ color: TXT }} />
+              <ArrowLeft size={17} strokeWidth={2} style={{ color: t.txt }} />
             </button>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setSaved(!saved)} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(5,8,22,.7)', backdropFilter: 'blur(12px)', border: `1px solid ${saved ? ACCENT + '40' : 'rgba(255,255,255,.12)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <Bookmark size={15} strokeWidth={2} style={{ color: saved ? ACCENT : DIM, fill: saved ? ACCENT : 'none' }} />
+              <button onClick={() => setSaved(!saved)} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(5,8,22,.7)', backdropFilter: 'blur(12px)', border: `1px solid ${saved ? t.accent + '40' : 'rgba(255,255,255,.12)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <Bookmark size={15} strokeWidth={2} style={{ color: saved ? t.accent : t.txtDim, fill: saved ? t.accent : 'none' }} />
               </button>
               <button style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(5,8,22,.7)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <Share2 size={15} strokeWidth={2} style={{ color: DIM }} />
+                <Share2 size={15} strokeWidth={2} style={{ color: t.txtDim }} />
               </button>
             </div>
           </div>
@@ -239,14 +228,14 @@ export default function HuntDetailPage() {
                 <img src={hunt.tenantLogo} alt={hunt.tenantName} style={{ width: 22, height: 22, borderRadius: 6, objectFit: 'cover' }} />
               ) : (
                 <div style={{ width: 22, height: 22, borderRadius: 6, background: 'rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {orgType ? <span style={{ fontSize: 11 }}>{orgType.emoji}</span> : <Building2 size={11} strokeWidth={2} style={{ color: FAINT }} />}
+                  {orgType ? <span style={{ fontSize: 11 }}>{orgType.emoji}</span> : <Building2 size={11} strokeWidth={2} style={{ color: t.txtFaint }} />}
                 </div>
               )}
-              <span style={{ fontSize: 12, color: DIM }}>{hunt.tenantName ?? 'X-Hunt Community'}</span>
+              <span style={{ fontSize: 12, color: t.txtDim }}>{hunt.tenantName ?? 'X-Hunt Community'}</span>
               {hunt.isVerified && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <ShieldCheck size={11} strokeWidth={2.5} style={{ color: ACCENT }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: ACCENT }}>Verified</span>
+                  <ShieldCheck size={11} strokeWidth={2.5} style={{ color: t.accent }} />
+                  <span style={{ fontSize: 10, fontWeight: 700, color: t.accent }}>Verified</span>
                 </div>
               )}
             </div>
@@ -273,7 +262,7 @@ export default function HuntDetailPage() {
               )}
               {demand && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10, padding: '5px 11px' }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: DIM }}>{demand}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: t.txtDim }}>{demand}</span>
                 </div>
               )}
             </div>
@@ -282,22 +271,22 @@ export default function HuntDetailPage() {
           {/* ── REWARD BREAKDOWN ── */}
           <section style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <Trophy size={13} strokeWidth={2} style={{ color: WARN }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Reward Breakdown</span>
+              <Trophy size={13} strokeWidth={2} style={{ color: t.warning }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>Reward Breakdown</span>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <RewardPill
-                icon={<DollarSign size={12} strokeWidth={2.5} style={{ color: ACCENT }} />}
-                label="Cash" value={`$${cash}`} color={ACCENT} bg={`${ACCENT}08`}
+                icon={<DollarSign size={12} strokeWidth={2.5} style={{ color: t.accent }} />}
+                label="Cash" value={`$${cash}`} color={t.accent} bg={`${t.accent}08`}
               />
               <RewardPill
-                icon={<Star size={12} strokeWidth={2.5} style={{ color: AI_CLR }} />}
-                label="XP" value={`+${xp}`} color={AI_CLR} bg={`${AI_CLR}08`}
+                icon={<Star size={12} strokeWidth={2.5} style={{ color: t.ai }} />}
+                label="XP" value={`+${xp}`} color={t.ai} bg={`${t.ai}08`}
               />
               {hunt.certificationReward && (
                 <RewardPill
-                  icon={<Award size={12} strokeWidth={2.5} style={{ color: WARN }} />}
-                  label="Cert" value="Certificate" color={WARN} bg={`${WARN}08`}
+                  icon={<Award size={12} strokeWidth={2.5} style={{ color: t.warning }} />}
+                  label="Cert" value="Certificate" color={t.warning} bg={`${t.warning}08`}
                 />
               )}
               {(hunt.portfolioCredits ?? 0) > 0 && (
@@ -309,17 +298,128 @@ export default function HuntDetailPage() {
             </div>
           </section>
 
+          {/* ── MISSION BRIEF ── */}
+          <section style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <FileText size={13} strokeWidth={2} style={{ color: t.txtFaint }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>Mission Brief</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.7, color: t.txtDim }}>
+              {hunt.story_context}
+            </p>
+          </section>
+
+          {/* ── JOURNEY / STEPS ── */}
+          <section style={{ marginBottom: 20 }}>
+            <button onClick={() => setStepsOpen(!stepsOpen)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 12px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Briefcase size={13} strokeWidth={2} style={{ color: t.txtFaint }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                  Your Journey · {hunt.steps.length} Steps
+                </span>
+              </div>
+              {stepsOpen
+                ? <ChevronUp size={16} style={{ color: t.txtFaint }} />
+                : <ChevronDown size={16} style={{ color: t.txtFaint }} />}
+            </button>
+
+            <AnimatePresence>
+              {stepsOpen && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                  style={{ overflow: 'hidden', paddingTop: 12 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {hunt.steps.map((step, i) => {
+                      const TYPE_CFG: Record<string, { color: string; bg: string; label: string; emoji: string }> = {
+                        action:        { color: t.warning,   bg: `${t.warning}0A`,   label: 'Action',        emoji: '⚡' },
+                        reflection:    { color: t.ai, bg: `${t.ai}0A`, label: 'Reflection',    emoji: '💭' },
+                        discovery:     { color: t.accent, bg: `${t.accent}0A`, label: 'Discovery',     emoji: '🔍' },
+                        research:      { color: '#60A5FA', bg: 'rgba(96,165,250,.08)', label: 'Research', emoji: '🔬' },
+                        submission:    { color: t.accent, bg: `${t.accent}0A`, label: 'Submission',    emoji: '📤' },
+                        collaboration: { color: '#a78bfa', bg: 'rgba(167,139,250,.08)', label: 'Collaborate', emoji: '🤝' },
+                      };
+                      const tc = TYPE_CFG[step.type] ?? TYPE_CFG.action;
+                      return (
+                        <div key={step.id} style={{ display: 'flex', gap: 12, padding: '12px 14px', borderRadius: 14, background: tc.bg, border: `1px solid ${tc.color}18` }}>
+                          <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, background: `${tc.color}18`, border: `1px solid ${tc.color}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                            <span style={{ fontSize: 10, fontWeight: 800, color: tc.color }}>{i + 1}</span>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
+                              <span style={{ fontSize: 13 }}>{tc.emoji}</span>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: tc.color, textTransform: 'uppercase', letterSpacing: '.07em' }}>{tc.label}</span>
+                            </div>
+                            <p style={{ margin: '0 0 6px', fontSize: 13.5, lineHeight: 1.5, color: t.txt, fontWeight: 600 }}>{step.instruction}</p>
+                            <p style={{ margin: 0, fontSize: 11.5, color: t.txtDim, lineHeight: 1.5 }}>
+                              <span style={{ color: t.txtFaint, fontWeight: 700 }}>Done when: </span>{step.success_criteria}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {!stepsOpen && (
+              <div style={{ display: 'flex', gap: 5, paddingTop: 12 }}>
+                {hunt.steps.slice(0, 5).map((_, i) => (
+                  <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: `${t.accent}25` }} />
+                ))}
+                {hunt.steps.length > 5 && (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: 10, color: t.txtFaint, marginLeft: 4 }}>+{hunt.steps.length - 5}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+
+          {/* ── VERIFICATION REQUIREMENTS ── */}
+          <section style={{ marginBottom: 20 }}>
+            <div style={{ borderRadius: 16, padding: '16px', background: t.surface, border: '1px solid rgba(255,255,255,.07)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <ShieldCheck size={15} strokeWidth={2} style={{ color: t.accent }} />
+                <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: t.txt }}>Verification Requirements</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {verificationRequirements(hunt).map((req, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <CheckCircle2 size={12} strokeWidth={2.5} style={{ color: t.accent, marginTop: 2, flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: t.txtDim, lineHeight: 1.5 }}>{req}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── QUICK STATS ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 20 }}>
+            {[
+              { icon: <Clock size={14} strokeWidth={2} style={{ color: t.txtDim }} />,  label: 'Duration',  value: hunt.estimated_time },
+              { icon: <Target size={14} strokeWidth={2} style={{ color: diff.color }} />, label: 'Level', value: diff.label },
+              { icon: <Briefcase size={14} strokeWidth={2} style={{ color: t.ai }} />, label: 'Steps', value: `${hunt.steps.length} tasks` },
+            ].map((s) => (
+              <div key={s.label} className="liquid-glass" style={{ ...XGLASS, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>{s.icon}</div>
+                <p style={{ margin: '0 0 2px', fontSize: 13.5, fontWeight: 800, color: t.txt, letterSpacing: '-.01em' }}>{s.value}</p>
+                <p style={{ margin: 0, fontSize: 9.5, fontWeight: 600, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.07em' }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+
           {/* ── AI MATCH (if profile) ── */}
           {matchScore != null && (
             <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              style={{ marginBottom: 20, padding: '14px 16px', borderRadius: 18, background: `linear-gradient(135deg, ${matchColor}08, ${AI_CLR}05)`, border: `1px solid ${matchColor}18`, display: 'flex', alignItems: 'center', gap: 16 }}>
+              style={{ marginBottom: 20, padding: '14px 16px', borderRadius: 18, background: `linear-gradient(135deg, ${matchColor}08, ${t.ai}05)`, border: `1px solid ${matchColor}18`, display: 'flex', alignItems: 'center', gap: 16 }}>
               <MatchRing score={matchScore} color={matchColor} />
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                  <Brain size={12} strokeWidth={2} style={{ color: AI_CLR }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: AI_CLR, textTransform: 'uppercase', letterSpacing: '.08em' }}>AI Match Score</span>
+                  <Brain size={12} strokeWidth={2} style={{ color: t.ai }} />
+                  <span style={{ fontSize: 10, fontWeight: 700, color: t.ai, textTransform: 'uppercase', letterSpacing: '.08em' }}>AI Match Score</span>
                 </div>
-                <p style={{ margin: 0, fontSize: 12.5, color: DIM, lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: 12.5, color: t.txtDim, lineHeight: 1.5 }}>
                   {matchScore >= 80
                     ? 'Excellent fit with your Impact DNA — highly recommended.'
                     : matchScore >= 65
@@ -327,7 +427,7 @@ export default function HuntDetailPage() {
                     : 'This mission will help you grow into new areas.'}
                 </p>
                 {profile?.archetype && (
-                  <p style={{ margin: '4px 0 0', fontSize: 11, color: FAINT }}>
+                  <p style={{ margin: '4px 0 0', fontSize: 11, color: t.txtFaint }}>
                     Matched to your <span style={{ color: matchColor, fontWeight: 700 }}>{profile.archetype}</span> archetype
                   </p>
                 )}
@@ -335,50 +435,24 @@ export default function HuntDetailPage() {
             </motion.section>
           )}
 
-          {/* ── MISSION BRIEF ── */}
-          <section style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <FileText size={13} strokeWidth={2} style={{ color: FAINT }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Mission Brief</span>
-            </div>
-            <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.7, color: DIM }}>
-              {hunt.story_context}
-            </p>
-          </section>
-
-          {/* ── QUICK STATS ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 20 }}>
-            {[
-              { icon: <Clock size={14} strokeWidth={2} style={{ color: DIM }} />,  label: 'Duration',  value: hunt.estimated_time },
-              { icon: <Target size={14} strokeWidth={2} style={{ color: diff.color }} />, label: 'Level', value: diff.label },
-              { icon: <Briefcase size={14} strokeWidth={2} style={{ color: AI_CLR }} />, label: 'Steps', value: `${hunt.steps.length} tasks` },
-            ].map((s) => (
-              <div key={s.label} className="liquid-glass" style={{ ...XGLASS, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>{s.icon}</div>
-                <p style={{ margin: '0 0 2px', fontSize: 13.5, fontWeight: 800, color: TXT, letterSpacing: '-.01em' }}>{s.value}</p>
-                <p style={{ margin: 0, fontSize: 9.5, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '.07em' }}>{s.label}</p>
-              </div>
-            ))}
-          </div>
-
           {/* ── LOCATION + TEAM ── */}
           {(hunt.locationType || hunt.teamSize) && (
             <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
               {hunt.locationType && (
                 <div className="liquid-glass" style={{ flex: 1, ...XGLASS, borderRadius: 14, padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <MapPin size={13} strokeWidth={2} style={{ color: ACCENT }} />
+                  <MapPin size={13} strokeWidth={2} style={{ color: t.accent }} />
                   <div>
-                    <p style={{ margin: 0, fontSize: 9, color: FAINT, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Location</p>
-                    <p style={{ margin: 0, fontSize: 12.5, color: TXT, fontWeight: 700, textTransform: 'capitalize' }}>{hunt.locationType}</p>
+                    <p style={{ margin: 0, fontSize: 9, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Location</p>
+                    <p style={{ margin: 0, fontSize: 12.5, color: t.txt, fontWeight: 700, textTransform: 'capitalize' }}>{hunt.locationType}</p>
                   </div>
                 </div>
               )}
               {hunt.teamSize && (
                 <div className="liquid-glass" style={{ flex: 1, ...XGLASS, borderRadius: 14, padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Users size={13} strokeWidth={2} style={{ color: AI_CLR }} />
+                  <Users size={13} strokeWidth={2} style={{ color: t.ai }} />
                   <div>
-                    <p style={{ margin: 0, fontSize: 9, color: FAINT, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Team Size</p>
-                    <p style={{ margin: 0, fontSize: 12.5, color: TXT, fontWeight: 700 }}>{hunt.teamSize}</p>
+                    <p style={{ margin: 0, fontSize: 9, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Team Size</p>
+                    <p style={{ margin: 0, fontSize: 12.5, color: t.txt, fontWeight: 700 }}>{hunt.teamSize}</p>
                   </div>
                 </div>
               )}
@@ -388,12 +462,12 @@ export default function HuntDetailPage() {
           {/* ── REQUIRED SKILLS ── */}
           <section style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <TrendingUp size={13} strokeWidth={2} style={{ color: FAINT }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Skills You&apos;ll Use</span>
+              <TrendingUp size={13} strokeWidth={2} style={{ color: t.txtFaint }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>Skills You&apos;ll Use</span>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
               {skills.map((s, i) => (
-                <SkillChip key={s} skill={s} color={i % 3 === 0 ? ACCENT : i % 3 === 1 ? AI_CLR : WARN} />
+                <SkillChip key={s} skill={s} color={i % 3 === 0 ? t.accent : i % 3 === 1 ? t.ai : t.warning} />
               ))}
             </div>
           </section>
@@ -402,8 +476,8 @@ export default function HuntDetailPage() {
           {(hunt.sdgGoals?.length ?? 0) > 0 && (
             <section style={{ marginBottom: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <Target size={13} strokeWidth={2} style={{ color: FAINT }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>UN SDG Alignment</span>
+                <Target size={13} strokeWidth={2} style={{ color: t.txtFaint }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>UN SDG Alignment</span>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                 {(hunt.sdgGoals ?? []).map((g) => <SDGBadge key={g} goal={g} />)}
@@ -414,8 +488,8 @@ export default function HuntDetailPage() {
           {/* ── DELIVERABLES ── */}
           <section style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <Upload size={13} strokeWidth={2} style={{ color: FAINT }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>What You Submit</span>
+              <Upload size={13} strokeWidth={2} style={{ color: t.txtFaint }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>What You Submit</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {deliverables.map((d, i) => <Deliverable key={i} text={d} index={i} />)}
@@ -430,28 +504,28 @@ export default function HuntDetailPage() {
                   {hunt.tenantLogo ? (
                     <img src={hunt.tenantLogo} alt={hunt.tenantName} style={{ width: 40, height: 40, borderRadius: 12, objectFit: 'cover' }} />
                   ) : (
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: `${AI_CLR}18`, border: `1px solid ${AI_CLR}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {orgType ? <span style={{ fontSize: 18 }}>{orgType.emoji}</span> : <Building2 size={18} strokeWidth={1.8} style={{ color: AI_CLR }} />}
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: `${t.ai}18`, border: `1px solid ${t.ai}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {orgType ? <span style={{ fontSize: 18 }}>{orgType.emoji}</span> : <Building2 size={18} strokeWidth={1.8} style={{ color: t.ai }} />}
                     </div>
                   )}
                   <div style={{ flex: 1 }}>
-                    <p style={{ margin: '0 0 2px', fontSize: 9, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                    <p style={{ margin: '0 0 2px', fontSize: 9, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>
                       {orgType?.label ?? 'Organisation'}
                     </p>
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: TXT }}>{hunt.tenantName ?? 'X-Hunt Partner'}</p>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: t.txt }}>{hunt.tenantName ?? 'X-Hunt Partner'}</p>
                   </div>
                   {hunt.isVerified && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${ACCENT}10`, border: `1px solid ${ACCENT}20`, borderRadius: 999, padding: '3px 10px' }}>
-                      <ShieldCheck size={11} strokeWidth={2.5} style={{ color: ACCENT }} />
-                      <span style={{ fontSize: 10, fontWeight: 700, color: ACCENT }}>Verified</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${t.accent}10`, border: `1px solid ${t.accent}20`, borderRadius: 999, padding: '3px 10px' }}>
+                      <ShieldCheck size={11} strokeWidth={2.5} style={{ color: t.accent }} />
+                      <span style={{ fontSize: 10, fontWeight: 700, color: t.accent }}>Verified</span>
                     </div>
                   )}
                 </div>
                 {hunt.organizationAbout && (
-                  <p style={{ margin: 0, fontSize: 13, color: DIM, lineHeight: 1.6 }}>{hunt.organizationAbout}</p>
+                  <p style={{ margin: 0, fontSize: 13, color: t.txtDim, lineHeight: 1.6 }}>{hunt.organizationAbout}</p>
                 )}
                 {hunt.tenantSlug && (
-                  <Link href={`/workspace/${hunt.tenantSlug}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, fontSize: 12, fontWeight: 700, color: ACCENT, textDecoration: 'none' }}>
+                  <Link href={`/workspace/${hunt.tenantSlug}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, fontSize: 12, fontWeight: 700, color: t.accent, textDecoration: 'none' }}>
                     View organisation <ExternalLink size={11} strokeWidth={2.5} />
                   </Link>
                 )}
@@ -459,102 +533,17 @@ export default function HuntDetailPage() {
             </section>
           )}
 
-          {/* ── JOURNEY / STEPS ── */}
-          <section style={{ marginBottom: 20 }}>
-            <button onClick={() => setStepsOpen(!stepsOpen)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 12px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Briefcase size={13} strokeWidth={2} style={{ color: FAINT }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>
-                  Your Journey · {hunt.steps.length} Steps
-                </span>
-              </div>
-              {stepsOpen
-                ? <ChevronUp size={16} style={{ color: FAINT }} />
-                : <ChevronDown size={16} style={{ color: FAINT }} />}
-            </button>
-
-            <AnimatePresence>
-              {stepsOpen && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                  style={{ overflow: 'hidden', paddingTop: 12 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {hunt.steps.map((step, i) => {
-                      const TYPE_CFG: Record<string, { color: string; bg: string; label: string; emoji: string }> = {
-                        action:        { color: WARN,   bg: `${WARN}0A`,   label: 'Action',        emoji: '⚡' },
-                        reflection:    { color: AI_CLR, bg: `${AI_CLR}0A`, label: 'Reflection',    emoji: '💭' },
-                        discovery:     { color: ACCENT, bg: `${ACCENT}0A`, label: 'Discovery',     emoji: '🔍' },
-                        research:      { color: '#60A5FA', bg: 'rgba(96,165,250,.08)', label: 'Research', emoji: '🔬' },
-                        submission:    { color: ACCENT, bg: `${ACCENT}0A`, label: 'Submission',    emoji: '📤' },
-                        collaboration: { color: '#a78bfa', bg: 'rgba(167,139,250,.08)', label: 'Collaborate', emoji: '🤝' },
-                      };
-                      const tc = TYPE_CFG[step.type] ?? TYPE_CFG.action;
-                      return (
-                        <div key={step.id} style={{ display: 'flex', gap: 12, padding: '12px 14px', borderRadius: 14, background: tc.bg, border: `1px solid ${tc.color}18` }}>
-                          <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, background: `${tc.color}18`, border: `1px solid ${tc.color}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
-                            <span style={{ fontSize: 10, fontWeight: 800, color: tc.color }}>{i + 1}</span>
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
-                              <span style={{ fontSize: 13 }}>{tc.emoji}</span>
-                              <span style={{ fontSize: 10, fontWeight: 700, color: tc.color, textTransform: 'uppercase', letterSpacing: '.07em' }}>{tc.label}</span>
-                            </div>
-                            <p style={{ margin: '0 0 6px', fontSize: 13.5, lineHeight: 1.5, color: TXT, fontWeight: 600 }}>{step.instruction}</p>
-                            <p style={{ margin: 0, fontSize: 11.5, color: DIM, lineHeight: 1.5 }}>
-                              <span style={{ color: FAINT, fontWeight: 700 }}>Done when: </span>{step.success_criteria}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {!stepsOpen && (
-              <div style={{ display: 'flex', gap: 5, paddingTop: 12 }}>
-                {hunt.steps.slice(0, 5).map((_, i) => (
-                  <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: `${ACCENT}25` }} />
-                ))}
-                {hunt.steps.length > 5 && (
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 10, color: FAINT, marginLeft: 4 }}>+{hunt.steps.length - 5}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* ── VERIFICATION REQUIREMENTS ── */}
-          <section style={{ marginBottom: 20 }}>
-            <div style={{ borderRadius: 16, padding: '16px', background: SURF, border: '1px solid rgba(255,255,255,.07)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <ShieldCheck size={15} strokeWidth={2} style={{ color: ACCENT }} />
-                <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: TXT }}>Verification Requirements</h3>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {verificationRequirements(hunt).map((req, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                    <CheckCircle2 size={12} strokeWidth={2.5} style={{ color: ACCENT, marginTop: 2, flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, color: DIM, lineHeight: 1.5 }}>{req}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
           {/* ── DISCUSSION TEASER ── */}
           <section style={{ marginBottom: 20 }}>
             <div style={{ ...XGLASS, borderRadius: 18, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: `${AI_CLR}14`, border: `1px solid ${AI_CLR}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <MessageSquare size={16} strokeWidth={2} style={{ color: AI_CLR }} />
+              <div style={{ width: 36, height: 36, borderRadius: 11, background: `${t.ai}14`, border: `1px solid ${t.ai}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <MessageSquare size={16} strokeWidth={2} style={{ color: t.ai }} />
               </div>
               <div style={{ flex: 1 }}>
-                <p style={{ margin: '0 0 1px', fontSize: 13, fontWeight: 700, color: TXT }}>Ask Xeno AI</p>
-                <p style={{ margin: 0, fontSize: 11.5, color: FAINT }}>Get clarification or tips before you start</p>
+                <p style={{ margin: '0 0 1px', fontSize: 13, fontWeight: 700, color: t.txt }}>Ask Xeno AI</p>
+                <p style={{ margin: 0, fontSize: 11.5, color: t.txtFaint }}>Get clarification or tips before you start</p>
               </div>
-              <button style={{ fontSize: 11, fontWeight: 700, color: AI_CLR, background: `${AI_CLR}10`, border: `1px solid ${AI_CLR}20`, borderRadius: 999, padding: '5px 12px', cursor: 'pointer', flexShrink: 0 }}>
+              <button style={{ fontSize: 11, fontWeight: 700, color: t.ai, background: `${t.ai}10`, border: `1px solid ${t.ai}20`, borderRadius: 999, padding: '5px 12px', cursor: 'pointer', flexShrink: 0 }}>
                 Ask
               </button>
             </div>
@@ -562,8 +551,8 @@ export default function HuntDetailPage() {
 
           {/* ── IMPACT DISCLAIMER ── */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)' }}>
-            <AlertCircle size={12} strokeWidth={2} style={{ color: FAINT, flexShrink: 0, marginTop: 1 }} />
-            <p style={{ margin: 0, fontSize: 11, color: FAINT, lineHeight: 1.6 }}>
+            <AlertCircle size={12} strokeWidth={2} style={{ color: t.txtFaint, flexShrink: 0, marginTop: 1 }} />
+            <p style={{ margin: 0, fontSize: 11, color: t.txtFaint, lineHeight: 1.6 }}>
               Completing this mission earns you XP, portfolio credits, and builds your Impact DNA profile. Cash rewards are processed within 7 days of submission approval.
             </p>
           </div>
@@ -575,29 +564,29 @@ export default function HuntDetailPage() {
 
             {/* earnings preview */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 10 }}>
-              <span style={{ fontSize: 12, color: FAINT }}>Earn</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: ACCENT }}>${cash}</span>
-              <div style={{ width: 3, height: 3, borderRadius: '50%', background: FAINT }} />
-              <span style={{ fontSize: 14, fontWeight: 800, color: AI_CLR }}>+{xp} XP</span>
+              <span style={{ fontSize: 12, color: t.txtFaint }}>Earn</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: t.accent }}>${cash}</span>
+              <div style={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
+              <span style={{ fontSize: 14, fontWeight: 800, color: t.ai }}>+{xp} XP</span>
               {hunt.certificationReward && (
                 <>
-                  <div style={{ width: 3, height: 3, borderRadius: '50%', background: FAINT }} />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: WARN }}>+ Cert</span>
+                  <div style={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: t.warning }}>+ Cert</span>
                 </>
               )}
             </div>
 
             {isCompleted ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, height: 56, borderRadius: 18, background: `${ACCENT}10`, border: `1px solid ${ACCENT}22` }}>
-                <CheckCircle2 size={18} strokeWidth={2.5} style={{ color: ACCENT }} />
-                <span style={{ fontSize: 15, fontWeight: 800, color: ACCENT }}>Mission Completed</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, height: 56, borderRadius: 18, background: `${t.accent}10`, border: `1px solid ${t.accent}22` }}>
+                <CheckCircle2 size={18} strokeWidth={2.5} style={{ color: t.accent }} />
+                <span style={{ fontSize: 15, fontWeight: 800, color: t.accent }}>Mission Completed</span>
               </div>
             ) : (
               <div style={{ display: 'flex', gap: 10 }}>
                 <motion.button
                   whileTap={{ scale: 0.98 }}
                   onClick={() => router.push(`/active/${hunt.id}`)}
-                  style={{ flex: 1, height: 56, borderRadius: 18, border: 'none', cursor: 'pointer', background: ACCENT, color: BG, fontWeight: 900, fontSize: 15.5, boxShadow: `0 0 28px ${ACCENT}40`, fontFamily: 'inherit', letterSpacing: '-.01em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  style={{ flex: 1, height: 56, borderRadius: 18, border: 'none', cursor: 'pointer', background: t.accent, color: t.bg, fontWeight: 900, fontSize: 15.5, boxShadow: `0 0 28px ${t.accent}40`, fontFamily: 'inherit', letterSpacing: '-.01em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <Sparkles size={16} strokeWidth={2.5} />
                   Start Mission
                 </motion.button>

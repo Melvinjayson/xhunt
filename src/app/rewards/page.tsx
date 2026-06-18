@@ -96,6 +96,19 @@ export default function RewardsPage() {
   if (!mounted) return null;
 
   const totalEarned   = completedHunts.reduce((s, c) => s + parseReward(c.reward), 0);
+  const pendingAmount = pendingRewards.reduce((s, { hunt }) =>
+    s + estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType), 0);
+  const approvedAmount = (() => {
+    const state = loadState();
+    const vMap = state.verificationStatus ?? {};
+    const allH = state.hunts ?? [];
+    return Object.values(vMap)
+      .filter(r => r.status === 'approved')
+      .reduce((s, r) => {
+        const h = allH.find(x => x.id === r.huntId);
+        return s + (h ? estimateCashReward(h.cashReward, h.difficulty, h.missionType) : 0);
+      }, 0);
+  })();
   const thisMonth     = completedHunts.filter(c => {
     const d = new Date(c.completedAt ?? 0);
     const now = new Date();
@@ -143,9 +156,30 @@ export default function RewardsPage() {
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ margin: 0, fontSize: 10, color: T.dim }}>Hunter Score</p>
+              <p style={{ margin: 0, fontSize: 10, color: T.muted }}>Hunter Score</p>
               <p style={{ margin: '2px 0 0', fontSize: 28, fontWeight: 900, color: currentTier.color, lineHeight: 1 }}>{hunterScore.toFixed(1)}</p>
             </div>
+          </div>
+        </motion.div>
+
+        {/* ─── Wallet ─── */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          style={{ marginBottom: 16, borderRadius: 20, background: T.panel, border: `1px solid ${T.line}`, overflow: 'hidden' }}>
+          <div style={{ padding: '12px 16px 10px', borderBottom: `1px solid ${T.line}` }}>
+            <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '.08em' }}>Participation Wallet</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)' }}>
+            {[
+              { label: 'Available',      value: `$${approvedAmount.toFixed(0)}`, color: T.green,  sub: 'ready to claim' },
+              { label: 'Pending',        value: `~$${pendingAmount.toFixed(0)}`,  color: T.amber,  sub: 'under review'   },
+              { label: 'Lifetime Earned',value: `$${totalEarned.toFixed(0)}`,    color: T.txt,    sub: 'all time'       },
+            ].map(({ label, value, color, sub }, i) => (
+              <div key={label} style={{ padding: '14px 12px', borderRight: i < 2 ? `1px solid ${T.line}` : 'none', textAlign: 'center' }}>
+                <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color, letterSpacing: '-.03em', lineHeight: 1 }}>{value}</p>
+                <p style={{ margin: '3px 0 0', fontSize: 9.5, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</p>
+                <p style={{ margin: '1px 0 0', fontSize: 9, color: T.muted }}>{sub}</p>
+              </div>
+            ))}
           </div>
         </motion.div>
 
