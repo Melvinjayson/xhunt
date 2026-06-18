@@ -12,6 +12,7 @@ import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
 import type { DbMissionScore } from '@/lib/supabase/types';
+import { t } from '@/theme/colors';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -65,10 +66,10 @@ function deriveHealth(score: DbMissionScore | null, starters: number): HealthSta
 }
 
 const HEALTH_CFG: Record<HealthStatus, { label: string; color: string; bg: string; border: string }> = {
-  healthy:  { label: 'Healthy',  color: '#22FFAA', bg: 'rgba(34,255,170,0.08)',  border: 'rgba(34,255,170,0.2)'  },
-  'at-risk':{ label: 'At Risk',  color: '#FFB84D', bg: 'rgba(255,184,77,0.08)',  border: 'rgba(255,184,77,0.2)'  },
-  critical: { label: 'Critical', color: '#FF5C7A', bg: 'rgba(255,92,122,0.08)',  border: 'rgba(255,92,122,0.2)'  },
-  inactive: { label: 'Inactive', color: '#4A5578', bg: 'rgba(74,85,120,0.08)',   border: 'rgba(74,85,120,0.2)'   },
+  healthy:  { label: 'Healthy',  color: t.accent,   bg: 'rgba(34,255,170,0.08)',  border: 'rgba(34,255,170,0.2)'  },
+  'at-risk':{ label: 'At Risk',  color: t.warning,  bg: 'rgba(255,184,77,0.08)',  border: 'rgba(255,184,77,0.2)'  },
+  critical: { label: 'Critical', color: t.error,    bg: 'rgba(255,92,122,0.08)',  border: 'rgba(255,92,122,0.2)'  },
+  inactive: { label: 'Inactive', color: t.txtFaint, bg: 'rgba(74,85,120,0.08)',   border: 'rgba(74,85,120,0.2)'   },
 };
 
 // ── MEI Ring ─────────────────────────────────────────────────────────────────
@@ -77,7 +78,7 @@ function MeiRing({ value }: { value: number }) {
   const r = 52;
   const circ = 2 * Math.PI * r;
   const dash = (value / 100) * circ;
-  const color = value >= 65 ? '#22FFAA' : value >= 35 ? '#FFB84D' : '#FF5C7A';
+  const color = value >= 65 ? t.accent : value >= 35 ? t.warning : t.error;
 
   return (
     <div className="relative w-32 h-32 flex items-center justify-center">
@@ -96,7 +97,7 @@ function MeiRing({ value }: { value: number }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-2xl font-black" style={{ color }}>{value}</span>
-        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B9CC0' }}>MEI</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.txtDim }}>MEI</span>
       </div>
     </div>
   );
@@ -117,8 +118,8 @@ function FunnelBar({ label, value, max, icon: Icon, color }: {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[12px] font-medium" style={{ color: '#8B9CC0' }}>{label}</span>
-          <span className="text-[13px] font-bold tabular-nums" style={{ color: '#F0F4FF' }}>{value.toLocaleString()}</span>
+          <span className="text-[12px] font-medium" style={{ color: t.txtDim }}>{label}</span>
+          <span className="text-[13px] font-bold tabular-nums" style={{ color: t.txt }}>{value.toLocaleString()}</span>
         </div>
         <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
           <motion.div
@@ -142,7 +143,7 @@ function StepRow({ step, meta, idx }: {
   idx: number;
 }) {
   const pct = step.completion_pct ?? 0;
-  const barColor = pct >= 70 ? '#22FFAA' : pct >= 45 ? '#FFB84D' : '#FF5C7A';
+  const barColor = pct >= 70 ? t.accent : pct >= 45 ? t.warning : t.error;
   const avgSec = step.avg_completion_ms ? Math.round(step.avg_completion_ms / 1000) : null;
 
   return (
@@ -155,18 +156,18 @@ function StepRow({ step, meta, idx }: {
     >
       <div className="flex items-start gap-3 mb-3">
         <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-[12px] font-bold"
-          style={{ background: '#0D1530', color: '#8B9CC0' }}>
+          style={{ background: t.panel, color: t.txtDim }}>
           {idx + 1}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-semibold text-[#F0F4FF] truncate">
+          <p className="text-[13px] font-semibold truncate" style={{ color: t.txt }}>
             {meta?.instruction ?? `Step ${idx + 1}`}
           </p>
-          <p className="text-[11px] text-[#4A5578] capitalize mt-0.5">{meta?.type ?? 'action'}</p>
+          <p className="text-[11px] capitalize mt-0.5" style={{ color: t.txtFaint }}>{meta?.type ?? 'action'}</p>
         </div>
         <div className="text-right flex-shrink-0">
           <span className="text-[16px] font-black" style={{ color: barColor }}>{Math.round(pct)}%</span>
-          <p className="text-[10px] text-[#4A5578]">completed</p>
+          <p className="text-[10px]" style={{ color: t.txtFaint }}>completed</p>
         </div>
       </div>
 
@@ -183,24 +184,24 @@ function StepRow({ step, meta, idx }: {
 
       {/* Stats row */}
       <div className="flex gap-4 text-[11px]">
-        <span style={{ color: '#8B9CC0' }}>
-          <span className="font-semibold text-[#F0F4FF]">{step.step_starts}</span> started
+        <span style={{ color: t.txtDim }}>
+          <span className="font-semibold" style={{ color: t.txt }}>{step.step_starts}</span> started
         </span>
-        <span style={{ color: '#8B9CC0' }}>
-          <span className="font-semibold text-[#22FFAA]">{step.step_completions}</span> done
+        <span style={{ color: t.txtDim }}>
+          <span className="font-semibold" style={{ color: t.accent }}>{step.step_completions}</span> done
         </span>
         {step.step_skips > 0 && (
-          <span style={{ color: '#8B9CC0' }}>
-            <span className="font-semibold text-[#FFB84D]">{step.step_skips}</span> skipped
+          <span style={{ color: t.txtDim }}>
+            <span className="font-semibold" style={{ color: t.warning }}>{step.step_skips}</span> skipped
           </span>
         )}
         {step.step_adaptations > 0 && (
-          <span style={{ color: '#8B9CC0' }}>
-            <span className="font-semibold text-[#6D5DFD]">{step.step_adaptations}</span> adapted
+          <span style={{ color: t.txtDim }}>
+            <span className="font-semibold" style={{ color: t.ai }}>{step.step_adaptations}</span> adapted
           </span>
         )}
         {avgSec !== null && (
-          <span className="ml-auto" style={{ color: '#4A5578' }}>~{avgSec}s avg</span>
+          <span className="ml-auto" style={{ color: t.txtFaint }}>~{avgSec}s avg</span>
         )}
       </div>
     </motion.div>
@@ -215,7 +216,7 @@ function ScorePill({ label, value, color }: { label: string; value: number; colo
       style={{ background: `${color}10`, border: `1px solid ${color}25` }}>
       <span className="text-[18px] font-black" style={{ color }}>{Math.round(value)}</span>
       <span className="text-[10px] font-bold uppercase tracking-wider text-center leading-tight"
-        style={{ color: '#4A5578' }}>{label}</span>
+        style={{ color: t.txtFaint }}>{label}</span>
     </div>
   );
 }
@@ -295,13 +296,13 @@ export default function MissionAnalyticsPage() {
         <Link href="/workspace/analytics"
           className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
           style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,0.07)' }}>
-          <ArrowLeft size={16} strokeWidth={2} style={{ color: '#8B9CC0' }} />
+          <ArrowLeft size={16} strokeWidth={2} style={{ color: t.txtDim }} />
         </Link>
         <div className="flex-1 min-w-0">
           {loading ? (
             <Skeleton className="h-7 w-64 mb-2" />
           ) : (
-            <h1 className="text-[22px] font-bold text-[#F0F4FF] truncate">{mission?.title}</h1>
+            <h1 className="text-[22px] font-bold truncate" style={{ color: t.txt }}>{mission?.title}</h1>
           )}
           <div className="flex items-center gap-2 mt-1">
             {!loading && (
@@ -310,19 +311,19 @@ export default function MissionAnalyticsPage() {
                 {hCfg.label}
               </span>
             )}
-            <span className="text-[12px] text-[#4A5578]">Mission Analytics</span>
+            <span className="text-[12px]" style={{ color: t.txtFaint }}>Mission Analytics</span>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button onClick={triggerMeiCompute} disabled={refreshing}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold"
-            style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,0.07)', color: '#8B9CC0' }}>
+            style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,0.07)', color: t.txtDim }}>
             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} strokeWidth={2} />
             Refresh MEI
           </button>
           <Link href={`/workspace/missions/${missionId}`}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold"
-            style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: '#22FFAA' }}>
+            style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: t.accent }}>
             <ChevronRight size={14} strokeWidth={2} />
             Edit Mission
           </Link>
@@ -335,7 +336,7 @@ export default function MissionAnalyticsPage() {
         {/* MEI card */}
         <div className="rounded-2xl p-6 flex flex-col items-center gap-4 min-w-[200px]"
           style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
-          <p className="text-[12px] font-bold uppercase tracking-widest text-[#4A5578]">
+          <p className="text-[12px] font-bold uppercase tracking-widest" style={{ color: t.txtFaint }}>
             Mission Effectiveness
           </p>
           {loading ? (
@@ -347,14 +348,14 @@ export default function MissionAnalyticsPage() {
             <Skeleton className="h-16 w-full" />
           ) : (
             <div className="grid grid-cols-2 gap-2 w-full">
-              <ScorePill label="Completion" value={score?.completion_score ?? 0} color="#22FFAA" />
-              <ScorePill label="Engagement" value={score?.engagement_score ?? 0} color="#6D5DFD" />
-              <ScorePill label="Retention"  value={score?.retention_score  ?? 0} color="#FFB84D" />
-              <ScorePill label="Outcome"    value={score?.outcome_score    ?? 0} color="#60A5FA" />
+              <ScorePill label="Completion" value={score?.completion_score ?? 0} color={t.accent} />
+              <ScorePill label="Engagement" value={score?.engagement_score ?? 0} color={t.ai} />
+              <ScorePill label="Retention"  value={score?.retention_score  ?? 0} color={t.warning} />
+              <ScorePill label="Outcome"    value={score?.outcome_score    ?? 0} color={t.info} />
             </div>
           )}
           {score && (
-            <p className="text-[11px] text-[#4A5578]">
+            <p className="text-[11px]" style={{ color: t.txtFaint }}>
               Sample: {score.sample_size.toLocaleString()} participants
             </p>
           )}
@@ -364,10 +365,10 @@ export default function MissionAnalyticsPage() {
         <div className="rounded-2xl p-6 space-y-4"
           style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[13px] font-bold text-[#F0F4FF]">Participant Funnel</p>
+            <p className="text-[13px] font-bold" style={{ color: t.txt }}>Participant Funnel</p>
             {funnel && (
               <span className="text-[12px] font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: 'rgba(34,255,170,0.08)', color: '#22FFAA', border: '1px solid rgba(34,255,170,0.2)' }}>
+                style={{ background: 'rgba(34,255,170,0.08)', color: t.accent, border: '1px solid rgba(34,255,170,0.2)' }}>
                 {funnel.view_to_start_pct ?? 0}% view→start
               </span>
             )}
@@ -376,22 +377,22 @@ export default function MissionAnalyticsPage() {
             Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10" />)
           ) : funnel ? (
             <>
-              <FunnelBar label="Views"       value={funnel.viewers}    max={funnel.viewers}    icon={Eye}          color="#8B9CC0" />
-              <FunnelBar label="Started"     value={funnel.starters}   max={funnel.viewers}    icon={Play}         color="#6D5DFD" />
-              <FunnelBar label="Ever Active" value={funnel.ever_active} max={funnel.viewers}    icon={Activity}     color="#FFB84D" />
-              <FunnelBar label="Completed"   value={funnel.completers}  max={funnel.viewers}    icon={CheckCircle2} color="#22FFAA" />
-              <FunnelBar label="Claimed"     value={funnel.claimers}    max={funnel.viewers}    icon={Award}        color="#60A5FA" />
+              <FunnelBar label="Views"       value={funnel.viewers}    max={funnel.viewers}    icon={Eye}          color={t.txtDim} />
+              <FunnelBar label="Started"     value={funnel.starters}   max={funnel.viewers}    icon={Play}         color={t.ai} />
+              <FunnelBar label="Ever Active" value={funnel.ever_active} max={funnel.viewers}    icon={Activity}     color={t.warning} />
+              <FunnelBar label="Completed"   value={funnel.completers}  max={funnel.viewers}    icon={CheckCircle2} color={t.accent} />
+              <FunnelBar label="Claimed"     value={funnel.claimers}    max={funnel.viewers}    icon={Award}        color={t.info} />
               <div className="flex items-center gap-2 pt-2 border-t"
                 style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-                <Zap size={13} style={{ color: '#22FFAA' }} strokeWidth={2} />
-                <span className="text-[12px]" style={{ color: '#8B9CC0' }}>
+                <Zap size={13} style={{ color: t.accent }} strokeWidth={2} />
+                <span className="text-[12px]" style={{ color: t.txtDim }}>
                   Start → complete:{' '}
-                  <span className="font-bold text-[#F0F4FF]">{funnel.start_to_complete_pct ?? 0}%</span>
+                  <span className="font-bold" style={{ color: t.txt }}>{funnel.start_to_complete_pct ?? 0}%</span>
                 </span>
               </div>
             </>
           ) : (
-            <p className="text-[13px] text-[#4A5578] text-center py-8">
+            <p className="text-[13px] text-center py-8" style={{ color: t.txtFaint }}>
               No event data yet. Events will appear after participants start this mission.
             </p>
           )}

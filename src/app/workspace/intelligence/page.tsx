@@ -7,6 +7,7 @@ import {
   ShieldCheck, CheckCircle2, XCircle, AlertTriangle, Bot
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { t } from '@/theme/colors';
 
 const INTELLIGENCE_FUNCTIONS = ['personal', 'community', 'marketplace', 'impact'] as const;
 type IntelligenceFunction = typeof INTELLIGENCE_FUNCTIONS[number];
@@ -25,7 +26,7 @@ const FN_META: Record<IntelligenceFunction, { label: string; description: string
   community: {
     label: 'Community Intelligence',
     description: 'Community health signals, cohesion patterns, and social capital analysis',
-    color: '#6D5DFD',
+    color: t.ai,
     examples: [
       'What is the health of my community this week?',
       'Identify collaboration opportunities with peers',
@@ -35,7 +36,7 @@ const FN_META: Record<IntelligenceFunction, { label: string; description: string
   marketplace: {
     label: 'Marketplace Intelligence',
     description: 'Fair exchange recommendations, value distribution analysis, and opportunity matching',
-    color: '#fbbf24',
+    color: t.warning,
     examples: [
       'Are our reward structures creating fair incentives?',
       'Identify underserved mission categories',
@@ -45,7 +46,7 @@ const FN_META: Record<IntelligenceFunction, { label: string; description: string
   impact: {
     label: 'Impact Intelligence',
     description: 'Impact measurement, sustainability alignment, and double materiality assessment',
-    color: '#34d399',
+    color: t.accent,
     examples: [
       'Measure the real-world impact of completed missions',
       'Assess alignment with UN SDGs',
@@ -109,15 +110,16 @@ export default function WorkspaceIntelligencePage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2.5 mb-2">
-          <div className="w-9 h-9 rounded-xl bg-[#6D5DFD]/15 border border-[#6D5DFD]/25 flex items-center justify-center">
-            <Cpu size={17} className="text-[#A99FFE]" strokeWidth={1.8} />
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: `${t.ai}26`, border: `1px solid ${t.ai}40` }}>
+            <Cpu size={17} strokeWidth={1.8} style={{ color: t.aiLight }} />
           </div>
           <div>
-            <h1 className="text-[24px] font-bold text-[#F0F4FF] leading-tight">XIL Hub</h1>
-            <p className="text-[11px] text-[#4A5578]">X-Hunt Intelligence Layer</p>
+            <h1 className="text-[24px] font-bold leading-tight" style={{ color: t.txt }}>XIL Hub</h1>
+            <p className="text-[11px]" style={{ color: t.txtFaint }}>X-Hunt Intelligence Layer</p>
           </div>
         </div>
-        <p className="text-[#8B9CC0] text-[13px]">
+        <p className="text-[13px]" style={{ color: t.txtDim }}>
           Constitutional AI intelligence that helps you flourish — not just engage
         </p>
       </div>
@@ -127,7 +129,7 @@ export default function WorkspaceIntelligencePage() {
         <div className="xl:col-span-2 space-y-5">
           {/* Function picker */}
           <div>
-            <p className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-3">Intelligence Function</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: t.txtFaint }}>Intelligence Function</p>
             <div className="grid grid-cols-2 gap-3">
               {INTELLIGENCE_FUNCTIONS.map((fn) => {
                 const m = FN_META[fn];
@@ -140,13 +142,15 @@ export default function WorkspaceIntelligencePage() {
                       'text-left p-4 rounded-2xl border transition-all',
                       active
                         ? 'bg-accent/10 border-accent/30'
-                        : 'bg-[#07101F] border-[#0F1D35] hover:border-[#1A2E50] hover:bg-[#0A1226]'
+                        : 'border-[#0F1D35] hover:border-[#1A2E50]'
                     )}
+                    style={!active ? { background: t.surface } : {}}
                   >
-                    <p className={cn('text-[13px] font-bold mb-1', active ? 'text-accent' : 'text-[#F0F4FF]')}>
+                    <p className={cn('text-[13px] font-bold mb-1', active ? 'text-accent' : '')}
+                      style={!active ? { color: t.txt } : {}}>
                       {m.label}
                     </p>
-                    <p className="text-[11px] text-[#4A5578] leading-relaxed">{m.description}</p>
+                    <p className="text-[11px] leading-relaxed" style={{ color: t.txtFaint }}>{m.description}</p>
                   </button>
                 );
               })}
@@ -155,34 +159,38 @@ export default function WorkspaceIntelligencePage() {
 
           {/* Objective input */}
           <div>
-            <p className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-2">Your Question or Objective</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: t.txtFaint }}>Your Question or Objective</p>
             <div className="relative">
               <textarea
                 value={objective}
                 onChange={(e: { target: { value: string } }) => setObjective(e.target.value)}
                 placeholder={`e.g. "${meta.examples[0]}"`}
                 rows={3}
-                className="w-full bg-[#07101F] border border-[#0F1D35] rounded-xl px-4 py-3 text-[#F0F4FF] placeholder-[#2A3550] text-[13px] focus:outline-none focus:border-accent/50 resize-none transition-colors"
+                className="w-full rounded-xl px-4 py-3 text-[13px] focus:outline-none focus:border-accent/50 resize-none transition-colors"
+                style={{ background: t.surface, border: `1px solid ${t.panel}`, color: t.txt }}
                 onKeyDown={(e: { key: string; metaKey: boolean; ctrlKey: boolean }) => {
                   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void handleInvoke();
                 }}
               />
-              <p className="absolute bottom-3 right-3 text-[10px] text-[#2A3550]">⌘↵ to run</p>
+              <p className="absolute bottom-3 right-3 text-[10px]" style={{ color: '#2A3550' }}>⌘↵ to run</p>
             </div>
           </div>
 
           {/* Example prompts */}
           <div>
-            <p className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-2">Example Objectives</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: t.txtFaint }}>Example Objectives</p>
             <div className="flex flex-col gap-1.5">
               {meta.examples.map((ex: string) => (
                 <button
                   key={ex}
                   onClick={() => setObjective(ex)}
-                  className="flex items-center gap-2 text-left px-3 py-2 rounded-lg hover:bg-[#0A1226] transition-colors group"
+                  className="flex items-center gap-2 text-left px-3 py-2 rounded-lg transition-colors group"
+                  style={{ background: 'transparent' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = t.card)}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <ChevronRight size={12} className="text-[#4A5578] group-hover:text-accent transition-colors flex-shrink-0" strokeWidth={2.5} />
-                  <span className="text-[12px] text-[#8B9CC0] group-hover:text-[#F0F4FF] transition-colors">{ex}</span>
+                  <ChevronRight size={12} className="text-accent transition-colors flex-shrink-0" strokeWidth={2.5} style={{ color: t.txtFaint }} />
+                  <span className="text-[12px] transition-colors" style={{ color: t.txtDim }}>{ex}</span>
                 </button>
               ))}
             </div>
@@ -191,7 +199,8 @@ export default function WorkspaceIntelligencePage() {
           <button
             onClick={handleInvoke}
             disabled={invoking || !objective.trim()}
-            className="flex items-center gap-2 h-11 px-6 bg-accent text-[#060a0e] rounded-xl font-bold text-[13px] disabled:opacity-50 shadow-[0_4px_20px_rgba(34,255,170,0.2)] transition-opacity w-full justify-center"
+            className="flex items-center gap-2 h-11 px-6 bg-accent rounded-xl font-bold text-[13px] disabled:opacity-50 shadow-[0_4px_20px_rgba(34,255,170,0.2)] transition-opacity w-full justify-center"
+            style={{ color: '#060a0e' }}
           >
             {invoking ? (
               <><RefreshCw size={14} className="animate-spin" /> Consulting Intelligence Layer…</>
@@ -205,7 +214,8 @@ export default function WorkspaceIntelligencePage() {
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-[#07101F] border border-[#0F1D35] rounded-2xl overflow-hidden"
+              className="rounded-2xl overflow-hidden"
+              style={{ background: t.surface, border: `1px solid ${t.panel}` }}
             >
               {/* Constitutional verdict */}
               {result?.constitutional && (
@@ -230,16 +240,16 @@ export default function WorkspaceIntelligencePage() {
 
               {error ? (
                 <div className="p-5 flex items-start gap-2">
-                  <XCircle size={14} className="text-[#ff5252] flex-shrink-0 mt-0.5" strokeWidth={2} />
-                  <p className="text-[13px] text-[#ff5252]">{error}</p>
+                  <XCircle size={14} className="flex-shrink-0 mt-0.5" strokeWidth={2} style={{ color: t.error }} />
+                  <p className="text-[13px]" style={{ color: t.error }}>{error}</p>
                 </div>
               ) : result?.content ? (
                 <div className="p-5">
-                  <p className="text-[13px] text-[#8B9CC0] leading-relaxed whitespace-pre-wrap">{result.content}</p>
+                  <p className="text-[13px] leading-relaxed whitespace-pre-wrap" style={{ color: t.txtDim }}>{result.content}</p>
                 </div>
               ) : (
                 <div className="p-5">
-                  <pre className="text-[11px] text-[#8B9CC0] font-mono whitespace-pre-wrap overflow-auto max-h-64">
+                  <pre className="text-[11px] font-mono whitespace-pre-wrap overflow-auto max-h-64" style={{ color: t.txtDim }}>
                     {JSON.stringify(result, null, 2)}
                   </pre>
                 </div>
@@ -250,29 +260,29 @@ export default function WorkspaceIntelligencePage() {
 
         {/* Right: active agents */}
         <div className="space-y-4">
-          <p className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider">Active Agents ({activeAgents.length})</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: t.txtFaint }}>Active Agents ({activeAgents.length})</p>
           {displayAgents.length === 0 ? (
-            <div className="py-8 text-center bg-[#07101F] border border-[#0F1D35] rounded-2xl">
-              <Bot size={28} className="text-[#2A3550] mx-auto mb-2" strokeWidth={1.5} />
-              <p className="text-[#4A5578] text-sm">No agents active</p>
+            <div className="py-8 text-center rounded-2xl" style={{ background: t.surface, border: `1px solid ${t.panel}` }}>
+              <Bot size={28} className="mx-auto mb-2" strokeWidth={1.5} style={{ color: '#2A3550' }} />
+              <p className="text-sm" style={{ color: t.txtFaint }}>No agents active</p>
             </div>
           ) : (
             displayAgents.map((agent: Agent) => (
-              <div key={agent.agent_id} className="bg-[#07101F] border border-[#0F1D35] rounded-xl p-4 hover:border-[#1A2E50] transition-colors">
+              <div key={agent.agent_id} className="rounded-xl p-4 transition-colors" style={{ background: t.surface, border: `1px solid ${t.panel}` }}>
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
-                  <p className="text-[13px] font-semibold text-[#F0F4FF]">{agent.name}</p>
+                  <p className="text-[13px] font-semibold" style={{ color: t.txt }}>{agent.name}</p>
                 </div>
-                <p className="text-[11px] text-[#4A5578] leading-relaxed line-clamp-2">{agent.purpose}</p>
+                <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: t.txtFaint }}>{agent.purpose}</p>
               </div>
             ))
           )}
 
           {/* Constitutional principles */}
-          <div className="bg-[#07101F] border border-[#0F1D35] rounded-2xl p-4 mt-4">
+          <div className="rounded-2xl p-4 mt-4" style={{ background: t.surface, border: `1px solid ${t.panel}` }}>
             <div className="flex items-center gap-2 mb-3">
-              <ShieldCheck size={13} className="text-[#A99FFE]" strokeWidth={1.8} />
-              <p className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider">Constitutional AI</p>
+              <ShieldCheck size={13} strokeWidth={1.8} style={{ color: t.aiLight }} />
+              <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: t.txtFaint }}>Constitutional AI</p>
             </div>
             <div className="space-y-2">
               {[
@@ -282,8 +292,8 @@ export default function WorkspaceIntelligencePage() {
                 'Trust is our most valuable asset',
               ].map((p) => (
                 <div key={p} className="flex items-start gap-2">
-                  <div className="w-1 h-1 rounded-full bg-[#4A5578] flex-shrink-0 mt-1.5" />
-                  <p className="text-[11px] text-[#4A5578] leading-relaxed">{p}</p>
+                  <div className="w-1 h-1 rounded-full flex-shrink-0 mt-1.5" style={{ background: t.txtFaint }} />
+                  <p className="text-[11px] leading-relaxed" style={{ color: t.txtFaint }}>{p}</p>
                 </div>
               ))}
             </div>

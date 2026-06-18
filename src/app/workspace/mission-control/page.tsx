@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/cn';
+import { t } from '@/theme/colors';
 import type { DbMission, DbMissionScore } from '@/lib/supabase/types';
 
 type StatusFilter = 'all' | 'active' | 'draft' | 'paused' | 'archived';
@@ -34,30 +35,30 @@ interface IntelPanel {
 }
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('bg-[#0D1530] animate-pulse rounded-lg', className)} />;
+  return <div className={cn('animate-pulse rounded-lg', className)} style={{ background: t.panel }} />;
 }
 
 const STATUS_CONFIG = {
-  active:    { label: 'Active',    color: 'text-[#22FFAA]', bg: 'bg-[#22FFAA]/10', dot: 'bg-[#22FFAA]' },
-  draft:     { label: 'Draft',     color: 'text-[#FFB84D]', bg: 'bg-[#FFB84D]/10', dot: 'bg-[#FFB84D]' },
-  paused:    { label: 'Paused',    color: 'text-[#8B9CC0]', bg: 'bg-[#8B9CC0]/10', dot: 'bg-[#8B9CC0]' },
-  archived:  { label: 'Archived',  color: 'text-[#4A5578]', bg: 'bg-[#4A5578]/10', dot: 'bg-[#4A5578]' },
-  published: { label: 'Published', color: 'text-[#22FFAA]', bg: 'bg-[#22FFAA]/10', dot: 'bg-[#22FFAA]' },
+  active:    { label: 'Active',    color: t.accent,   bg: 'rgba(34,255,170,0.1)',  dot: t.accent },
+  draft:     { label: 'Draft',     color: t.warning,  bg: 'rgba(255,184,77,0.1)',  dot: t.warning },
+  paused:    { label: 'Paused',    color: t.txtDim,   bg: 'rgba(139,156,192,0.1)', dot: t.txtDim },
+  archived:  { label: 'Archived',  color: t.txtFaint, bg: 'rgba(74,85,120,0.1)',   dot: t.txtFaint },
+  published: { label: 'Published', color: t.accent,   bg: 'rgba(34,255,170,0.1)',  dot: t.accent },
 };
 
 const HEALTH_CONFIG: Record<MissionHealth, {
   label: string; color: string; bg: string; border: string; dot: string; glow: string;
 }> = {
-  healthy:  { label: 'Healthy',  color: 'text-[#22FFAA]', bg: 'bg-[#22FFAA]/10', border: 'border-[#22FFAA]/20', dot: 'bg-[#22FFAA]', glow: '#22FFAA' },
-  'at-risk':{ label: 'At Risk',  color: 'text-[#FFB84D]', bg: 'bg-[#FFB84D]/10', border: 'border-[#FFB84D]/20', dot: 'bg-[#FFB84D]', glow: '#FFB84D' },
-  critical: { label: 'Critical', color: 'text-[#FF5C7A]', bg: 'bg-[#FF5C7A]/10', border: 'border-[#FF5C7A]/20', dot: 'bg-[#FF5C7A]', glow: '#FF5C7A' },
-  inactive: { label: 'Inactive', color: 'text-[#4A5578]', bg: 'bg-[#4A5578]/10', border: 'border-[#4A5578]/20', dot: 'bg-[#4A5578]', glow: '#4A5578' },
+  healthy:  { label: 'Healthy',  color: t.accent,   bg: 'rgba(34,255,170,0.1)',  border: 'rgba(34,255,170,0.2)',  dot: t.accent,   glow: t.accent },
+  'at-risk':{ label: 'At Risk',  color: t.warning,  bg: 'rgba(255,184,77,0.1)',  border: 'rgba(255,184,77,0.2)',  dot: t.warning,  glow: t.warning },
+  critical: { label: 'Critical', color: t.error,    bg: 'rgba(255,92,122,0.1)',  border: 'rgba(255,92,122,0.2)',  dot: t.error,    glow: t.error },
+  inactive: { label: 'Inactive', color: t.txtFaint, bg: 'rgba(74,85,120,0.1)',   border: 'rgba(74,85,120,0.2)',   dot: t.txtFaint, glow: t.txtFaint },
 };
 
 const DIFF_CONFIG = {
-  easy:   { label: 'Easy',   color: 'text-[#22FFAA]' },
-  medium: { label: 'Medium', color: 'text-[#FFB84D]' },
-  hard:   { label: 'Hard',   color: 'text-[#FF5C7A]' },
+  easy:   { label: 'Easy',   color: t.accent },
+  medium: { label: 'Medium', color: t.warning },
+  hard:   { label: 'Hard',   color: t.error },
 };
 
 function computeHealth(m: { status: string; participants: number; completions: number; score?: DbMissionScore }): MissionHealth {
@@ -219,12 +220,12 @@ export default function MissionControlPage() {
             <Radar size={18} className="text-accent" strokeWidth={1.8} />
           </div>
           <div>
-            <h1 className="text-[22px] font-bold text-[#F0F4FF]">Mission Control</h1>
-            <p className="text-[#4A5578] text-[12px]">{missions.length} missions · {counts.active} active</p>
+            <h1 className="text-[22px] font-bold" style={{ color: t.txt }}>Mission Control</h1>
+            <p className="text-[12px]" style={{ color: t.txtFaint }}>{missions.length} missions · {counts.active} active</p>
           </div>
         </div>
         <Link href="/workspace/missions/new">
-          <button className="flex items-center gap-2 h-9 px-4 bg-accent text-[#060a0e] rounded-xl font-semibold text-[13px] shadow-[0_4px_16px_rgba(34,255,170,0.25)]">
+          <button className="flex items-center gap-2 h-9 px-4 bg-accent rounded-xl font-semibold text-[13px] shadow-[0_4px_16px_rgba(34,255,170,0.25)]" style={{ color: '#060a0e' }}>
             <Plus size={14} strokeWidth={2.5} />
             New Mission
           </button>
@@ -234,17 +235,21 @@ export default function MissionControlPage() {
       {/* ── Health Summary ── */}
       <div className="grid grid-cols-3 gap-3">
         {([
-          { key: 'healthy'  as const, label: 'Healthy',  Icon: ShieldCheck,    accent: '#22FFAA', desc: 'MEI ≥ 65 · Completion ≥ 50%' },
-          { key: 'at-risk'  as const, label: 'At Risk',  Icon: AlertTriangle,  accent: '#FFB84D', desc: 'MEI 35–64 or low completion' },
-          { key: 'critical' as const, label: 'Critical', Icon: Flame,          accent: '#FF5C7A', desc: 'MEI < 35 · Needs attention' },
+          { key: 'healthy'  as const, label: 'Healthy',  Icon: ShieldCheck,    accent: t.accent,  desc: 'MEI ≥ 65 · Completion ≥ 50%' },
+          { key: 'at-risk'  as const, label: 'At Risk',  Icon: AlertTriangle,  accent: t.warning, desc: 'MEI 35–64 or low completion' },
+          { key: 'critical' as const, label: 'Critical', Icon: Flame,          accent: t.error,   desc: 'MEI < 35 · Needs attention' },
         ]).map(({ key, label, Icon, accent, desc }, i) => (
           <motion.div
             key={key}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}
-            className="bg-[#0A1226] border border-[#0F1D35] rounded-xl p-4 flex items-center gap-3"
-            style={{ boxShadow: healthCounts[key] > 0 ? `0 0 24px ${accent}0F` : undefined }}
+            className="rounded-xl p-4 flex items-center gap-3"
+            style={{
+              background: t.card,
+              border: `1px solid ${t.panel}`,
+              boxShadow: healthCounts[key] > 0 ? `0 0 24px ${accent}0F` : undefined,
+            }}
           >
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: `${accent}14`, border: `1px solid ${accent}28` }}>
@@ -255,9 +260,9 @@ export default function MissionControlPage() {
                 <span className="text-[26px] font-black leading-none" style={{ color: accent }}>
                   {healthCounts[key]}
                 </span>
-                <span className="text-[13px] font-semibold text-[#F0F4FF]">{label}</span>
+                <span className="text-[13px] font-semibold" style={{ color: t.txt }}>{label}</span>
               </div>
-              <p className="text-[10.5px] text-[#4A5578] mt-0.5 truncate">{desc}</p>
+              <p className="text-[10.5px] mt-0.5 truncate" style={{ color: t.txtFaint }}>{desc}</p>
             </div>
           </motion.div>
         ))}
@@ -270,17 +275,18 @@ export default function MissionControlPage() {
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            className="bg-[#FF5C7A]/5 border border-[#FF5C7A]/18 rounded-xl px-4 py-3 flex items-start gap-3"
+            className="rounded-xl px-4 py-3 flex items-start gap-3"
+            style={{ background: 'rgba(255,92,122,0.05)', border: `1px solid rgba(255,92,122,0.18)` }}
           >
-            <AlertTriangle size={14} className="text-[#FF5C7A] flex-shrink-0 mt-0.5" strokeWidth={2} />
+            <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" strokeWidth={2} style={{ color: t.error }} />
             <div className="flex-1 min-w-0">
-              <p className="text-[12.5px] font-bold text-[#FF5C7A]">
+              <p className="text-[12.5px] font-bold" style={{ color: t.error }}>
                 {criticalActive.length} active mission{criticalActive.length !== 1 ? 's' : ''} in critical health
               </p>
-              <p className="text-[11px] text-[#8B9CC0] mt-0.5 leading-relaxed">
+              <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: t.txtDim }}>
                 {criticalActive.map((m, i) => (
                   <span key={m.id}>
-                    <span className="font-semibold text-[#F0F4FF]">&quot;{m.title}&quot;</span>
+                    <span className="font-semibold" style={{ color: t.txt }}>&quot;{m.title}&quot;</span>
                     {m.dropOffStep != null && ` — ${m.dropOffStep.count} users stuck at step ${m.dropOffStep.stepIdx + 1}`}
                     {i < criticalActive.length - 1 ? ' · ' : ''}
                   </span>
@@ -293,64 +299,63 @@ export default function MissionControlPage() {
 
       {/* ── Filters + Search ── */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 bg-[#0A1226] border border-[#0F1D35] rounded-xl p-1">
+        <div className="flex items-center gap-1.5 rounded-xl p-1" style={{ background: t.card, border: `1px solid ${t.panel}` }}>
           {(Object.keys(counts) as StatusFilter[]).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={cn(
-                'px-3 h-7 rounded-lg text-[12px] font-semibold transition-all',
-                filter === f ? 'bg-[#0D1530] text-[#F0F4FF]' : 'text-[#4A5578] hover:text-[#8B9CC0]'
-              )}
+              className="px-3 h-7 rounded-lg text-[12px] font-semibold transition-all"
+              style={filter === f ? { background: t.panel, color: t.txt } : { color: t.txtFaint }}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
-              <span className={cn('ml-1.5 text-[10px]', filter === f ? 'text-accent' : 'text-[#4A5578]')}>
+              <span className="ml-1.5 text-[10px]" style={{ color: filter === f ? t.accent : t.txtFaint }}>
                 {counts[f]}
               </span>
             </button>
           ))}
         </div>
         <div className="flex-1 relative max-w-xs">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4A5578]" strokeWidth={2} />
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" strokeWidth={2} style={{ color: t.txtFaint }} />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search missions…"
-            className="w-full h-9 pl-8 pr-3 bg-[#0A1226] border border-[#0F1D35] rounded-xl text-[13px] text-[#F0F4FF] placeholder:text-[#4A5578] focus:outline-none focus:border-[#162440]"
+            className="w-full h-9 pl-8 pr-3 rounded-xl text-[13px] focus:outline-none"
+            style={{ background: t.card, border: `1px solid ${t.panel}`, color: t.txt }}
           />
         </div>
-        <button className="flex items-center gap-2 h-9 px-3 bg-[#0A1226] border border-[#0F1D35] rounded-xl text-[12px] font-medium text-[#8B9CC0] hover:text-[#F0F4FF] hover:border-[#162440] transition-colors">
+        <button className="flex items-center gap-2 h-9 px-3 rounded-xl text-[12px] font-medium transition-colors"
+          style={{ background: t.card, border: `1px solid ${t.panel}`, color: t.txtDim }}>
           <SlidersHorizontal size={13} strokeWidth={2} />
           Filters
         </button>
       </div>
 
       {/* ── Table + Intel Panel ── */}
-      <div className={cn('flex gap-4 flex-1 min-h-0', selected && 'divide-x divide-[#0F1D35]')}>
+      <div className={cn('flex gap-4 flex-1 min-h-0', selected && 'divide-x')} style={selected ? { borderColor: t.panel } : {}}>
 
         {/* Table */}
         <div className={cn(
-          'flex-1 min-w-0 bg-[#0A1226] border border-[#0F1D35] rounded-2xl overflow-hidden flex flex-col',
+          'flex-1 min-w-0 rounded-2xl overflow-hidden flex flex-col',
           selected && 'max-w-[58%]'
-        )}>
+        )} style={{ background: t.card, border: `1px solid ${t.panel}` }}>
           {/* Column headers */}
-          <div className="grid px-5 py-3 border-b border-[#0F1D35] bg-[#07101F]"
-            style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 52px' }}>
+          <div className="grid px-5 py-3" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 52px', background: t.surface, borderBottom: `1px solid ${t.panel}` }}>
             {['Mission', 'Health', 'Participants', 'Completions', 'Forecast', 'MEI', ''].map((h) => (
-              <p key={h} className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider">{h}</p>
+              <p key={h} className="text-[10px] font-bold uppercase tracking-wider" style={{ color: t.txtFaint }}>{h}</p>
             ))}
           </div>
 
           {filtered.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
-              <Radar size={28} className="text-[#4A5578] mx-auto mb-3" strokeWidth={1.5} />
-              <p className="text-[#8B9CC0] font-medium">No missions found</p>
-              <p className="text-[#4A5578] text-sm mt-1">
+              <Radar size={28} className="mx-auto mb-3" strokeWidth={1.5} style={{ color: t.txtFaint }} />
+              <p className="font-medium" style={{ color: t.txtDim }}>No missions found</p>
+              <p className="text-sm mt-1" style={{ color: t.txtFaint }}>
                 {search ? `No results for "${search}"` : 'No missions in this status.'}
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-[#0F1D35] overflow-y-auto flex-1">
+            <div className="overflow-y-auto flex-1" style={{ borderTop: `1px solid ${t.panel}` }}>
               {filtered.map((m) => {
                 const h   = HEALTH_CONFIG[m.health];
                 const d   = DIFF_CONFIG[m.difficulty];
@@ -360,43 +365,40 @@ export default function MissionControlPage() {
                   <div
                     key={m.id}
                     onClick={() => loadIntel(m)}
-                    className={cn(
-                      'grid px-5 py-3.5 cursor-pointer items-center transition-colors',
-                      sel ? 'bg-accent/5 border-l-2 border-accent' : 'hover:bg-[#0D1530] border-l-2 border-transparent'
-                    )}
-                    style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 52px' }}
+                    className="grid px-5 py-3.5 cursor-pointer items-center transition-colors border-l-2"
+                    style={{
+                      gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 52px',
+                      background: sel ? 'rgba(34,255,170,0.05)' : undefined,
+                      borderLeftColor: sel ? t.accent : 'transparent',
+                    }}
                   >
                     {/* Mission name */}
                     <div className="pr-4">
-                      <p className={cn('text-[13px] font-semibold truncate', sel ? 'text-accent' : 'text-[#F0F4FF]')}>{m.title}</p>
-                      <p className={cn('text-[11px] mt-0.5', d.color)}>{d.label} · {(m.steps as unknown[]).length} steps</p>
+                      <p className="text-[13px] font-semibold truncate" style={{ color: sel ? t.accent : t.txt }}>{m.title}</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: d.color }}>{d.label} · {(m.steps as unknown[]).length} steps</p>
                     </div>
 
                     {/* Health badge */}
-                    <span className={cn(
-                      'inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full w-fit border',
-                      h.color, h.bg, h.border
-                    )}>
-                      <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', h.dot, m.health === 'healthy' && 'breathe')} />
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full w-fit border"
+                      style={{ color: h.color, background: h.bg, borderColor: h.border }}>
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: h.dot }} />
                       {h.label}
                     </span>
 
-                    <p className="text-[13px] text-[#F0F4FF] font-semibold tabular-nums">{m.participants}</p>
-                    <p className="text-[13px] text-[#F0F4FF] font-semibold tabular-nums">{m.completions}</p>
+                    <p className="text-[13px] font-semibold tabular-nums" style={{ color: t.txt }}>{m.participants}</p>
+                    <p className="text-[13px] font-semibold tabular-nums" style={{ color: t.txt }}>{m.completions}</p>
 
                     {/* Completion forecast bar */}
                     <div className="flex items-center gap-2">
-                      <div className="w-10 h-1.5 bg-[#0D1530] rounded-full overflow-hidden">
+                      <div className="w-10 h-1.5 rounded-full overflow-hidden" style={{ background: t.panel }}>
                         <div className="h-full rounded-full" style={{ width: `${forecastPct}%`, backgroundColor: h.glow }} />
                       </div>
                       <span className="text-[11px] font-bold tabular-nums" style={{ color: h.glow }}>{forecastPct}%</span>
                     </div>
 
                     {/* MEI */}
-                    <p className={cn(
-                      'text-[13px] font-bold tabular-nums',
-                      m.score?.mei ? (m.score.mei >= 70 ? 'text-[#22FFAA]' : m.score.mei >= 40 ? 'text-[#FFB84D]' : 'text-[#FF5C7A]') : 'text-[#4A5578]'
-                    )}>
+                    <p className="text-[13px] font-bold tabular-nums"
+                      style={{ color: m.score?.mei ? (m.score.mei >= 70 ? t.accent : m.score.mei >= 40 ? t.warning : t.error) : t.txtFaint }}>
                       {m.score?.mei ?? '—'}
                     </p>
 
@@ -405,7 +407,8 @@ export default function MissionControlPage() {
                       <Link
                         href={`/workspace/missions/${m.id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1.5 rounded-lg hover:bg-[#162440] text-[#4A5578] hover:text-[#F0F4FF] transition-colors"
+                        className="p-1.5 rounded-lg transition-colors"
+                        style={{ color: t.txtFaint }}
                       >
                         <ChevronRight size={13} strokeWidth={2} />
                       </Link>
@@ -427,26 +430,27 @@ export default function MissionControlPage() {
               className="w-[340px] flex-shrink-0 flex flex-col gap-4 pl-4 overflow-y-auto"
             >
               {/* Mission header */}
-              <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-4">
+              <div className="rounded-2xl p-4" style={{ background: t.card, border: `1px solid ${t.panel}` }}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Bot size={14} className="text-[#6D5DFD]" strokeWidth={2} />
-                    <p className="text-[13px] font-bold text-[#F0F4FF]">Mission Intelligence</p>
+                    <Bot size={14} strokeWidth={2} style={{ color: t.ai }} />
+                    <p className="text-[13px] font-bold" style={{ color: t.txt }}>Mission Intelligence</p>
                   </div>
-                  <button onClick={() => setSelected(null)} className="text-[#4A5578] hover:text-[#8B9CC0] text-[11px] leading-none">✕</button>
+                  <button onClick={() => setSelected(null)} className="text-[11px] leading-none" style={{ color: t.txtFaint }}>✕</button>
                 </div>
-                <p className="text-[13px] font-semibold text-[#F0F4FF] mb-2 truncate">{selected.title}</p>
+                <p className="text-[13px] font-semibold mb-2 truncate" style={{ color: t.txt }}>{selected.title}</p>
                 <div className="flex items-center gap-2 flex-wrap">
                   {(() => {
                     const h = HEALTH_CONFIG[selected.health];
                     return (
-                      <span className={cn('inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full border', h.color, h.bg, h.border)}>
-                        <span className={cn('w-1.5 h-1.5 rounded-full', h.dot)} />
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full border"
+                        style={{ color: h.color, background: h.bg, borderColor: h.border }}>
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: h.dot }} />
                         {h.label}
                       </span>
                     );
                   })()}
-                  <span className="text-[11px] text-[#4A5578]">
+                  <span className="text-[11px]" style={{ color: t.txtFaint }}>
                     {Math.round(selected.completionRate * 100)}% completion rate
                   </span>
                 </div>
@@ -457,14 +461,15 @@ export default function MissionControlPage() {
                 <motion.div
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-[#FF5C7A]/5 border border-[#FF5C7A]/18 rounded-xl p-3.5 flex items-start gap-2.5"
+                  className="rounded-xl p-3.5 flex items-start gap-2.5"
+                  style={{ background: 'rgba(255,92,122,0.05)', border: `1px solid rgba(255,92,122,0.18)` }}
                 >
-                  <TrendingDown size={14} className="text-[#FF5C7A] flex-shrink-0 mt-0.5" strokeWidth={2} />
+                  <TrendingDown size={14} className="flex-shrink-0 mt-0.5" strokeWidth={2} style={{ color: t.error }} />
                   <div>
-                    <p className="text-[12px] font-bold text-[#FF5C7A]">
+                    <p className="text-[12px] font-bold" style={{ color: t.error }}>
                       ⚠ Step {selected.dropOffStep.stepIdx + 1} causing {Math.round((selected.dropOffStep.count / Math.max(selected.participants, 1)) * 100)}% drop-off
                     </p>
-                    <p className="text-[11px] text-[#8B9CC0] mt-0.5 leading-relaxed">
+                    <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: t.txtDim }}>
                       {selected.dropOffStep.count} user{selected.dropOffStep.count !== 1 ? 's' : ''} stuck here.
                       Recommended: Split into 2 smaller steps.
                     </p>
@@ -473,15 +478,15 @@ export default function MissionControlPage() {
               )}
 
               {/* Completion forecast */}
-              <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-4">
-                <p className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider mb-3">Completion Forecast</p>
+              <div className="rounded-2xl p-4" style={{ background: t.card, border: `1px solid ${t.panel}` }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: t.txtFaint }}>Completion Forecast</p>
                 <div className="flex items-baseline gap-2 mb-3">
                   <span className="text-[32px] font-black leading-none" style={{ color: HEALTH_CONFIG[selected.health].glow }}>
                     {Math.round(selected.completionRate * 100)}%
                   </span>
-                  <span className="text-[12px] text-[#4A5578]">projected completion</span>
+                  <span className="text-[12px]" style={{ color: t.txtFaint }}>projected completion</span>
                 </div>
-                <div className="h-2 bg-[#0D1530] rounded-full overflow-hidden">
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: t.panel }}>
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${Math.round(selected.completionRate * 100)}%` }}
@@ -494,14 +499,14 @@ export default function MissionControlPage() {
                   />
                 </div>
                 <div className="flex justify-between mt-2">
-                  <span className="text-[10px] text-[#4A5578]">{selected.completions} completed</span>
-                  <span className="text-[10px] text-[#4A5578]">{selected.participants} participants</span>
+                  <span className="text-[10px]" style={{ color: t.txtFaint }}>{selected.completions} completed</span>
+                  <span className="text-[10px]" style={{ color: t.txtFaint }}>{selected.participants} participants</span>
                 </div>
               </div>
 
               {/* AI Analysis */}
               {intel?.loading ? (
-                <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-4 space-y-3">
+                <div className="rounded-2xl p-4 space-y-3" style={{ background: t.card, border: `1px solid ${t.panel}` }}>
                   <Skeleton className="h-3 w-full" />
                   <Skeleton className="h-3 w-4/5" />
                   <Skeleton className="h-3 w-full" />
@@ -509,58 +514,60 @@ export default function MissionControlPage() {
                 </div>
               ) : intel && (
                 <>
-                  <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-4 space-y-4">
-                    <p className="text-[12px] text-[#8B9CC0] leading-relaxed">{intel.analysis}</p>
+                  <div className="rounded-2xl p-4 space-y-4" style={{ background: t.card, border: `1px solid ${t.panel}` }}>
+                    <p className="text-[12px] leading-relaxed" style={{ color: t.txtDim }}>{intel.analysis}</p>
 
-                    <div className={cn(
-                      'flex items-start gap-2 p-3 rounded-xl border',
-                      intel.rewardEffective ? 'bg-[#22FFAA]/8 border-[#22FFAA]/15' : 'bg-[#FFB84D]/8 border-[#FFB84D]/15'
-                    )}>
-                      <CheckCircle2 size={13} className={intel.rewardEffective ? 'text-[#22FFAA]' : 'text-[#FFB84D]'} strokeWidth={2} />
+                    <div className="flex items-start gap-2 p-3 rounded-xl border"
+                      style={
+                        intel.rewardEffective
+                          ? { background: 'rgba(34,255,170,0.08)', borderColor: 'rgba(34,255,170,0.15)' }
+                          : { background: 'rgba(255,184,77,0.08)', borderColor: 'rgba(255,184,77,0.15)' }
+                      }>
+                      <CheckCircle2 size={13} strokeWidth={2} style={{ color: intel.rewardEffective ? t.accent : t.warning }} />
                       <div>
-                        <p className={cn('text-[11px] font-bold', intel.rewardEffective ? 'text-[#22FFAA]' : 'text-[#FFB84D]')}>
+                        <p className="text-[11px] font-bold" style={{ color: intel.rewardEffective ? t.accent : t.warning }}>
                           Rewards {intel.rewardEffective ? 'Effective' : 'Needs Review'}
                         </p>
-                        <p className="text-[11px] text-[#8B9CC0] mt-0.5">
+                        <p className="text-[11px] mt-0.5" style={{ color: t.txtDim }}>
                           {intel.rewardEffective ? 'Reward structure is driving completions.' : 'Review reward alignment with steps.'}
                         </p>
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-[#6D5DFD]/8 border border-[#6D5DFD]/15">
+                    <div className="p-3 rounded-xl" style={{ background: 'rgba(109,93,253,0.08)', border: `1px solid rgba(109,93,253,0.15)` }}>
                       <div className="flex items-center gap-1.5 mb-1.5">
-                        <Sparkles size={11} className="text-[#6D5DFD]" strokeWidth={2} />
-                        <p className="text-[11px] font-bold text-[#A99FFE]">AI Recommendation</p>
+                        <Sparkles size={11} strokeWidth={2} style={{ color: t.ai }} />
+                        <p className="text-[11px] font-bold" style={{ color: t.aiLight }}>AI Recommendation</p>
                       </div>
-                      <p className="text-[12px] text-[#8B9CC0]">{intel.recommendation}</p>
+                      <p className="text-[12px]" style={{ color: t.txtDim }}>{intel.recommendation}</p>
                     </div>
                   </div>
 
                   {/* MEI Breakdown */}
                   {selected.score && (
-                    <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-4">
-                      <p className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-3">MEI Breakdown</p>
+                    <div className="rounded-2xl p-4" style={{ background: t.card, border: `1px solid ${t.panel}` }}>
+                      <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: t.txtFaint }}>MEI Breakdown</p>
                       <div className="space-y-2.5">
                         {[
-                          { label: 'Completion', value: selected.score.completion_score, color: '#22FFAA' },
-                          { label: 'Engagement', value: selected.score.engagement_score, color: '#6D5DFD' },
-                          { label: 'Retention',  value: selected.score.retention_score,  color: '#FFB84D' },
-                          { label: 'Outcome',    value: selected.score.outcome_score,    color: '#F0F4FF' },
+                          { label: 'Completion', value: selected.score.completion_score, color: t.accent },
+                          { label: 'Engagement', value: selected.score.engagement_score, color: t.ai },
+                          { label: 'Retention',  value: selected.score.retention_score,  color: t.warning },
+                          { label: 'Outcome',    value: selected.score.outcome_score,    color: t.txt },
                         ].map(({ label, value, color }) => (
                           <div key={label}>
                             <div className="flex justify-between text-[11px] mb-1">
-                              <span className="text-[#8B9CC0]">{label}</span>
+                              <span style={{ color: t.txtDim }}>{label}</span>
                               <span className="font-bold tabular-nums" style={{ color }}>{value ?? 0}</span>
                             </div>
-                            <div className="h-1 bg-[#0D1530] rounded-full overflow-hidden">
+                            <div className="h-1 rounded-full overflow-hidden" style={{ background: t.panel }}>
                               <div className="h-full rounded-full" style={{ width: `${value ?? 0}%`, backgroundColor: color }} />
                             </div>
                           </div>
                         ))}
                       </div>
-                      <div className="mt-3 pt-3 border-t border-[#0F1D35] flex items-center justify-between">
-                        <p className="text-[11px] text-[#4A5578]">MEI Score</p>
-                        <p className="text-[20px] font-bold text-[#22FFAA]">{selected.score.mei}</p>
+                      <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: `1px solid ${t.panel}` }}>
+                        <p className="text-[11px]" style={{ color: t.txtFaint }}>MEI Score</p>
+                        <p className="text-[20px] font-bold" style={{ color: t.accent }}>{selected.score.mei}</p>
                       </div>
                     </div>
                   )}

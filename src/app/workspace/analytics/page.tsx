@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
+import { t } from '@/theme/colors';
 import LinearProgress from '@mui/material/LinearProgress';
 import Chip from '@mui/material/Chip';
 
@@ -164,11 +165,11 @@ export default function AnalyticsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-[#22FFAA]/8 border border-[#22FFAA]/15 flex items-center justify-center">
-            <BarChart3 size={18} className="text-[#22FFAA]" strokeWidth={1.8} />
+            <BarChart3 size={18} style={{ color: t.accent }} strokeWidth={1.8} />
           </div>
           <div>
-            <h1 className="text-[22px] font-bold text-[#F0F4FF]">Analytics Center</h1>
-            <p className="text-[#4A5578] text-[12px]">Operational intelligence and performance insights</p>
+            <h1 className="text-[22px] font-bold" style={{ color: t.txt }}>Analytics Center</h1>
+            <p className="text-[12px]" style={{ color: t.txtFaint }}>Operational intelligence and performance insights</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -177,11 +178,11 @@ export default function AnalyticsPage() {
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={cn('h-7 px-3 rounded-lg text-[11px] font-bold transition-all', period === p ? 'bg-[#0D1530] text-[#F0F4FF]' : 'text-[#4A5578] hover:text-[#8B9CC0]')}
+                className={cn('h-7 px-3 rounded-lg text-[11px] font-bold transition-all', period === p ? 'bg-[#0D1530]' : '')} style={{ color: period === p ? t.txt : t.txtFaint }}
               >{p}</button>
             ))}
           </div>
-          <button className="flex items-center gap-1.5 h-9 px-3 bg-[#0A1226] border border-[#0F1D35] rounded-xl text-[12px] font-medium text-[#8B9CC0] hover:text-[#F0F4FF] transition-colors">
+          <button className="flex items-center gap-1.5 h-9 px-3 bg-[#0A1226] border border-[#0F1D35] rounded-xl text-[12px] font-medium hover:text-[#F0F4FF] transition-colors" style={{ color: t.txtDim }}>
             <Download size={13} strokeWidth={2} />Export
           </button>
         </div>
@@ -190,11 +191,11 @@ export default function AnalyticsPage() {
       {/* KPIs */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'Total Missions',   value: data!.totalMissions,   icon: Target,       color: 'text-[#F0F4FF]', bg: 'bg-[#0D1530]',       trend: 8  },
-          { label: 'Completion Rate',  value: `${completionRate}%`,  icon: CheckCircle2, color: 'text-[#22FFAA]', bg: 'bg-[#22FFAA]/8',     trend: 5  },
-          { label: 'Total Users',      value: data!.totalUsers,      icon: Users,        color: 'text-[#6D5DFD]', bg: 'bg-[#6D5DFD]/10',    trend: 12 },
-          { label: 'Avg MEI Score',    value: data!.avgMei,          icon: TrendingUp,   color: 'text-[#FFB84D]', bg: 'bg-[#FFB84D]/10',    trend: -2 },
-        ].map(({ label, value, icon: Icon, color, bg, trend }, i) => (
+          { label: 'Total Missions',   value: data!.totalMissions,   icon: Target,       clr: t.txt,     bg: 'bg-[#0D1530]',       trend: 8  },
+          { label: 'Completion Rate',  value: `${completionRate}%`,  icon: CheckCircle2, clr: t.accent,  bg: 'bg-[#22FFAA]/8',     trend: 5  },
+          { label: 'Total Users',      value: data!.totalUsers,      icon: Users,        clr: t.ai,      bg: 'bg-[#6D5DFD]/10',    trend: 12 },
+          { label: 'Avg MEI Score',    value: data!.avgMei,          icon: TrendingUp,   clr: t.warning, bg: 'bg-[#FFB84D]/10',    trend: -2 },
+        ].map(({ label, value, icon: Icon, clr, bg, trend }, i) => (
           <motion.div
             key={label}
             initial={{ opacity: 0, y: 12 }}
@@ -204,15 +205,15 @@ export default function AnalyticsPage() {
           >
             <div className="flex items-center justify-between mb-3">
               <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', bg)}>
-                <Icon size={16} className={color} strokeWidth={1.8} />
+                <Icon size={16} strokeWidth={1.8} style={{ color: clr }} />
               </div>
-              <span className={cn('text-[11px] font-bold flex items-center gap-0.5', trend >= 0 ? 'text-[#22FFAA]' : 'text-[#FF5C7A]')}>
+              <span className="text-[11px] font-bold flex items-center gap-0.5" style={{ color: trend >= 0 ? t.accent : t.error }}>
                 <ArrowUpRight size={11} className={trend < 0 ? 'rotate-180' : ''} strokeWidth={2.5} />
                 {Math.abs(trend)}%
               </span>
             </div>
-            <p className={cn('text-2xl font-bold tabular-nums', color)}>{value}</p>
-            <p className="text-[#4A5578] text-[11px] mt-0.5 font-medium">{label}</p>
+            <p className="text-2xl font-bold tabular-nums" style={{ color: clr }}>{value}</p>
+            <p className="text-[11px] mt-0.5 font-medium" style={{ color: t.txtFaint }}>{label}</p>
           </motion.div>
         ))}
       </div>
@@ -224,15 +225,15 @@ export default function AnalyticsPage() {
         <div className="col-span-2 bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-5">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <Activity size={14} className="text-[#22FFAA]" strokeWidth={2} />
-              <p className="text-[13px] font-bold text-[#F0F4FF]">Mission Activity</p>
+              <Activity size={14} style={{ color: t.accent }} strokeWidth={2} />
+              <p className="text-[13px] font-bold" style={{ color: t.txt }}>Mission Activity</p>
             </div>
             <div className="flex items-center gap-3 text-[11px]">
-              <span className="flex items-center gap-1.5 text-[#22FFAA]">
-                <span className="w-2 h-2 rounded-full bg-[#22FFAA]" />Completions
+              <span className="flex items-center gap-1.5" style={{ color: t.accent }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: t.accent }} />Completions
               </span>
-              <span className="flex items-center gap-1.5 text-[#6D5DFD]">
-                <span className="w-2 h-2 rounded-full bg-[#6D5DFD]" />Starts
+              <span className="flex items-center gap-1.5" style={{ color: t.ai }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: t.ai }} />Starts
               </span>
             </div>
           </div>
@@ -253,7 +254,7 @@ export default function AnalyticsPage() {
                     initial={{ height: 0 }}
                     animate={{ height: `${maxActivity > 0 ? (d.completions / maxActivity) * 100 : 0}%` }}
                     transition={{ delay: i * 0.05 + 0.3, duration: 0.5 }}
-                    className="rounded-t-sm min-h-[2px] bg-[#22FFAA]"
+                    className="rounded-t-sm min-h-[2px]" style={{ background: t.accent }}
                   />
                 </div>
               </div>
@@ -262,7 +263,7 @@ export default function AnalyticsPage() {
 
           <div className="flex gap-2 mt-2">
             {data!.recentActivity.map((d) => (
-              <p key={d.date} className="flex-1 text-center text-[9px] text-[#4A5578]">
+              <p key={d.date} className="flex-1 text-center text-[9px]" style={{ color: t.txtFaint }}>
                 {new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' })}
               </p>
             ))}
@@ -272,20 +273,20 @@ export default function AnalyticsPage() {
         {/* Mission Status Distribution */}
         <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-5">
-            <Target size={14} className="text-[#FFB84D]" strokeWidth={2} />
-            <p className="text-[13px] font-bold text-[#F0F4FF]">Mission Status</p>
+            <Target size={14} style={{ color: t.warning }} strokeWidth={2} />
+            <p className="text-[13px] font-bold" style={{ color: t.txt }}>Mission Status</p>
           </div>
           <div className="space-y-3">
             {Object.entries(data!.missionsByStatus).map(([status, count]) => {
               const pct = data!.totalMissions > 0 ? Math.round((count / data!.totalMissions) * 100) : 0;
               const colors: Record<string, string> = {
-                active: '#22FFAA', draft: '#FFB84D', paused: '#8B9CC0', archived: '#4A5578', published: '#22FFAA',
+                active: t.accent, draft: t.warning, paused: t.txtDim, archived: t.txtFaint, published: t.accent,
               };
-              const color = colors[status] ?? '#8B9CC0';
+              const color = colors[status] ?? t.txtDim;
               return (
                 <div key={status}>
                   <div className="flex items-center justify-between text-[12px] mb-1.5">
-                    <span className="text-[#8B9CC0] capitalize">{status}</span>
+                    <span className="capitalize" style={{ color: t.txtDim }}>{status}</span>
                     <span className="font-bold tabular-nums" style={{ color }}>{count}</span>
                   </div>
                   <LinearProgress
@@ -310,40 +311,40 @@ export default function AnalyticsPage() {
         <div className="col-span-2 bg-[#0A1226] border border-[#0F1D35] rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-[#0F1D35] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Zap size={14} className="text-[#22FFAA]" strokeWidth={2} />
-              <p className="text-[13px] font-bold text-[#F0F4FF]">Top Performing Missions</p>
+              <Zap size={14} style={{ color: t.accent }} strokeWidth={2} />
+              <p className="text-[13px] font-bold" style={{ color: t.txt }}>Top Performing Missions</p>
             </div>
-            <Link href="/workspace/missions" className="text-[11px] text-[#8B9CC0] hover:text-accent transition-colors font-medium flex items-center gap-1">
+            <Link href="/workspace/missions" className="text-[11px] hover:text-accent transition-colors font-medium flex items-center gap-1" style={{ color: t.txtDim }}>
               All missions <ChevronRight size={11} strokeWidth={2} />
             </Link>
           </div>
           {data!.topMissions.length === 0 ? (
             <div className="py-12 text-center">
-              <Target size={24} className="text-[#4A5578] mx-auto mb-2" strokeWidth={1.5} />
-              <p className="text-[#8B9CC0] text-sm font-medium">No data yet</p>
+              <Target size={24} className="mx-auto mb-2" style={{ color: t.txtFaint }} strokeWidth={1.5} />
+              <p className="text-sm font-medium" style={{ color: t.txtDim }}>No data yet</p>
             </div>
           ) : (
             <div className="divide-y divide-[#0F1D35]">
               {data!.topMissions.map((m, i) => (
                 <Link key={m.id} href={`/workspace/missions/${m.id}`}
                   className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#0D1530] transition-colors group">
-                  <span className="text-[12px] font-bold text-[#4A5578] w-4 flex-shrink-0">{i + 1}</span>
-                  <p className="flex-1 text-[13px] text-[#F0F4FF] font-medium truncate group-hover:text-accent transition-colors">{m.title}</p>
+                  <span className="text-[12px] font-bold w-4 flex-shrink-0" style={{ color: t.txtFaint }}>{i + 1}</span>
+                  <p className="flex-1 text-[13px] font-medium truncate group-hover:text-accent transition-colors" style={{ color: t.txt }}>{m.title}</p>
                   <div className="flex items-center gap-4 flex-shrink-0">
-                    <span className="text-[12px] text-[#8B9CC0]">{m.completions} completions</span>
+                    <span className="text-[12px]" style={{ color: t.txtDim }}>{m.completions} completions</span>
                     {m.mei !== null && (
                       <Chip
                         label={`MEI ${m.mei}`}
                         size="small"
                         sx={{
                           fontSize: 11, fontWeight: 700, height: 20,
-                          color: m.mei >= 70 ? '#22FFAA' : m.mei >= 40 ? '#FFB84D' : '#FF5C7A',
+                          color: m.mei >= 70 ? t.accent : m.mei >= 40 ? t.warning : t.error,
                           bgcolor: m.mei >= 70 ? 'rgba(34,255,170,0.1)' : m.mei >= 40 ? 'rgba(255,184,77,0.1)' : 'rgba(255,92,122,0.1)',
                           '& .MuiChip-label': { px: 1 },
                         }}
                       />
                     )}
-                    <ChevronRight size={13} className="text-[#4A5578] group-hover:text-accent transition-colors" strokeWidth={2} />
+                    <ChevronRight size={13} className="group-hover:text-accent transition-colors" style={{ color: t.txtFaint }} strokeWidth={2} />
                   </div>
                 </Link>
               ))}
@@ -354,14 +355,14 @@ export default function AnalyticsPage() {
         {/* Difficulty Breakdown */}
         <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-5">
-            <BarChart3 size={14} className="text-[#6D5DFD]" strokeWidth={2} />
-            <p className="text-[13px] font-bold text-[#F0F4FF]">By Difficulty</p>
+            <BarChart3 size={14} style={{ color: t.ai }} strokeWidth={2} />
+            <p className="text-[13px] font-bold" style={{ color: t.txt }}>By Difficulty</p>
           </div>
           <div className="space-y-4">
             {[
-              { key: 'easy',   label: 'Easy',   color: '#22FFAA' },
-              { key: 'medium', label: 'Medium', color: '#FFB84D' },
-              { key: 'hard',   label: 'Hard',   color: '#FF5C7A' },
+              { key: 'easy',   label: 'Easy',   color: t.accent  },
+              { key: 'medium', label: 'Medium', color: t.warning },
+              { key: 'hard',   label: 'Hard',   color: t.error   },
             ].map(({ key, label, color }) => {
               const d = data!.completionsByDifficulty[key] ?? { total: 0, completed: 0 };
               const rate = d.total > 0 ? Math.round((d.completed / d.total) * 100) : 0;
@@ -369,7 +370,7 @@ export default function AnalyticsPage() {
                 <div key={key} className="p-3 bg-[#07101F] rounded-xl">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[12px] font-bold" style={{ color }}>{label}</span>
-                    <span className="text-[11px] text-[#8B9CC0] tabular-nums">{d.completed}/{d.total}</span>
+                    <span className="text-[11px] tabular-nums" style={{ color: t.txtDim }}>{d.completed}/{d.total}</span>
                   </div>
                   <LinearProgress
                     variant="determinate"
@@ -388,8 +389,8 @@ export default function AnalyticsPage() {
 
           <div className="mt-4 pt-4 border-t border-[#0F1D35]">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] text-[#4A5578]">Total rewards issued</p>
-              <p className="text-[16px] font-bold text-[#FFB84D]">{data!.totalRewards}</p>
+              <p className="text-[11px]" style={{ color: t.txtFaint }}>Total rewards issued</p>
+              <p className="text-[16px] font-bold" style={{ color: t.warning }}>{data!.totalRewards}</p>
             </div>
           </div>
         </div>
