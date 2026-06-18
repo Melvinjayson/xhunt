@@ -403,13 +403,13 @@ export default function MissionAnalyticsPage() {
       <div className="rounded-2xl p-6" style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <BarChart3 size={16} strokeWidth={2} style={{ color: '#6D5DFD' }} />
-            <h2 className="text-[14px] font-bold text-[#F0F4FF]">Step-by-Step Drop-off</h2>
+            <BarChart3 size={16} strokeWidth={2} style={{ color: t.ai }} />
+            <h2 className="text-[14px] font-bold" style={{ color: t.txt }}>Step-by-Step Drop-off</h2>
           </div>
           <div className="flex items-center gap-3 text-[11px]">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#22FFAA]" />≥70% healthy</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#FFB84D]" />45–70% at risk</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#FF5C7A]" />&lt;45% critical</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: t.accent }} />≥70% healthy</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: t.warning }} />45–70% at risk</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: t.error }} />&lt;45% critical</span>
           </div>
         </div>
 
@@ -419,8 +419,8 @@ export default function MissionAnalyticsPage() {
           </div>
         ) : dropoffs.length === 0 ? (
           <div className="text-center py-10">
-            <SkipForward size={28} strokeWidth={1.5} style={{ color: '#4A5578' }} className="mx-auto mb-3" />
-            <p className="text-[13px] text-[#4A5578]">
+            <SkipForward size={28} strokeWidth={1.5} style={{ color: t.txtFaint }} className="mx-auto mb-3" />
+            <p className="text-[13px]" style={{ color: t.txtFaint }}>
               No step event data yet. Step analytics appear once participants begin executing this mission.
             </p>
           </div>
@@ -440,22 +440,22 @@ export default function MissionAnalyticsPage() {
         {/* Event type breakdown */}
         <div className="rounded-2xl p-6" style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
           <div className="flex items-center gap-2 mb-4">
-            <Activity size={15} strokeWidth={2} style={{ color: '#22FFAA' }} />
-            <h2 className="text-[14px] font-bold text-[#F0F4FF]">Event Breakdown</h2>
+            <Activity size={15} strokeWidth={2} style={{ color: t.accent }} />
+            <h2 className="text-[14px] font-bold" style={{ color: t.txt }}>Event Breakdown</h2>
           </div>
           {loading ? (
             <div className="space-y-2">
               {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-7" />)}
             </div>
           ) : Object.keys(typeCounts).length === 0 ? (
-            <p className="text-[13px] text-[#4A5578] py-6 text-center">No events recorded yet.</p>
+            <p className="text-[13px] py-6 text-center" style={{ color: t.txtFaint }}>No events recorded yet.</p>
           ) : (
             <div className="space-y-2">
               {Object.entries(typeCounts).sort(([, a], [, b]) => b - a).map(([type, count]) => (
                 <div key={type} className="flex items-center justify-between py-1.5 px-3 rounded-lg"
                   style={{ background: 'rgba(255,255,255,0.03)' }}>
-                  <span className="text-[12px] text-[#8B9CC0] font-mono">{type.replace(/_/g, ' ')}</span>
-                  <span className="text-[13px] font-bold tabular-nums" style={{ color: '#F0F4FF' }}>{count}</span>
+                  <span className="text-[12px] font-mono" style={{ color: t.txtDim }}>{type.replace(/_/g, ' ')}</span>
+                  <span className="text-[13px] font-bold tabular-nums" style={{ color: t.txt }}>{count}</span>
                 </div>
               ))}
             </div>
@@ -465,39 +465,39 @@ export default function MissionAnalyticsPage() {
         {/* AI recommendations */}
         <div className="rounded-2xl p-6" style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
           <div className="flex items-center gap-2 mb-4">
-            <Sparkles size={15} strokeWidth={2} style={{ color: '#6D5DFD' }} />
-            <h2 className="text-[14px] font-bold text-[#F0F4FF]">Health Insights</h2>
+            <Sparkles size={15} strokeWidth={2} style={{ color: t.ai }} />
+            <h2 className="text-[14px] font-bold" style={{ color: t.txt }}>Health Insights</h2>
           </div>
           <div className="space-y-3">
             {score ? (
               <>
                 {score.completion_score < 40 && (
-                  <InsightCard icon={AlertTriangle} color="#FF5C7A"
+                  <InsightCard icon={AlertTriangle} color={t.error}
                     text="Completion rate is below 40%. Review step difficulty and reduce barriers to finishing." />
                 )}
                 {score.engagement_score < 50 && (
-                  <InsightCard icon={TrendingUp} color="#FFB84D"
+                  <InsightCard icon={TrendingUp} color={t.warning}
                     text="Low step engagement. Consider shorter, clearer instructions or adding adaptation options." />
                 )}
                 {score.retention_score < 30 && (
-                  <InsightCard icon={Users} color="#6D5DFD"
+                  <InsightCard icon={Users} color={t.ai}
                     text="Few participants return to this mission. A follow-up mission in the same category may help." />
                 )}
                 {score.outcome_score < 20 && (
-                  <InsightCard icon={Target} color="#60A5FA"
+                  <InsightCard icon={Target} color={t.info}
                     text="Reward claim rate is low. Ensure the reward is visible and the claim flow is frictionless." />
                 )}
                 {score.mei >= 65 && (
-                  <InsightCard icon={CheckCircle2} color="#22FFAA"
+                  <InsightCard icon={CheckCircle2} color={t.accent}
                     text={`This mission is performing well with an MEI of ${Math.round(score.mei)}. Consider featuring it in the marketplace.`} />
                 )}
                 {score.sample_size < 5 && (
-                  <InsightCard icon={Clock} color="#8B9CC0"
+                  <InsightCard icon={Clock} color={t.txtDim}
                     text="Not enough data yet. MEI scores become reliable above 5 participants." />
                 )}
               </>
             ) : (
-              <p className="text-[13px] text-[#4A5578]">
+              <p className="text-[13px]" style={{ color: t.txtFaint }}>
                 Run MEI compute to generate health insights for this mission.
               </p>
             )}
@@ -514,7 +514,7 @@ function InsightCard({ icon: Icon, color, text }: {
   return (
     <div className="flex gap-3 p-3 rounded-xl" style={{ background: `${color}08`, border: `1px solid ${color}20` }}>
       <Icon size={15} strokeWidth={2} style={{ color }} className="flex-shrink-0 mt-0.5" />
-      <p className="text-[12px] leading-relaxed" style={{ color: '#8B9CC0' }}>{text}</p>
+      <p className="text-[12px] leading-relaxed" style={{ color: t.txtDim }}>{text}</p>
     </div>
   );
 }

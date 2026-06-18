@@ -8,17 +8,8 @@ import { Send, ArrowRight, Sparkles, Brain, Shield, Lock } from 'lucide-react';
 import { saveState, loadState, saveProfile } from '@/lib/store';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/context';
+import { t } from '@/theme/colors';
 import type { ImpactProfile } from '@/lib/types';
-
-/* ─── design tokens ─── */
-const BG     = '#050816';
-const CARD   = '#0A1226';
-const SURF   = '#07101F';
-const ACCENT = '#22FFAA';
-const AI_CLR = '#6D5DFD';
-const TXT    = '#F0F4FF';
-const DIM    = '#8B9CC0';
-const FAINT  = '#4A5578';
 
 const MAX_USER_MESSAGES = 8;
 
@@ -47,8 +38,8 @@ const STAGE_LABELS = [
 ];
 
 const ARCHETYPE_COLORS: Record<string, string> = {
-  Explorer: ACCENT, Builder: '#6D5DFD', Innovator: '#a78bfa',
-  Mentor: '#FFB84D', Creator: '#FF5C7A', Analyst: '#60A5FA', Activist: ACCENT,
+  Explorer: t.accent, Builder: t.ai, Innovator: '#a78bfa',
+  Mentor: t.warning, Creator: t.error, Analyst: t.info, Activist: t.accent,
 };
 
 /* ─── StrengthBar ─── */
@@ -56,7 +47,7 @@ function StrengthBar({ name, score, color, delay }: { name: string; score: numbe
   return (
     <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay, duration: 0.4 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-        <span style={{ fontSize: 12, color: DIM, fontWeight: 600 }}>{name}</span>
+        <span style={{ fontSize: 12, color: t.txtDim, fontWeight: 600 }}>{name}</span>
         <span style={{ fontSize: 12, color, fontWeight: 800 }}>{score}%</span>
       </div>
       <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
@@ -72,7 +63,7 @@ function StrengthBar({ name, score, color, delay }: { name: string; score: numbe
 
 /* ─── ImpactDNAReveal ─── */
 function ImpactDNAReveal({ profile, onContinue }: { profile: ImpactProfile; onContinue: () => void }) {
-  const archetypeColor = ARCHETYPE_COLORS[profile.archetype] ?? ACCENT;
+  const archetypeColor = ARCHETYPE_COLORS[profile.archetype] ?? t.accent;
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.97 }}
@@ -84,13 +75,13 @@ function ImpactDNAReveal({ profile, onContinue }: { profile: ImpactProfile; onCo
         <motion.div
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 280, damping: 18 }}
-          style={{ width: 72, height: 72, borderRadius: '50%', background: `linear-gradient(135deg, ${archetypeColor}20, ${AI_CLR}20)`,
+          style={{ width: 72, height: 72, borderRadius: '50%', background: `linear-gradient(135deg, ${archetypeColor}20, ${t.ai}20)`,
             border: `2px solid ${archetypeColor}40`, display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px', boxShadow: `0 0 40px ${archetypeColor}25` }}>
           <Brain size={30} style={{ color: archetypeColor }} strokeWidth={1.5} />
         </motion.div>
         <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.1em', margin: '0 0 6px' }}>
+          style={{ fontSize: 11, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.1em', margin: '0 0 6px' }}>
           Your Impact DNA
         </motion.p>
         <motion.h2 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
@@ -100,15 +91,15 @@ function ImpactDNAReveal({ profile, onContinue }: { profile: ImpactProfile; onCo
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.32 }}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           <div style={{ height: 3, width: 32, borderRadius: 2, background: `linear-gradient(90deg, transparent, ${archetypeColor})` }} />
-          <span style={{ fontSize: 11, color: FAINT }}>Impact Score</span>
+          <span style={{ fontSize: 11, color: t.txtFaint }}>Impact Score</span>
           <span style={{ fontSize: 14, fontWeight: 900, color: archetypeColor }}>{profile.impactScore}</span>
           <div style={{ height: 3, width: 32, borderRadius: 2, background: `linear-gradient(90deg, ${archetypeColor}, transparent)` }} />
         </motion.div>
       </div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-        style={{ background: CARD, border: `1px solid ${archetypeColor}18`, borderRadius: 18, padding: '18px 20px', marginBottom: 14 }}>
-        <p style={{ fontSize: 10, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.09em', margin: '0 0 14px' }}>Strengths</p>
+        style={{ background: t.card, border: `1px solid ${archetypeColor}18`, borderRadius: 18, padding: '18px 20px', marginBottom: 14 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.09em', margin: '0 0 14px' }}>Strengths</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {profile.strengths.slice(0, 5).map((s, i) => (
             <StrengthBar key={s.name} name={s.name} score={s.score} color={archetypeColor} delay={0.35 + i * 0.07} />
@@ -118,12 +109,12 @@ function ImpactDNAReveal({ profile, onContinue }: { profile: ImpactProfile; onCo
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
         {[
-          { label: 'Causes', items: profile.causes, color: ACCENT },
-          { label: 'Motivations', items: profile.motivations, color: AI_CLR },
+          { label: 'Causes', items: profile.causes, color: t.accent },
+          { label: 'Motivations', items: profile.motivations, color: t.ai },
         ].map(({ label, items, color }, gi) => (
           <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 + gi * 0.07 }}
-            style={{ background: CARD, border: '1px solid rgba(255,255,255,.06)', borderRadius: 16, padding: '14px 16px' }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.09em', margin: '0 0 10px' }}>{label}</p>
+            style={{ background: t.card, border: '1px solid rgba(255,255,255,.06)', borderRadius: 16, padding: '14px 16px' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.09em', margin: '0 0 10px' }}>{label}</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {items.map((item) => (
                 <span key={item} style={{ fontSize: 10, fontWeight: 700, color, background: `${color}12`, border: `1px solid ${color}20`, borderRadius: 999, padding: '3px 9px' }}>
@@ -136,14 +127,14 @@ function ImpactDNAReveal({ profile, onContinue }: { profile: ImpactProfile; onCo
       </div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.68 }}
-        style={{ background: CARD, border: '1px solid rgba(255,255,255,.06)', borderRadius: 16, padding: '14px 16px', marginBottom: 14 }}>
+        style={{ background: t.card, border: '1px solid rgba(255,255,255,.06)', borderRadius: 16, padding: '14px 16px', marginBottom: 14 }}>
         <div style={{ display: 'flex', gap: 24 }}>
           {[
             { label: 'Personality', items: profile.personality, color: '#a78bfa' },
-            { label: 'Growth Areas', items: profile.growthAreas, color: '#FFB84D' },
+            { label: 'Growth Areas', items: profile.growthAreas, color: t.warning },
           ].map(({ label, items, color }) => (
             <div key={label} style={{ flex: 1 }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.09em', margin: '0 0 8px' }}>{label}</p>
+              <p style={{ fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.09em', margin: '0 0 8px' }}>{label}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {items.map((item) => (
                   <span key={item} style={{ fontSize: 11, color, fontWeight: 600 }}>· {item}</span>
@@ -155,10 +146,10 @@ function ImpactDNAReveal({ profile, onContinue }: { profile: ImpactProfile; onCo
       </motion.div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.74 }}
-        style={{ display: 'flex', alignItems: 'center', gap: 10, background: `${ACCENT}08`, border: `1px solid ${ACCENT}18`, borderRadius: 14, padding: '12px 16px', marginBottom: 14 }}>
-        <Sparkles size={15} style={{ color: ACCENT, flexShrink: 0 }} strokeWidth={2} />
-        <span style={{ fontSize: 12, color: DIM }}>
-          <strong style={{ color: TXT }}>Available</strong> {profile.availability} · AI will match missions to your window
+        style={{ display: 'flex', alignItems: 'center', gap: 10, background: `${t.accent}08`, border: `1px solid ${t.accent}18`, borderRadius: 14, padding: '12px 16px', marginBottom: 14 }}>
+        <Sparkles size={15} style={{ color: t.accent, flexShrink: 0 }} strokeWidth={2} />
+        <span style={{ fontSize: 12, color: t.txtDim }}>
+          <strong style={{ color: t.txt }}>Available</strong> {profile.availability} · AI will match missions to your window
         </span>
       </motion.div>
 
@@ -166,21 +157,21 @@ function ImpactDNAReveal({ profile, onContinue }: { profile: ImpactProfile; onCo
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.78 }}
         style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginBottom: 20,
           background: 'rgba(109,93,253,0.06)', border: '1px solid rgba(109,93,253,0.15)', borderRadius: 12 }}>
-        <Lock size={12} style={{ color: AI_CLR, flexShrink: 0 }} />
-        <span style={{ fontSize: 11, color: DIM }}>Your profile and all messages are <strong style={{ color: '#a78bfa' }}>end-to-end encrypted</strong></span>
+        <Lock size={12} style={{ color: t.ai, flexShrink: 0 }} />
+        <span style={{ fontSize: 11, color: t.txtDim }}>Your profile and all messages are <strong style={{ color: '#a78bfa' }}>end-to-end encrypted</strong></span>
       </motion.div>
 
       <motion.button
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.82 }}
         onClick={onContinue}
-        style={{ width: '100%', height: 52, background: ACCENT, color: BG, borderRadius: 16, border: 'none', fontWeight: 900,
+        style={{ width: '100%', height: 52, background: t.accent, color: t.bg, borderRadius: 16, border: 'none', fontWeight: 900,
           fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          boxShadow: `0 0 28px ${ACCENT}35`, fontFamily: 'inherit', letterSpacing: '-.01em' }}>
+          boxShadow: `0 0 28px ${t.accent}35`, fontFamily: 'inherit', letterSpacing: '-.01em' }}>
         Start Hunting <ArrowRight size={17} strokeWidth={2.8} />
       </motion.button>
 
       <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.92 }}
-        style={{ textAlign: 'center', fontSize: 11, color: FAINT, marginTop: 12 }}>
+        style={{ textAlign: 'center', fontSize: 11, color: t.txtFaint, marginTop: 12 }}>
         Your Impact DNA updates with every mission you complete.
       </motion.p>
     </motion.div>
@@ -252,8 +243,8 @@ export default function GetStartedPage() {
   useEffect(() => {
     if (phase !== 'analyzing') return;
     let i = 0;
-    const t = setInterval(() => { i++; setAnalyzeStep(i); if (i >= 3) clearInterval(t); }, 900);
-    return () => clearInterval(t);
+    const timer = setInterval(() => { i++; setAnalyzeStep(i); if (i >= 3) clearInterval(timer); }, 900);
+    return () => clearInterval(timer);
   }, [phase]);
 
   async function fetchXenoReply(history: Message[]) {
@@ -353,8 +344,8 @@ export default function GetStartedPage() {
   // Loading until auth check completes
   if (!authChecked) {
     return (
-      <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 24, height: 24, border: `2px solid ${FAINT}`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 24, height: 24, border: `2px solid ${t.txtFaint}`, borderTopColor: t.accent, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -364,28 +355,28 @@ export default function GetStartedPage() {
   if (phase === 'analyzing') {
     const steps = ['Reading your story…', 'Mapping your skills & strengths…', 'Matching your causes…', 'Building your Impact DNA…'];
     return (
-      <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ textAlign: 'center', maxWidth: 320 }}>
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-            style={{ width: 72, height: 72, borderRadius: '50%', background: `conic-gradient(${ACCENT}, ${AI_CLR}, ${ACCENT})`, margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Brain size={24} style={{ color: ACCENT }} strokeWidth={1.5} />
+            style={{ width: 72, height: 72, borderRadius: '50%', background: `conic-gradient(${t.accent}, ${t.ai}, ${t.accent})`, margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Brain size={24} style={{ color: t.accent }} strokeWidth={1.5} />
             </div>
           </motion.div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: TXT, margin: '0 0 6px', letterSpacing: '-.02em' }}>Building your Impact DNA</h2>
-          <p style={{ fontSize: 13, color: DIM, margin: '0 0 28px' }}>Xeno is analysing your conversation…</p>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: t.txt, margin: '0 0 6px', letterSpacing: '-.02em' }}>Building your Impact DNA</h2>
+          <p style={{ fontSize: 13, color: t.txtDim, margin: '0 0 28px' }}>Xeno is analysing your conversation…</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {steps.map((step, i) => (
               <motion.div key={step}
                 initial={{ opacity: 0, x: -12 }} animate={{ opacity: analyzeStep >= i ? 1 : 0.2, x: 0 }}
                 transition={{ delay: i * 0.1, duration: 0.3 }}
                 style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12,
-                  background: analyzeStep >= i ? `${ACCENT}08` : 'rgba(255,255,255,.02)',
-                  border: `1px solid ${analyzeStep >= i ? `${ACCENT}20` : 'rgba(255,255,255,.04)'}` }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: analyzeStep >= i ? ACCENT : FAINT, boxShadow: analyzeStep >= i ? `0 0 8px ${ACCENT}` : 'none' }} />
-                <span style={{ fontSize: 12, color: analyzeStep >= i ? TXT : FAINT, fontWeight: 600 }}>{step}</span>
+                  background: analyzeStep >= i ? `${t.accent}08` : 'rgba(255,255,255,.02)',
+                  border: `1px solid ${analyzeStep >= i ? `${t.accent}20` : 'rgba(255,255,255,.04)'}` }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: analyzeStep >= i ? t.accent : t.txtFaint, boxShadow: analyzeStep >= i ? `0 0 8px ${t.accent}` : 'none' }} />
+                <span style={{ fontSize: 12, color: analyzeStep >= i ? t.txt : t.txtFaint, fontWeight: 600 }}>{step}</span>
               </motion.div>
             ))}
           </div>
@@ -397,7 +388,7 @@ export default function GetStartedPage() {
   /* ─── complete / DNA reveal ─── */
   if (phase === 'complete' && profile) {
     return (
-      <div style={{ minHeight: '100vh', background: BG, color: TXT, paddingTop: 40 }}>
+      <div style={{ minHeight: '100vh', background: t.bg, color: t.txt, paddingTop: 40 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <Image src="/xhunt-logo.png" alt="X-Hunt" width={160} height={120} style={{ height: 30, width: 'auto', objectFit: 'contain' }} />
         </div>
@@ -408,15 +399,15 @@ export default function GetStartedPage() {
 
   /* ─── chat screen ─── */
   return (
-    <div style={{ minHeight: '100vh', background: BG, display: 'flex', flexDirection: 'column', maxWidth: 520, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', flexDirection: 'column', maxWidth: 520, margin: '0 auto' }}>
 
       {/* Top bar */}
       <div style={{ padding: '20px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <Image src="/xhunt-logo.png" alt="X-Hunt" width={160} height={120} style={{ height: 26, width: 'auto', objectFit: 'contain' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${ACCENT}08`, border: `1px solid ${ACCENT}18`, borderRadius: 999, padding: '4px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${t.accent}08`, border: `1px solid ${t.accent}18`, borderRadius: 999, padding: '4px 12px' }}>
           <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.8, repeat: Infinity }}
-            style={{ width: 5, height: 5, borderRadius: '50%', background: ACCENT }} />
-          <span style={{ fontSize: 10, fontWeight: 700, color: ACCENT, letterSpacing: '.08em', textTransform: 'uppercase' }}>Xeno AI</span>
+            style={{ width: 5, height: 5, borderRadius: '50%', background: t.accent }} />
+          <span style={{ fontSize: 10, fontWeight: 700, color: t.accent, letterSpacing: '.08em', textTransform: 'uppercase' }}>Xeno AI</span>
         </div>
       </div>
 
@@ -424,10 +415,10 @@ export default function GetStartedPage() {
       <div style={{ margin: '14px 20px 0' }}>
         {/* Stage labels */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: DIM }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: t.txtDim }}>
             {userMsgCount < 6 ? `Question ${userMsgCount + 1} of 6 · ${stageLabel}` : 'Analysing…'}
           </span>
-          <span style={{ fontSize: 10, color: FAINT }}>{progressPct}%</span>
+          <span style={{ fontSize: 10, color: t.txtFaint }}>{progressPct}%</span>
         </div>
 
         {/* Step dots */}
@@ -435,9 +426,9 @@ export default function GetStartedPage() {
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <div key={i} style={{
               flex: 1, height: 3, borderRadius: 3,
-              background: i < userMsgCount ? ACCENT : i === userMsgCount ? `${ACCENT}55` : 'rgba(255,255,255,0.07)',
+              background: i < userMsgCount ? t.accent : i === userMsgCount ? `${t.accent}55` : 'rgba(255,255,255,0.07)',
               transition: 'background 0.35s',
-              boxShadow: i < userMsgCount ? `0 0 6px ${ACCENT}60` : 'none',
+              boxShadow: i < userMsgCount ? `0 0 6px ${t.accent}60` : 'none',
             }} />
           ))}
         </div>
@@ -445,7 +436,7 @@ export default function GetStartedPage() {
         {/* Thin gradient progress bar */}
         <div style={{ height: 2, borderRadius: 2, background: 'rgba(255,255,255,.04)', overflow: 'hidden' }}>
           <motion.div animate={{ width: `${progressPct}%` }} transition={{ duration: 0.4 }}
-            style={{ height: '100%', borderRadius: 2, background: `linear-gradient(90deg, ${ACCENT}, ${AI_CLR})`, boxShadow: `0 0 8px ${ACCENT}50` }} />
+            style={{ height: '100%', borderRadius: 2, background: `linear-gradient(90deg, ${t.accent}, ${t.ai})`, boxShadow: `0 0 8px ${t.accent}50` }} />
         </div>
       </div>
 
@@ -460,18 +451,18 @@ export default function GetStartedPage() {
               style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 10 }}>
               {msg.role === 'assistant' && (
                 <div style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, marginBottom: 2,
-                  background: `linear-gradient(135deg, ${ACCENT}30, ${AI_CLR}30)`,
-                  border: `1px solid ${ACCENT}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Brain size={14} style={{ color: ACCENT }} strokeWidth={1.8} />
+                  background: `linear-gradient(135deg, ${t.accent}30, ${t.ai}30)`,
+                  border: `1px solid ${t.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Brain size={14} style={{ color: t.accent }} strokeWidth={1.8} />
                 </div>
               )}
               <div style={{
                 maxWidth: '78%',
                 padding: msg.role === 'assistant' ? '12px 15px' : '10px 15px',
                 borderRadius: msg.role === 'assistant' ? '4px 18px 18px 18px' : '18px 4px 18px 18px',
-                background: msg.role === 'assistant' ? SURF : `linear-gradient(135deg, ${ACCENT}18, ${AI_CLR}12)`,
-                border: msg.role === 'assistant' ? '1px solid rgba(255,255,255,.07)' : `1px solid ${ACCENT}25`,
-                fontSize: 13.5, lineHeight: 1.6, color: TXT,
+                background: msg.role === 'assistant' ? t.surface : `linear-gradient(135deg, ${t.accent}18, ${t.ai}12)`,
+                border: msg.role === 'assistant' ? '1px solid rgba(255,255,255,.07)' : `1px solid ${t.accent}25`,
+                fontSize: 13.5, lineHeight: 1.6, color: t.txt,
                 fontWeight: msg.role === 'user' ? 500 : 400,
               }}>
                 {msg.content}
@@ -485,16 +476,16 @@ export default function GetStartedPage() {
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
             style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
             <div style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-              background: `linear-gradient(135deg, ${ACCENT}30, ${AI_CLR}30)`,
-              border: `1px solid ${ACCENT}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Brain size={14} style={{ color: ACCENT }} strokeWidth={1.8} />
+              background: `linear-gradient(135deg, ${t.accent}30, ${t.ai}30)`,
+              border: `1px solid ${t.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Brain size={14} style={{ color: t.accent }} strokeWidth={1.8} />
             </div>
-            <div style={{ padding: '12px 16px', borderRadius: '4px 18px 18px 18px', background: SURF, border: '1px solid rgba(255,255,255,.07)' }}>
+            <div style={{ padding: '12px 16px', borderRadius: '4px 18px 18px 18px', background: t.surface, border: '1px solid rgba(255,255,255,.07)' }}>
               <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
                 {[0, 1, 2].map((i) => (
                   <motion.div key={i}
                     animate={{ y: [0, -5, 0] }} transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.15 }}
-                    style={{ width: 5, height: 5, borderRadius: '50%', background: ACCENT, opacity: 0.6 }} />
+                    style={{ width: 5, height: 5, borderRadius: '50%', background: t.accent, opacity: 0.6 }} />
                 ))}
               </div>
             </div>
@@ -504,7 +495,7 @@ export default function GetStartedPage() {
         {/* Rate limited message */}
         {rateLimited && (
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-            style={{ padding: '12px 16px', borderRadius: 14, background: 'rgba(255,184,77,0.08)', border: '1px solid rgba(255,184,77,0.2)', fontSize: 13, color: '#FFB84D' }}>
+            style={{ padding: '12px 16px', borderRadius: 14, background: 'rgba(255,184,77,0.08)', border: '1px solid rgba(255,184,77,0.2)', fontSize: 13, color: t.warning }}>
             You&apos;ve reached the conversation limit. Click &quot;Generate my profile&quot; to continue.
           </motion.div>
         )}
@@ -519,8 +510,8 @@ export default function GetStartedPage() {
           {quickReplies.map((r) => (
             <button key={r} onClick={() => handleSend(r)}
               style={{
-                fontSize: 11, fontWeight: 700, color: ACCENT, background: `${ACCENT}0A`,
-                border: `1px solid ${ACCENT}22`, borderRadius: 999, padding: '6px 12px',
+                fontSize: 11, fontWeight: 700, color: t.accent, background: `${t.accent}0A`,
+                border: `1px solid ${t.accent}22`, borderRadius: 999, padding: '6px 12px',
                 cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
                 transition: 'all .15s',
               }}>
@@ -538,9 +529,9 @@ export default function GetStartedPage() {
             onClick={() => beginExtraction(messages)}
             style={{
               width: '100%', height: 40, borderRadius: 12,
-              background: `linear-gradient(135deg, ${ACCENT}15, ${AI_CLR}15)`,
-              border: `1px solid ${ACCENT}30`,
-              color: ACCENT, fontSize: 12, fontWeight: 700,
+              background: `linear-gradient(135deg, ${t.accent}15, ${t.ai}15)`,
+              border: `1px solid ${t.accent}30`,
+              color: t.accent, fontSize: 12, fontWeight: 700,
               cursor: 'pointer', fontFamily: 'inherit',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}>
@@ -552,7 +543,7 @@ export default function GetStartedPage() {
 
       {/* Input */}
       <div style={{ padding: '10px 16px 28px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', gap: 10, background: CARD, border: '1px solid rgba(255,255,255,.08)',
+        <div style={{ display: 'flex', gap: 10, background: t.card, border: '1px solid rgba(255,255,255,.08)',
           borderRadius: 18, padding: '8px 8px 8px 16px', alignItems: 'center' }}>
           <input
             ref={inputRef}
@@ -561,21 +552,21 @@ export default function GetStartedPage() {
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
             placeholder={rateLimited ? 'Limit reached — use the button above' : 'Type your answer…'}
             disabled={isTyping || phase !== 'chat' || rateLimited}
-            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: TXT, fontSize: 13.5, fontFamily: 'inherit', caretColor: ACCENT }}
+            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: t.txt, fontSize: 13.5, fontFamily: 'inherit', caretColor: t.accent }}
           />
           <button onClick={() => handleSend()} disabled={!input.trim() || isTyping || rateLimited}
             style={{ width: 38, height: 38, borderRadius: 12, border: 'none', flexShrink: 0, transition: 'background .15s',
-              background: input.trim() && !isTyping && !rateLimited ? ACCENT : 'rgba(255,255,255,.06)',
+              background: input.trim() && !isTyping && !rateLimited ? t.accent : 'rgba(255,255,255,.06)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: input.trim() && !isTyping && !rateLimited ? 'pointer' : 'not-allowed' }}>
-            <Send size={15} style={{ color: input.trim() && !isTyping && !rateLimited ? BG : FAINT }} strokeWidth={2.5} />
+            <Send size={15} style={{ color: input.trim() && !isTyping && !rateLimited ? t.bg : t.txtFaint }} strokeWidth={2.5} />
           </button>
         </div>
 
         {/* Encryption indicator */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 8 }}>
-          <Shield size={9} style={{ color: FAINT }} />
-          <p style={{ textAlign: 'center', fontSize: 10, color: FAINT, margin: 0 }}>
+          <Shield size={9} style={{ color: t.txtFaint }} />
+          <p style={{ textAlign: 'center', fontSize: 10, color: t.txtFaint, margin: 0 }}>
             Conversation is end-to-end encrypted
           </p>
         </div>
