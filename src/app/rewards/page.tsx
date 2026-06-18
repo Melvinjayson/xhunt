@@ -302,6 +302,26 @@ export default function RewardsPage() {
     setOfferLoading(false);
   }
 
+  async function handleClaimPerk(listing: BarterListing) {
+    if (!listing.ask_xp) return;
+    if (xpBalance !== null && xpBalance < listing.ask_xp) {
+      alert(`You need ${listing.ask_xp.toLocaleString()} XP but only have ${xpBalance.toLocaleString()}.`);
+      return;
+    }
+    if (!confirm(`Claim "${listing.title}" for ${listing.ask_xp.toLocaleString()} XP?`)) return;
+    const res = await fetch('/api/barter/claim-perk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listing_id: listing.id }),
+    });
+    const d = await res.json() as { ok?: boolean; new_balance?: number; error?: string };
+    if (res.ok && d.ok) {
+      if (d.new_balance !== undefined) setXPBalance(d.new_balance);
+    } else {
+      alert(d.error ?? 'Failed to claim perk');
+    }
+  }
+
   async function handlePropose(listing: BarterListing) {
     const xp = prompt(`How many XP would you like to offer? (You have ${xpBalance ?? '?'} XP)`);
     if (!xp) return;
@@ -687,9 +707,15 @@ export default function RewardsPage() {
                                 <span style={{ fontSize: 11, color: t.txtFaint, background: 'rgba(255,255,255,.04)', border: `1px solid ${t.border}`, borderRadius: 999, padding: '3px 10px' }}>Open to offers</span>
                               )}
                             </div>
-                            <button onClick={() => void handlePropose(listing)} style={{ padding: '7px 14px', borderRadius: 10, background: `${t.accent}14`, border: `1px solid ${t.accent}28`, color: t.accent, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                              Propose Trade
-                            </button>
+                            {listing.listing_type === 'perk' ? (
+                              <button onClick={() => void handleClaimPerk(listing)} style={{ padding: '7px 14px', borderRadius: 10, background: `${t.success}14`, border: `1px solid ${t.success}33`, color: t.success, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                                {listing.ask_xp ? `Claim for ${listing.ask_xp.toLocaleString()} XP` : 'Claim Perk'}
+                              </button>
+                            ) : (
+                              <button onClick={() => void handlePropose(listing)} style={{ padding: '7px 14px', borderRadius: 10, background: `${t.accent}14`, border: `1px solid ${t.accent}28`, color: t.accent, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                                Propose Trade
+                              </button>
+                            )}
                           </div>
                         </motion.div>
                       );

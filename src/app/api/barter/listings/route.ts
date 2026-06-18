@@ -52,11 +52,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'title is required' }, { status: 400 });
   }
 
+  let tenantId: string | null = null;
+  if (body.listing_type === 'perk') {
+    const { data: profile } = await sb
+      .from('user_profiles')
+      .select('tenant_id')
+      .eq('id', user.id)
+      .single();
+    tenantId = (profile as { tenant_id?: string } | null)?.tenant_id ?? null;
+  }
+
   const { data, error } = await sb
     .from('barter_listings')
     .insert({
       user_id: user.id,
       listing_type: body.listing_type,
+      tenant_id: tenantId,
       title: body.title.trim().slice(0, 120),
       description: body.description?.trim().slice(0, 500) ?? null,
       offering: body.offering ?? {},
