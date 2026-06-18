@@ -7,8 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell, Compass, Zap, X, ArrowUpRight, ArrowRight,
   Users, BarChart3, MessageSquare, Sparkles, Flame, Star, CheckCircle2, Target,
+  Clock, Gift,
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
+import QuickActionFAB from '@/components/QuickActionFAB';
 import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import { MMSCard, StatCard } from '@/components/home/MMSCard';
 import { MissionCard } from '@/components/home/MissionCard';
@@ -46,6 +48,8 @@ export default function HomePage() {
   const [userName, setUserName]      = useState('Explorer');
   const [profile, setProfile]        = useState<ImpactProfile | null>(null);
   const [aiConfig, setAIConfig]      = useState<AIConfig>(DEFAULT_AI_CONFIG);
+  const [pendingVeriCount, setPendingVeri] = useState(0);
+  const [readyRewardCount, setReadyRewards] = useState(0);
 
   useEffect(() => {
     const state = loadState();
@@ -60,6 +64,10 @@ export default function HomePage() {
     setAIConfig(loadAIConfig());
     const topId = initialHunts.find(h => !completed.includes(h.id))?.id;
     if (topId && state.progress[topId]) setAMS(state.progress[topId].completedSteps?.length ?? 0);
+    const vMap = state.verificationStatus ?? {};
+    const vRecords = Object.values(vMap);
+    setPendingVeri(vRecords.filter(r => ['submitted', 'ai_reviewing', 'manual_review'].includes(r.status)).length);
+    setReadyRewards(vRecords.filter(r => r.status === 'approved').length);
     setMounted(true);
     void fetchSupabaseMissions().then(r => { if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } else if (!state.hunts.length) { setHunts(MOCK_HUNTS.slice(0, 6)); } });
     void fetch('/api/subscription/status').then(r => r.json()).then((d: SubStatus) => setSub(d)).catch(() => {});
@@ -211,6 +219,57 @@ export default function HomePage() {
           )}
         </AnimatePresence>
 
+        {/* Participation Queue */}
+        {(pendingVeriCount > 0 || readyRewardCount > 0 || active.length > 0) && (
+          <div style={{ padding: '16px 24px 0' }}>
+            <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>Your Participation Queue</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {active.length > 0 && (
+                <Link href="/missions" style={{ textDecoration: 'none' }}>
+                  <motion.div whileTap={{ scale: .98 }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 14, background: `${t.accent}08`, border: `1px solid ${t.accent}20`, cursor: 'pointer' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 10, background: `${t.accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Target size={15} strokeWidth={2} style={{ color: t.accent }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: t.txt }}>{active.length} Active Mission{active.length !== 1 ? 's' : ''}</p>
+                      <p style={{ margin: 0, fontSize: 11, color: t.txtFaint }}>Tap to continue participating</p>
+                    </div>
+                    <ArrowRight size={14} strokeWidth={2} style={{ color: t.accent }} />
+                  </motion.div>
+                </Link>
+              )}
+              {pendingVeriCount > 0 && (
+                <Link href="/missions" style={{ textDecoration: 'none' }}>
+                  <motion.div whileTap={{ scale: .98 }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 14, background: `${t.warning}08`, border: `1px solid ${t.warning}20`, cursor: 'pointer' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 10, background: `${t.warning}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Clock size={15} strokeWidth={2} style={{ color: t.warning }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: t.txt }}>{pendingVeriCount} Awaiting Verification</p>
+                      <p style={{ margin: 0, fontSize: 11, color: t.txtFaint }}>Under review · Usually within 24 hrs</p>
+                    </div>
+                    <ArrowRight size={14} strokeWidth={2} style={{ color: t.warning }} />
+                  </motion.div>
+                </Link>
+              )}
+              {readyRewardCount > 0 && (
+                <Link href="/rewards" style={{ textDecoration: 'none' }}>
+                  <motion.div whileTap={{ scale: .98 }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 14, background: `${t.ai}08`, border: `1px solid ${t.ai}20`, cursor: 'pointer' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 10, background: `${t.ai}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Gift size={15} strokeWidth={2} style={{ color: t.ai }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: t.txt }}>{readyRewardCount} Reward{readyRewardCount !== 1 ? 's' : ''} Ready to Claim</p>
+                      <p style={{ margin: 0, fontSize: 11, color: t.txtFaint }}>Verification approved — go collect</p>
+                    </div>
+                    <ArrowRight size={14} strokeWidth={2} style={{ color: t.ai }} />
+                  </motion.div>
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Two-column layout */}
         <div className="md:flex md:gap-6 md:items-start" style={{ padding: '0 24px' }}>
 
@@ -328,6 +387,7 @@ export default function HomePage() {
         </div>
       </div>
 
+      <QuickActionFAB />
       <BottomNav />
     </div>
   );

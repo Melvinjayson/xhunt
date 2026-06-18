@@ -496,6 +496,117 @@ export default function ExplorePage() {
             )}
           </AnimatePresence>
 
+          {/* Marketplace Sections — shown when browsing unfiltered */}
+          {showRecs && !recsLoading && filtered.length > 0 && (
+            <>
+              {/* High Reward */}
+              {(() => {
+                const highReward = [...huntsWithDistance]
+                  .sort((a, b) => estimateCashReward(b.cashReward, b.difficulty, b.missionType) - estimateCashReward(a.cashReward, a.difficulty, a.missionType))
+                  .slice(0, 5);
+                return (
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: t.txt }}>💰 High Reward</span>
+                      <span style={{ fontSize: 10.5, color: t.txtFaint }}>Top payers right now</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+                      {highReward.map((hunt) => {
+                        const cash = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
+                        const cat = resolveCategory(hunt.tags, hunt.category);
+                        return (
+                          <Link key={hunt.id} href={`/hunt/${hunt.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                            <motion.div whileTap={{ scale: .96 }} style={{ width: 160, padding: '12px 13px', borderRadius: 16, background: t.card, border: `1px solid ${cat.color}18`, cursor: 'pointer' }}>
+                              <div style={{ fontSize: 22, marginBottom: 6 }}>{cat.emoji}</div>
+                              <p style={{ margin: '0 0 6px', fontSize: 12.5, fontWeight: 700, color: t.txt, lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{hunt.title}</p>
+                              <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: t.accent }}>${cash}</p>
+                              <p style={{ margin: '2px 0 0', fontSize: 10, color: t.txtFaint }}>{hunt.estimated_time}</p>
+                            </motion.div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Ending Soon */}
+              {(() => {
+                const now = Date.now();
+                const soon = huntsWithDistance
+                  .filter(h => h.deadline && (new Date(h.deadline).getTime() - now) < 7 * 24 * 60 * 60 * 1000 && new Date(h.deadline).getTime() > now)
+                  .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())
+                  .slice(0, 5);
+                if (!soon.length) return null;
+                return (
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: t.txt }}>⏰ Ending Soon</span>
+                      <span style={{ fontSize: 10.5, color: t.error }}>Don&apos;t miss these</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+                      {soon.map((hunt) => {
+                        const cash = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
+                        const cat = resolveCategory(hunt.tags, hunt.category);
+                        const deadline = new Date(hunt.deadline!);
+                        const daysLeft = Math.ceil((deadline.getTime() - now) / (24 * 60 * 60 * 1000));
+                        return (
+                          <Link key={hunt.id} href={`/hunt/${hunt.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                            <motion.div whileTap={{ scale: .96 }} style={{ width: 160, padding: '12px 13px', borderRadius: 16, background: t.card, border: `1px solid ${t.error}18`, cursor: 'pointer' }}>
+                              <div style={{ fontSize: 22, marginBottom: 6 }}>{cat.emoji}</div>
+                              <p style={{ margin: '0 0 6px', fontSize: 12.5, fontWeight: 700, color: t.txt, lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{hunt.title}</p>
+                              <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: t.accent }}>${cash}</p>
+                              <p style={{ margin: '2px 0 0', fontSize: 10, fontWeight: 700, color: t.error }}>{daysLeft}d left</p>
+                            </motion.div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Quick Wins */}
+              {(() => {
+                const quick = huntsWithDistance
+                  .filter(h => h.difficulty === 'easy' || parseInt(h.estimated_time) <= 30)
+                  .sort((a, b) => (parseInt(a.estimated_time) || 60) - (parseInt(b.estimated_time) || 60))
+                  .slice(0, 5);
+                if (!quick.length) return null;
+                return (
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: t.txt }}>⚡ Quick Wins</span>
+                      <span style={{ fontSize: 10.5, color: t.txtFaint }}>Under 30 min · Easy entry</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+                      {quick.map((hunt) => {
+                        const cash = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
+                        const cat = resolveCategory(hunt.tags, hunt.category);
+                        return (
+                          <Link key={hunt.id} href={`/hunt/${hunt.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                            <motion.div whileTap={{ scale: .96 }} style={{ width: 160, padding: '12px 13px', borderRadius: 16, background: t.card, border: `1px solid ${t.accent}18`, cursor: 'pointer' }}>
+                              <div style={{ fontSize: 22, marginBottom: 6 }}>{cat.emoji}</div>
+                              <p style={{ margin: '0 0 6px', fontSize: 12.5, fontWeight: 700, color: t.txt, lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{hunt.title}</p>
+                              <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: t.accent }}>${cash}</p>
+                              <p style={{ margin: '2px 0 0', fontSize: 10, color: t.txtFaint }}>{hunt.estimated_time}</p>
+                            </motion.div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.05)' }} />
+                <span style={{ fontSize: 10.5, color: t.txtFaint, fontWeight: 600 }}>All Opportunities</span>
+                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.05)' }} />
+              </div>
+            </>
+          )}
+
           {/* Mission list */}
           {filtered.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0', textAlign: 'center' }}>

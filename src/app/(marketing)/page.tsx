@@ -650,26 +650,24 @@ export default function RootPage() {
               <motion.h1
                 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
                 className="text-[clamp(2.8rem,5.2vw,4.6rem)] font-black text-[#F0F4FF] leading-[1.04] tracking-tighter mb-6">
-                Brands pay you
-                <br />to do real things.
+                Get paid for completing
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#22FFAA] to-[#6D5DFD]">
-                  AI confirms it.
+                  simple real-world tasks.
                 </span>
               </motion.h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.22 }}
                 className="text-[1rem] text-[#8B9CC0] leading-relaxed max-w-[480px] mb-3">
-                Pick a mission — hit the gym, explore your city, try a product.
-                Upload your proof. AI validates it in seconds. Escrow releases automatically.{' '}
-                <strong className="text-[#F0F4FF]">No followers, no content skills, no pitch decks.</strong>
+                Go places. Try things. Give feedback. Attend events.{' '}
+                <strong className="text-[#F0F4FF]">Earn rewards.</strong>
               </motion.p>
 
               <motion.p
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
                 className="text-[13px] text-[#4A5578] mb-10">
-                You just do the thing. We verify it. They pay you.
+                Join a growing network of participants helping brands, organizations, researchers, and communities get real-world outcomes.
               </motion.p>
 
               <motion.div
@@ -691,14 +689,14 @@ export default function RootPage() {
               <motion.div
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.46 }}
                 className="flex flex-wrap gap-3">
-                <Link href="/sign-up"
-                  className="flex items-center gap-2.5 h-13 px-7 bg-[#22FFAA] text-[#050816] rounded-xl text-[15px] font-bold shadow-[0_0_28px_rgba(34,255,170,0.3)] hover:shadow-[0_0_44px_rgba(34,255,170,0.5)] transition-all duration-200">
-                  Find a mission now <ArrowRight size={16} strokeWidth={2.8} />
-                </Link>
                 <Link href="/explore"
+                  className="flex items-center gap-2.5 h-13 px-7 bg-[#22FFAA] text-[#050816] rounded-xl text-[15px] font-bold shadow-[0_0_28px_rgba(34,255,170,0.3)] hover:shadow-[0_0_44px_rgba(34,255,170,0.5)] transition-all duration-200">
+                  Find Opportunities <ArrowRight size={16} strokeWidth={2.8} />
+                </Link>
+                <Link href="/workspace/missions/new"
                   className="flex items-center gap-2.5 h-13 px-6 border text-[#8B9CC0] rounded-xl text-[15px] font-semibold hover:text-[#F0F4FF] transition-all duration-200"
                   style={{ background: 'rgba(255,255,255,.04)', borderColor: 'rgba(255,255,255,.09)' }}>
-                  See what&apos;s open <ChevronRight size={15} strokeWidth={2.5} />
+                  Create Missions <ChevronRight size={15} strokeWidth={2.5} />
                 </Link>
               </motion.div>
 
@@ -901,20 +899,20 @@ export default function RootPage() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#22FFAA] to-[#6D5DFD]">that someone would pay for?</span>
           </motion.h2>
           <motion.p variants={fadeUp} custom={0.14} className="text-[15px] text-[#8B9CC0] max-w-[480px] mb-3">
-            Seriously — going to the gym, exploring new places, trying new products. There&apos;s probably a brand willing to pay you for that right now.
+            Going to the gym, exploring your city, attending events, trying new products — there&apos;s probably a brand, researcher, or organization willing to pay you for that right now.
           </motion.p>
           <motion.p variants={fadeUp} custom={0.2} className="text-[12px] text-[#4A5578] mb-10">
-            Free to join · No credit card · First mission generated in under 15 seconds
+            Free to join · No credit card · Start earning in minutes
           </motion.p>
           <motion.div variants={fadeUp} custom={0.26} className="flex flex-col sm:flex-row gap-3 justify-start">
-            <Link href="/home"
+            <Link href="/explore"
               className="flex items-center justify-center gap-2.5 h-13 px-8 bg-[#22FFAA] text-[#050816] rounded-xl text-[15px] font-bold shadow-[0_0_32px_rgba(34,255,170,0.3)] hover:shadow-[0_0_48px_rgba(34,255,170,0.5)] transition-all">
-              Start hunting free <ArrowRight size={16} strokeWidth={2.8} />
+              Find Opportunities Free <ArrowRight size={16} strokeWidth={2.8} />
             </Link>
-            <Link href="/enterprise"
+            <Link href="/workspace/missions/new"
               className="flex items-center justify-center gap-2.5 h-13 px-7 border text-[#8B9CC0] rounded-xl text-[15px] font-semibold hover:text-[#F0F4FF] transition-all"
               style={{ background: 'rgba(255,255,255,.04)', borderColor: 'rgba(255,255,255,.09)' }}>
-              Post a mission as a brand <ChevronRight size={15} strokeWidth={2.5} />
+              Create Missions <ChevronRight size={15} strokeWidth={2.5} />
             </Link>
           </motion.div>
         </div>
