@@ -20,6 +20,8 @@ import { fetchSupabaseMissions } from '@/lib/supabase/events';
 import { computeMatchScore, greeting } from '@/lib/missionHelpers';
 import { loadAIConfig, DEFAULT_AI_CONFIG, type AIConfig } from '@/lib/aiConfig';
 import { t } from '@/theme/colors';
+import { useNotifications } from '@/hooks/useNotifications';
+import { NotificationPanel } from '@/components/home/NotificationPanel';
 import type { Hunt, ImpactProfile } from '@/lib/types';
 
 interface SubStatus { tier: string; isTrialActive: boolean; trialDaysLeft: number; hasUsedTrial: boolean; canUseAI: boolean; }
@@ -45,6 +47,8 @@ export default function HomePage() {
   const [userName, setUserName]      = useState('Explorer');
   const [profile, setProfile]        = useState<ImpactProfile | null>(null);
   const [aiConfig, setAIConfig]      = useState<AIConfig>(DEFAULT_AI_CONFIG);
+  const [notifOpen, setNotifOpen]    = useState(false);
+  const { notifications, unreadCount, loading: notifLoading, markAllRead } = useNotifications();
 
   useEffect(() => {
     const state = loadState();
@@ -156,10 +160,26 @@ export default function HomePage() {
                 <span style={{ fontSize: 12, color: t.txtFaint }}>Search missions…</span>
               </div>
             </Link>
-            <button style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', flexShrink: 0 }}>
-              <Bell size={16} strokeWidth={1.8} style={{ color: t.txtDim }} />
-              <div style={{ position: 'absolute', top: 7, right: 7, width: 7, height: 7, borderRadius: '50%', background: t.accent, border: `1.5px solid ${t.bg}`, animation: 'breathe 2.5s ease-in-out infinite' }} />
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setNotifOpen(v => !v)} style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', flexShrink: 0 }}>
+                <Bell size={16} strokeWidth={1.8} style={{ color: t.txtDim }} />
+                {unreadCount > 0 && (
+                  <div style={{ position: 'absolute', top: 7, right: 7, width: 7, height: 7, borderRadius: '50%', background: t.accent, border: `1.5px solid ${t.bg}`, animation: 'breathe 2.5s ease-in-out infinite' }} />
+                )}
+              </button>
+              <AnimatePresence>
+                {notifOpen && (
+                  <NotificationPanel
+                    open={notifOpen}
+                    onClose={() => setNotifOpen(false)}
+                    notifications={notifications}
+                    unreadCount={unreadCount}
+                    loading={notifLoading}
+                    markAllRead={markAllRead}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
             <Link href="/profile" style={{ textDecoration: 'none' }}>
               <div style={{ width: 38, height: 38, borderRadius: 12, background: `linear-gradient(135deg,${t.accent}20,${t.ai}20)`, border: `1.5px solid ${t.accent}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
                 <span style={{ fontSize: 13, fontWeight: 800, color: t.accent }}>{userName[0].toUpperCase()}</span>

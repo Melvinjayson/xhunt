@@ -5,8 +5,9 @@ import { motion } from 'framer-motion';
 import {
   Gift, Plus, Award, Tag, Percent, Star, Key, Sparkles, BarChart3,
   Check, X, MoreHorizontal, TrendingUp, Users, ArrowUpRight, Zap,
-  ChevronRight, RefreshCw
+  ChevronRight, RefreshCw, Store, Trash2
 } from 'lucide-react';
+import { t } from '@/theme/colors';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
 import type { DbRewardConfig, DbRewardEvent } from '@/lib/supabase/types';
@@ -33,6 +34,16 @@ export default function RewardsPage() {
   const [newPoints, setNewPoints] = useState('100');
   const [saving, setSaving] = useState(false);
   const [tenantId, setTenantId] = useState<string | null>(null);
+
+  // Marketplace Perks state
+  const [perkListings, setPerkListings] = useState<{ id: string; title: string; description: string | null; ask_xp: number | null; status: string; created_at: string; expires_at: string | null }[]>([]);
+  const [creatingPerk, setCreatingPerk] = useState(false);
+  const [perkTitle, setPerkTitle] = useState('');
+  const [perkDescription, setPerkDescription] = useState('');
+  const [perkXpCost, setPerkXpCost] = useState('');
+  const [perkExpiry, setPerkExpiry] = useState('30');
+  const [savingPerk, setSavingPerk] = useState(false);
+
   const supabase = createClient();
 
   useEffect(() => {
@@ -43,12 +54,14 @@ export default function RewardsPage() {
       if (!profile?.tenant_id) return;
       setTenantId(profile.tenant_id);
 
-      const [configsRes, eventsRes] = await Promise.all([
+      const [configsRes, eventsRes, perksRes] = await Promise.all([
         supabase.from('reward_configs').select('*').eq('tenant_id', profile.tenant_id).order('created_at', { ascending: false }),
         supabase.from('reward_events').select('*').eq('tenant_id', profile.tenant_id).order('issued_at', { ascending: false }).limit(30),
+        supabase.from('barter_listings').select('id, title, description, ask_xp, status, created_at, expires_at').eq('listing_type', 'perk').eq('user_id', user.id).order('created_at', { ascending: false }),
       ]);
       setConfigs(configsRes.data ?? []);
       setEvents(eventsRes.data ?? []);
+      setPerkListings((perksRes.data ?? []) as { id: string; title: string; description: string | null; ask_xp: number | null; status: string; created_at: string; expires_at: string | null }[]);
       setLoading(false);
     }
     load();
@@ -76,6 +89,39 @@ export default function RewardsPage() {
     setNewPoints('100');
     setCreating(false);
     setSaving(false);
+  }
+
+  async function createPerk() {
+    if (!perkTitle.trim()) return;
+    setSavingPerk(true);
+    const expiresAt = perkExpiry ? new Date(Date.now() + parseInt(perkExpiry) * 86400000).toISOString() : null;
+    const res = await fetch('/api/barter/listings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        listing_type: 'perk',
+        title: perkTitle.trim(),
+        description: perkDescription.trim() || null,
+        offering: { type: 'benefit', label: perkTitle.trim() },
+        ask_xp: parseInt(perkXpCost) > 0 ? parseInt(perkXpCost) : null,
+        expires_at: expiresAt,
+      }),
+    });
+    if (res.ok) {
+      const d = await res.json() as { listing: { id: string; title: string; description: string | null; ask_xp: number | null; status: string; created_at: string; expires_at: string | null } };
+      setPerkListings(prev => [d.listing, ...prev]);
+      setPerkTitle('');
+      setPerkDescription('');
+      setPerkXpCost('');
+      setPerkExpiry('30');
+      setCreatingPerk(false);
+    }
+    setSavingPerk(false);
+  }
+
+  async function cancelPerk(id: string) {
+    await fetch(`/api/barter/listings/${id}`, { method: 'DELETE' });
+    setPerkListings(prev => prev.map(p => p.id === id ? { ...p, status: 'cancelled' } : p));
   }
 
   const totalIssued = events.length;
@@ -320,6 +366,154 @@ export default function RewardsPage() {
             )}
           </div>
         </div>
+      </div>
+      {/* Marketplace Perks */}
+      <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: `${t.ai}1A`, border: `1px solid ${t.ai}33`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Store size={16} style={{ color: t.ai }} strokeWidth={1.8} />
+            </div>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 700, color: t.txt }}>Marketplace Perks</p>
+              <p style={{ fontSize: 11, color: t.txtFaint }}>Perks participants can claim with XP on the barter market</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setCreatingPerk(v => !v)}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', background: `${t.ai}1A`, border: `1px solid ${t.ai}33`, borderRadius: 10, color: t.ai, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+          >
+            <Plus size={13} strokeWidth={2.5} />
+            Add Perk
+          </button>
+        </div>
+
+        {creatingPerk && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ background: t.card, border: `1px solid ${t.ai}33`, borderRadius: 16, padding: 18, marginBottom: 16 }}
+          >
+            <p style={{ fontSize: 12, fontWeight: 700, color: t.txt, marginBottom: 14 }}>New Marketplace Perk</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>Perk Name *</label>
+                <input
+                  value={perkTitle}
+                  onChange={e => setPerkTitle(e.target.value)}
+                  placeholder="e.g. Free Coffee Voucher"
+                  style={{ width: '100%', height: 36, padding: '0 12px', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, fontSize: 12, color: t.txt, outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>XP Cost</label>
+                <input
+                  type="number"
+                  value={perkXpCost}
+                  onChange={e => setPerkXpCost(e.target.value)}
+                  placeholder="e.g. 200"
+                  min={1}
+                  style={{ width: '100%', height: 36, padding: '0 12px', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, fontSize: 12, color: t.txt, outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>Expires In</label>
+                <select
+                  value={perkExpiry}
+                  onChange={e => setPerkExpiry(e.target.value)}
+                  style={{ width: '100%', height: 36, padding: '0 12px', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, fontSize: 12, color: t.txt, outline: 'none', boxSizing: 'border-box' }}
+                >
+                  <option value="7">7 days</option>
+                  <option value="14">14 days</option>
+                  <option value="30">30 days</option>
+                  <option value="90">90 days</option>
+                  <option value="">No expiry</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>Description</label>
+              <input
+                value={perkDescription}
+                onChange={e => setPerkDescription(e.target.value)}
+                placeholder="What participants receive when they claim this perk…"
+                style={{ width: '100%', height: 36, padding: '0 12px', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, fontSize: 12, color: t.txt, outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={createPerk}
+                disabled={savingPerk || !perkTitle.trim()}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, height: 32, padding: '0 16px', background: t.ai, color: '#fff', borderRadius: 10, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', opacity: savingPerk || !perkTitle.trim() ? 0.5 : 1 }}
+              >
+                <Check size={12} strokeWidth={2.5} />
+                {savingPerk ? 'Creating…' : 'Create Perk'}
+              </button>
+              <button
+                onClick={() => setCreatingPerk(false)}
+                style={{ height: 32, padding: '0 12px', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, fontSize: 12, color: t.txtDim, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {perkListings.length === 0 && !creatingPerk ? (
+          <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 16, padding: '40px 0', textAlign: 'center' }}>
+            <Store size={28} style={{ color: t.txtFaint, margin: '0 auto 8px' }} strokeWidth={1.5} />
+            <p style={{ color: t.txtDim, fontWeight: 500, fontSize: 13 }}>No marketplace perks yet</p>
+            <p style={{ color: t.txtFaint, fontSize: 12, marginTop: 4 }}>Create perks participants can claim with their XP balance.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+            {perkListings.map((perk, i) => (
+              <motion.div
+                key={perk.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                style={{ background: t.card, border: `1px solid ${perk.status === 'active' ? t.ai + '33' : t.border}`, borderRadius: 14, padding: 14 }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: `${t.ai}1A`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Key size={14} style={{ color: t.ai }} strokeWidth={1.8} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: t.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{perk.title}</p>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: perk.status === 'active' ? `${t.accent}1A` : `${t.txtFaint}1A`, color: perk.status === 'active' ? t.accent : t.txtFaint, flexShrink: 0 }}>
+                        {perk.status}
+                      </span>
+                    </div>
+                    {perk.description && (
+                      <p style={{ fontSize: 11, color: t.txtDim, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{perk.description}</p>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {perk.ask_xp ? (
+                        <span style={{ fontSize: 11, fontWeight: 700, color: t.ai }}>{perk.ask_xp} XP</span>
+                      ) : (
+                        <span style={{ fontSize: 11, color: t.txtFaint }}>No XP cost</span>
+                      )}
+                      {perk.expires_at && (
+                        <span style={{ fontSize: 10, color: t.txtFaint }}>· expires {new Date(perk.expires_at).toLocaleDateString()}</span>
+                      )}
+                    </div>
+                  </div>
+                  {perk.status === 'active' && (
+                    <button
+                      onClick={() => cancelPerk(perk.id)}
+                      title="Cancel perk"
+                      style={{ width: 28, height: 28, borderRadius: 8, background: `${t.error}1A`, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      <Trash2 size={12} style={{ color: t.error }} strokeWidth={2} />
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
