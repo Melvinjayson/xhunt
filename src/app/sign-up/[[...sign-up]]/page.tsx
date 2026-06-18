@@ -7,12 +7,13 @@ import Link from 'next/link';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { apiRegister } from '@/lib/auth/api';
 import { useAuth } from '@/lib/auth/context';
+import { t } from '@/theme/colors';
 
 const INPUT_STYLE: React.CSSProperties = {
   width: '100%', padding: '12px 14px',
   background: 'rgba(10,18,38,0.8)',
   border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 12, color: '#F0F4FF',
+  borderRadius: 12, color: t.txt,
   fontSize: 14, outline: 'none',
   fontFamily: 'inherit',
   transition: 'border-color 0.15s',
@@ -20,7 +21,7 @@ const INPUT_STYLE: React.CSSProperties = {
 
 const LABEL_STYLE: React.CSSProperties = {
   display: 'block', fontSize: 11, fontWeight: 600,
-  color: '#8B9CC0', letterSpacing: '0.08em',
+  color: t.txtDim, letterSpacing: '0.08em',
   textTransform: 'uppercase', marginBottom: 6,
 };
 
@@ -69,20 +70,20 @@ function SignUpForm() {
           </div>
         </div>
         <div style={{ position: 'relative', zIndex: 2, marginTop: 'auto', paddingTop: 60 }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#22FFAA', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Join X-hunt</p>
-          <h1 style={{ fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 900, color: '#F0F4FF', lineHeight: 1.15, letterSpacing: '-0.03em', margin: '0 0 16px' }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: t.accent, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Join X-hunt</p>
+          <h1 style={{ fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 900, color: t.txt, lineHeight: 1.15, letterSpacing: '-0.03em', margin: '0 0 16px' }}>
             Your impact<br />starts here.
           </h1>
-          <p style={{ fontSize: 15, color: '#8B9CC0', lineHeight: 1.65, maxWidth: 340 }}>
+          <p style={{ fontSize: 15, color: t.txtDim, lineHeight: 1.65, maxWidth: 340 }}>
             Create your free account and let our AI match you with missions that align with your skills, passions, and values.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 32 }}>
             <div style={{ display: 'flex' }}>
-              {['#22FFAA', '#6D5DFD', '#FFB84D', '#FF5C7A'].map((c, i) => (
+              {[t.accent, t.ai, t.warning, t.error].map((c, i) => (
                 <div key={i} style={{ width: 28, height: 28, borderRadius: '50%', background: c, border: '2px solid var(--t-bg)', marginLeft: i ? -8 : 0, opacity: 0.85 }} />
               ))}
             </div>
-            <p style={{ fontSize: 13, color: '#8B9CC0' }}>Join <strong style={{ color: '#F0F4FF' }}>2,400+</strong> explorers</p>
+            <p style={{ fontSize: 13, color: t.txtDim }}>Join <strong style={{ color: t.txt }}>2,400+</strong> explorers</p>
           </div>
         </div>
       </div>
@@ -96,8 +97,8 @@ function SignUpForm() {
             <Image src="/xhunt-logo.png" alt="X-hunt" width={80} height={80} style={{ objectFit: 'contain' }} priority onError={() => {}} />
           </div>
 
-          <h2 style={{ fontSize: 24, fontWeight: 900, color: '#F0F4FF', letterSpacing: '-0.02em', marginBottom: 4 }}>Create your account</h2>
-          <p style={{ fontSize: 14, color: '#8B9CC0', marginBottom: 32 }}>Free forever. No credit card needed.</p>
+          <h2 style={{ fontSize: 24, fontWeight: 900, color: t.txt, letterSpacing: '-0.02em', marginBottom: 4 }}>Create your account</h2>
+          <p style={{ fontSize: 14, color: t.txtDim, marginBottom: 32 }}>Free forever. No credit card needed.</p>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div>
@@ -133,22 +134,22 @@ function SignUpForm() {
                   autoComplete="new-password"
                 />
                 <button type="button" onClick={() => setShowPw(v => !v)}
-                  style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#8B9CC0', cursor: 'pointer', padding: 0 }}>
+                  style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: t.txtDim, cursor: 'pointer', padding: 0 }}>
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <p style={{ fontSize: 13, color: '#FF5C7A', background: 'rgba(255,92,122,0.08)', border: '1px solid rgba(255,92,122,0.2)', borderRadius: 10, padding: '10px 14px', margin: 0 }}>
+              <p style={{ fontSize: 13, color: t.error, background: 'rgba(255,92,122,0.08)', border: '1px solid rgba(255,92,122,0.2)', borderRadius: 10, padding: '10px 14px', margin: 0 }}>
                 {error}
               </p>
             )}
 
             <button type="submit" disabled={loading} style={{
               width: '100%', padding: '13px', borderRadius: 12, border: 'none',
-              background: loading ? 'rgba(34,255,170,0.5)' : '#22FFAA',
-              color: '#050816', fontWeight: 700, fontSize: 15,
+              background: loading ? 'rgba(34,255,170,0.5)' : t.accent,
+              color: t.bg, fontWeight: 700, fontSize: 15,
               cursor: loading ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(34,255,170,0.3)',
@@ -158,16 +159,16 @@ function SignUpForm() {
               {loading ? 'Creating account…' : 'Create account'}
             </button>
 
-            <p style={{ fontSize: 11, color: '#4A5578', textAlign: 'center', lineHeight: 1.5 }}>
+            <p style={{ fontSize: 11, color: t.txtFaint, textAlign: 'center', lineHeight: 1.5 }}>
               By signing up you agree to our{' '}
-              <Link href="/terms" style={{ color: '#8B9CC0' }}>Terms</Link> and{' '}
-              <Link href="/privacy" style={{ color: '#8B9CC0' }}>Privacy Policy</Link>.
+              <Link href="/terms" style={{ color: t.txtDim }}>Terms</Link> and{' '}
+              <Link href="/privacy" style={{ color: t.txtDim }}>Privacy Policy</Link>.
             </p>
           </form>
 
-          <p style={{ fontSize: 14, color: '#8B9CC0', textAlign: 'center', marginTop: 24 }}>
+          <p style={{ fontSize: 14, color: t.txtDim, textAlign: 'center', marginTop: 24 }}>
             Already have an account?{' '}
-            <Link href="/sign-in" style={{ color: '#22FFAA', fontWeight: 700, textDecoration: 'none' }}>
+            <Link href="/sign-in" style={{ color: t.accent, fontWeight: 700, textDecoration: 'none' }}>
               Sign in
             </Link>
           </p>

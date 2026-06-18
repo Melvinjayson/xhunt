@@ -24,24 +24,28 @@ function cookieResponse(data: Record<string, unknown>, token: { access_token: st
   return res;
 }
 
-async function previewFallback(email: string) {
-  const session = await createPreviewSession(email, email.split('@')[0]);
+async function previewFallback(email: string, surface?: string) {
+  const opts = surface === 'workspace' || surface === 'admin'
+    ? { surface: 'workspace' as const }
+    : undefined;
+  const session = await createPreviewSession(email, email.split('@')[0], opts);
   return cookieResponse(session, session.token);
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const email = body.email as string;
+  const surface = body.surface as string | undefined;
 
   // Explicit preview mode: accept any credentials
   if (PREVIEW_ENABLED) {
-    return previewFallback(email);
+    return previewFallback(email, surface);
   }
 
   // No backend URL configured
   if (!BACKEND) {
     console.warn('[login] NEXT_PUBLIC_AUTH_URL not set — using preview mode');
-    return previewFallback(email);
+    return previewFallback(email, surface);
   }
 
   let upstream: Response | null = null;
@@ -53,7 +57,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (e) {
     console.warn('[login] backend unreachable, falling back to preview mode:', e);
-    return previewFallback(email);
+    return previewFallback(email, surface);
   }
 
   if (!upstream.ok) {
@@ -64,14 +68,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(data, { status: 401 });
     }
     console.warn('[login] backend returned', upstream.status, '— using preview mode as fallback');
-    return previewFallback(email);
+    return previewFallback(email, surface);
   }
 
   let data: Record<string, unknown>;
   try {
     data = await upstream.json();
   } catch {
-    return previewFallback(email);
+    return previewFallback(email, surface);
   }
 
   const token = data.token as { access_token: string; expires_in: number };

@@ -1,6 +1,6 @@
 import type { AuthUser } from './types';
 
-interface LoginPayload { email: string; password: string }
+interface LoginPayload { email: string; password: string; surface?: string }
 interface RegisterPayload { email: string; password: string; display_name?: string }
 
 interface AuthResponse {

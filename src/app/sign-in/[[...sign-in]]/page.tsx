@@ -4,16 +4,16 @@ import { useState, FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Metadata } from 'next';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { apiLogin } from '@/lib/auth/api';
 import { useAuth } from '@/lib/auth/context';
+import { t } from '@/theme/colors';
 
 const INPUT_STYLE: React.CSSProperties = {
   width: '100%', padding: '12px 14px',
   background: 'rgba(10,18,38,0.8)',
   border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 12, color: '#F0F4FF',
+  borderRadius: 12, color: t.txt,
   fontSize: 14, outline: 'none',
   fontFamily: 'inherit',
   transition: 'border-color 0.15s',
@@ -21,7 +21,7 @@ const INPUT_STYLE: React.CSSProperties = {
 
 const LABEL_STYLE: React.CSSProperties = {
   display: 'block', fontSize: 11, fontWeight: 600,
-  color: '#8B9CC0', letterSpacing: '0.08em',
+  color: t.txtDim, letterSpacing: '0.08em',
   textTransform: 'uppercase', marginBottom: 6,
 };
 
@@ -40,10 +40,13 @@ function SignInForm() {
     setError('');
     setLoading(true);
     try {
-      const user = await apiLogin({ email, password });
+      const redirectUrl = params.get('redirect_url') ?? '';
+      const surface = redirectUrl.startsWith('/workspace') || redirectUrl.startsWith('/admin')
+        ? 'workspace'
+        : undefined;
+      const user = await apiLogin({ email, password, surface });
       setUser(user);
-      const redirectUrl = params.get('redirect_url') ?? `/${user.surface}`;
-      router.push(redirectUrl);
+      router.push(redirectUrl || `/${user.surface}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -70,11 +73,11 @@ function SignInForm() {
           </div>
         </div>
         <div style={{ position: 'relative', zIndex: 2, marginTop: 'auto', paddingTop: 60 }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#22FFAA', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>AI-Powered Experiences</p>
-          <h1 style={{ fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 900, color: '#F0F4FF', lineHeight: 1.15, letterSpacing: '-0.03em', margin: '0 0 16px' }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: t.accent, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>AI-Powered Experiences</p>
+          <h1 style={{ fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 900, color: t.txt, lineHeight: 1.15, letterSpacing: '-0.03em', margin: '0 0 16px' }}>
             Discover your<br />next mission.
           </h1>
-          <p style={{ fontSize: 15, color: '#8B9CC0', lineHeight: 1.65, maxWidth: 340 }}>
+          <p style={{ fontSize: 15, color: t.txtDim, lineHeight: 1.65, maxWidth: 340 }}>
             Personalised AI missions that guide you through real-world challenges, adventures, and meaningful impact.
           </p>
         </div>
@@ -89,8 +92,8 @@ function SignInForm() {
             <Image src="/xhunt-logo.png" alt="X-hunt" width={80} height={80} style={{ objectFit: 'contain' }} priority onError={() => {}} />
           </div>
 
-          <h2 style={{ fontSize: 24, fontWeight: 900, color: '#F0F4FF', letterSpacing: '-0.02em', marginBottom: 4 }}>Welcome back</h2>
-          <p style={{ fontSize: 14, color: '#8B9CC0', marginBottom: 32 }}>Sign in to your X-hunt account</p>
+          <h2 style={{ fontSize: 24, fontWeight: 900, color: t.txt, letterSpacing: '-0.02em', marginBottom: 4 }}>Welcome back</h2>
+          <p style={{ fontSize: 14, color: t.txtDim, marginBottom: 32 }}>Sign in to your X-hunt account</p>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div>
@@ -115,22 +118,22 @@ function SignInForm() {
                   autoComplete="current-password"
                 />
                 <button type="button" onClick={() => setShowPw(v => !v)}
-                  style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#8B9CC0', cursor: 'pointer', padding: 0 }}>
+                  style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: t.txtDim, cursor: 'pointer', padding: 0 }}>
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <p style={{ fontSize: 13, color: '#FF5C7A', background: 'rgba(255,92,122,0.08)', border: '1px solid rgba(255,92,122,0.2)', borderRadius: 10, padding: '10px 14px', margin: 0 }}>
+              <p style={{ fontSize: 13, color: t.error, background: 'rgba(255,92,122,0.08)', border: '1px solid rgba(255,92,122,0.2)', borderRadius: 10, padding: '10px 14px', margin: 0 }}>
                 {error}
               </p>
             )}
 
             <button type="submit" disabled={loading} style={{
               width: '100%', padding: '13px', borderRadius: 12, border: 'none',
-              background: loading ? 'rgba(34,255,170,0.5)' : '#22FFAA',
-              color: '#050816', fontWeight: 700, fontSize: 15,
+              background: loading ? 'rgba(34,255,170,0.5)' : t.accent,
+              color: t.bg, fontWeight: 700, fontSize: 15,
               cursor: loading ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(34,255,170,0.3)',
@@ -141,9 +144,9 @@ function SignInForm() {
             </button>
           </form>
 
-          <p style={{ fontSize: 14, color: '#8B9CC0', textAlign: 'center', marginTop: 24 }}>
+          <p style={{ fontSize: 14, color: t.txtDim, textAlign: 'center', marginTop: 24 }}>
             Don't have an account?{' '}
-            <Link href="/sign-up" style={{ color: '#22FFAA', fontWeight: 700, textDecoration: 'none' }}>
+            <Link href="/sign-up" style={{ color: t.accent, fontWeight: 700, textDecoration: 'none' }}>
               Sign up free
             </Link>
           </p>
