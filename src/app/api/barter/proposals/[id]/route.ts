@@ -23,7 +23,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!proposal) return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
   if (proposal.status !== 'pending') return NextResponse.json({ error: 'Proposal is no longer pending' }, { status: 400 });
 
-  const listing = proposal.listing as { id: string; user_id: string; status: string } | null;
+  const listing = proposal.listing as unknown as { id: string; user_id: string; status: string } | null;
   if (!listing || listing.user_id !== user.id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
