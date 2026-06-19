@@ -1,658 +1,217 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import {
-  Brain, Search, X, Clock, DollarSign, Star, Award,
-  ShieldCheck, Building2, Zap, SlidersHorizontal, Target,
-  MapPin, Navigation, Bookmark, BookmarkCheck,
-} from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, X } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
-import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
-import { loadState, saveState, loadProfile, toggleSavedHunt } from '@/lib/store';
-import { fetchSupabaseMissions } from '@/lib/supabase/events';
-import { MOCK_HUNTS } from '@/lib/mockHunts';
-import {
-  IMPACT_CATEGORIES, MISSION_TYPE_META, DIFF_META, SDG_META,
-  estimateCashReward, estimateXP, deadlineLabel, resolveCategory,
-} from '@/lib/missionCategories';
+import FilterBar from '@/components/consumer/FilterBar';
+import MissionCard from '@/components/consumer/MissionCard';
+import SectionHeader from '@/components/consumer/SectionHeader';
+import EmptyState from '@/components/consumer/EmptyState';
+import BottomSheet from '@/components/consumer/BottomSheet';
+import CopilotFab from '@/components/consumer/CopilotFab';
 import { t } from '@/theme/colors';
-import type { Hunt, ImpactProfile } from '@/lib/types';
-import { useProximity } from '@/hooks/useProximity';
-import { haversineKm, formatDistance, proximityColor, sortByProximity } from '@/lib/proximity';
-import { LocationPermissionCard } from '@/components/proximity/LocationPermissionCard';
-import { ProximityBadge } from '@/components/proximity/ProximityBadge';
+import { loadState } from '@/lib/store';
+import { IMPACT_CATEGORIES, resolveCategory, deadlineLabel, estimateCashReward } from '@/lib/missionCategories';
+import type { Hunt } from '@/lib/types';
 
-const SORT_OPTS = [
-  { id: 'recommended', label: 'Best Match'  },
-  { id: 'nearby',      label: '📍 Nearby'   },
-  { id: 'reward',      label: 'Highest Pay' },
-  { id: 'easy',        label: 'Entry Level' },
-  { id: 'hard',        label: 'Expert'      },
-  { id: 'quick',       label: 'Quickest'    },
-  { id: 'deadline',    label: 'Ending Soon' },
+const SORT_OPTIONS = [
+  { id: 'recommended', label: 'Best Match' },
+  { id: 'reward',      label: 'Highest Reward' },
+  { id: 'newest',      label: 'Newest' },
+  { id: 'deadline',    label: 'Deadline Soon' },
+  { id: 'spots',       label: 'Most Spots' },
 ];
-const LOCATION_OPTS = [
-  { id: 'all',    label: 'All'    },
-  { id: 'remote', label: 'Remote' },
-  { id: 'local',  label: '📍 Local' },
-  { id: 'hybrid', label: 'Hybrid' },
-];
-const RADIUS_OPTS = [
-  { km: 5,   label: '<5 km'  },
-  { km: 20,  label: '<20 km' },
-  { km: 50,  label: '<50 km' },
-  { km: 100, label: '<100 km'},
-  { km: 0,   label: 'Any distance' },
-];
-type SortId = typeof SORT_OPTS[number]['id'];
 
-interface Recommendation {
-  id: string; title: string; tags: string[]; estimated_time: string;
-  difficulty: string; confidence_pct: number; reason: string; reward?: string;
-}
+const LOCATION_OPTS = ['All', 'Remote', 'Local', 'Hybrid'];
+const DIFFICULTY_OPTS = ['All', 'Entry Level', 'Professional', 'Expert'];
+const DIFF_MAP: Record<string, Hunt['difficulty']> = { 'Entry Level': 'easy', 'Professional': 'medium', 'Expert': 'hard' };
 
-function computeMatch(hunt: Hunt, profile: ImpactProfile | null): number | null {
-  if (!profile) return null;
-  const tl = hunt.tags.map(tag => tag.toLowerCase());
-  const cl = profile.causes.map(c => c.toLowerCase());
-  const sl = profile.strengths.map(s => s.name.toLowerCase());
-  let score = 55;
-  for (const tag of tl) {
-    if (cl.some(c => c.includes(tag) || tag.includes(c))) score += 12;
-    if (sl.some(s => s.includes(tag) || tag.includes(s))) score += 8;
+function sortMissions(missions: Hunt[], sort: string): Hunt[] {
+  const copy = [...missions];
+  switch (sort) {
+    case 'reward':   return copy.sort((a, b) => estimateCashReward(b.cashReward, b.difficulty, b.missionType) - estimateCashReward(a.cashReward, a.difficulty, a.missionType));
+    case 'newest':   return copy.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
+    case 'deadline': return copy.sort((a, b) => (a.deadline ?? '9999').localeCompare(b.deadline ?? '9999'));
+    case 'spots':    return copy.sort((a, b) => (b.spotsRemaining ?? 99) - (a.spotsRemaining ?? 99));
+    default:         return copy;
   }
-  return Math.min(98, score + Math.round((profile.impactScore / 100) * 8));
 }
 
-function AIRecCard({ rec }: { rec: Recommendation }) {
-  return (
-    <Link href={`/hunt/${rec.id}`} style={{ textDecoration: 'none', display: 'block' }}>
-      <motion.div whileTap={{ scale: 0.985 }} className="liquid-glass"
-        style={{ ...LIQUID_GLASS_STYLE, borderRadius: 20, padding: '14px 16px', borderColor: `${t.ai}32`, boxShadow: `0 0 32px ${t.ai}0C` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px 3px 6px', borderRadius: 999, background: `${t.ai}14`, border: `1px solid ${t.ai}28` }}>
-            <Brain size={11} strokeWidth={2} style={{ color: t.ai }} />
-            <span style={{ fontSize: 10, fontWeight: 700, color: t.ai }}>{rec.confidence_pct}% match</span>
-          </div>
-          <span style={{ fontSize: 10, color: t.txtFaint }}>· {rec.reason}</span>
-        </div>
-        <h3 style={{ margin: '0 0 8px', fontSize: 14.5, fontWeight: 700, color: t.txt, lineHeight: 1.3 }}>{rec.title}</h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Clock size={11} strokeWidth={2} style={{ color: t.txtFaint }} />
-            <span style={{ fontSize: 11, color: t.txtDim }}>{rec.estimated_time}</span>
-          </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: DIFF_META[rec.difficulty as keyof typeof DIFF_META]?.color ?? t.txtDim }}>{rec.difficulty}</span>
-          {rec.reward && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-              <DollarSign size={11} strokeWidth={2} style={{ color: t.accent }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: t.accent }}>{rec.reward.split('+')[0].trim()}</span>
-            </div>
-          )}
-        </div>
-      </motion.div>
-    </Link>
-  );
+function filterMissions(missions: Hunt[], opts: { category: string; location: string; difficulty: string; query: string }): Hunt[] {
+  return missions.filter((h) => {
+    if (opts.category !== 'all') {
+      if (resolveCategory(h.tags ?? [], h.category).id !== opts.category) return false;
+    }
+    if (opts.location !== 'All') {
+      const loc = opts.location.toLowerCase() as Hunt['locationType'];
+      if (h.locationType && h.locationType !== loc) return false;
+    }
+    if (opts.difficulty !== 'All') {
+      const d = DIFF_MAP[opts.difficulty];
+      if (d && h.difficulty !== d) return false;
+    }
+    if (opts.query) {
+      const q = opts.query.toLowerCase();
+      if (!h.title.toLowerCase().includes(q) && !(h.story_context ?? '').toLowerCase().includes(q) && !(h.tags ?? []).join(' ').toLowerCase().includes(q) && !(h.tenantName ?? '').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
 }
 
-function ExploreCard({ hunt, index, completedIds, profile, distanceKm, savedHunts, onToggleSave }: {
-  hunt: Hunt; index: number; completedIds: string[]; profile: ImpactProfile | null;
-  distanceKm?: number | null;
-  savedHunts: string[];
-  onToggleSave: (id: string) => void;
-}) {
-  const done    = completedIds.includes(hunt.id);
-  const isSaved = savedHunts.includes(hunt.id);
-  const cash    = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
-  const xp      = estimateXP(hunt.xpReward, hunt.difficulty, hunt.steps.length);
-  const diff    = DIFF_META[hunt.difficulty] ?? DIFF_META.easy;
-  const cat     = resolveCategory(hunt.tags, hunt.category);
-  const mtype   = hunt.missionType ? MISSION_TYPE_META[hunt.missionType] : null;
-  const dlLabel = deadlineLabel(hunt.deadline);
-  const ms      = computeMatch(hunt, profile);
-  const msColor = ms == null ? t.txtDim : ms >= 80 ? t.accent : ms >= 65 ? t.warning : t.txtDim;
-
+function SectionRail({ title, missions, onSeeAll }: { title: string; missions: Hunt[]; onSeeAll?: () => void }) {
+  if (!missions.length) return null;
   return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05, duration: 0.28 }}>
-      <Link href={`/hunt/${hunt.id}`} style={{ display: 'block', textDecoration: 'none' }}>
-        <motion.div whileTap={{ scale: 0.985 }} className="liquid-glass"
-          style={{ ...LIQUID_GLASS_STYLE, borderRadius: 20, overflow: 'hidden', opacity: done ? 0.65 : 1, borderColor: `${cat.color}18` }}>
-
-          <div style={{ height: 2, background: `linear-gradient(90deg, ${cat.color}88, transparent)` }} />
-
-          <div style={{ padding: '13px 15px' }}>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 9, flexWrap: 'wrap', alignItems: 'center' }}>
-              {mtype && (
-                <span style={{ fontSize: 9.5, fontWeight: 700, color: mtype.color, background: `${mtype.color}10`, border: `1px solid ${mtype.color}18`, borderRadius: 999, padding: '2px 8px' }}>
-                  {mtype.emoji} {mtype.label}
-                </span>
-              )}
-              <span style={{ fontSize: 9.5, fontWeight: 700, color: cat.color, background: `${cat.color}10`, border: `1px solid ${cat.color}18`, borderRadius: 999, padding: '2px 8px' }}>
-                {cat.emoji} {cat.label}
-              </span>
-              {/* Proximity badge — shown when we have a distance */}
-              {distanceKm != null && (
-                <ProximityBadge distanceKm={distanceKm} />
-              )}
-              {/* Location city when no distance */}
-              {distanceKm == null && hunt.locationCity && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9.5, color: t.txtFaint, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 999, padding: '2px 8px' }}>
-                  <MapPin size={8} strokeWidth={2} />
-                  {hunt.locationCity}
-                </span>
-              )}
-              {/* Bookmark */}
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSave(hunt.id); }}
-                style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: isSaved ? t.accent : t.txtFaint, display: 'flex', alignItems: 'center' }}
-              >
-                {isSaved ? <BookmarkCheck size={15} strokeWidth={2} /> : <Bookmark size={15} strokeWidth={1.8} />}
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, marginBottom: 7 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, background: `${cat.color}14`, border: `1px solid ${cat.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
-                {cat.emoji}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: '0 0 2px', fontSize: 13.5, fontWeight: 700, color: t.txt, lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {hunt.title}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  {hunt.tenantLogo
-                    ? <img src={hunt.tenantLogo} alt="" style={{ width: 14, height: 14, borderRadius: 4 }} />
-                    : <Building2 size={10} strokeWidth={2} style={{ color: t.txtFaint }} />
-                  }
-                  <span style={{ fontSize: 10.5, color: t.txtFaint }}>{hunt.tenantName ?? 'X-Hunt'}</span>
-                  {hunt.isVerified && <ShieldCheck size={9} strokeWidth={2.5} style={{ color: t.accent }} />}
-                </div>
-              </div>
-              {ms != null && !done && (
-                <div style={{ flexShrink: 0, width: 34, height: 34, borderRadius: '50%', background: `${msColor}10`, border: `2px solid ${msColor}25`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 9.5, fontWeight: 900, color: msColor }}>{ms}%</span>
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', gap: 5, marginBottom: 9, flexWrap: 'wrap' }}>
-              {hunt.tags.slice(0, 3).map(tag => (
-                <span key={tag} style={{ fontSize: 9.5, color: t.txtFaint, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)', padding: '1px 8px', borderRadius: 999 }}>{tag}</span>
-              ))}
-              {(hunt.sdgGoals?.length ?? 0) > 0 && hunt.sdgGoals!.slice(0, 2).map(g => {
-                const m = SDG_META[g as keyof typeof SDG_META];
-                return m ? (
-                  <span key={g} style={{ fontSize: 9.5, fontWeight: 700, color: m.color, background: `${m.color}12`, border: `1px solid ${m.color}20`, padding: '1px 8px', borderRadius: 999 }}>
-                    {m.emoji} SDG {g}
-                  </span>
-                ) : null;
-              })}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <DollarSign size={11} strokeWidth={2} style={{ color: t.accent }} />
-              <span style={{ fontSize: 13, fontWeight: 900, color: done ? t.txtFaint : t.accent, letterSpacing: '-.02em' }}>${cash}</span>
-              <div style={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
-              <Star size={10} strokeWidth={2} style={{ color: t.ai }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: done ? t.txtFaint : t.ai }}>+{xp} XP</span>
-              {hunt.certificationReward && (
-                <>
-                  <div style={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
-                  <Award size={10} strokeWidth={2} style={{ color: t.warning }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: t.warning }}>Cert</span>
-                </>
-              )}
-              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
-                {dlLabel && (
-                  <span style={{ fontSize: 10, fontWeight: 700, color: dlLabel.color, background: `${dlLabel.color}10`, borderRadius: 999, padding: '2px 7px' }}>{dlLabel.label}</span>
-                )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 7px', borderRadius: 999, background: `${diff.color}10` }}>
-                  <Zap size={9} strokeWidth={2.5} style={{ color: diff.color }} />
-                  <span style={{ fontSize: 9.5, fontWeight: 700, color: diff.color }}>{diff.label}</span>
-                </div>
-              </div>
-            </div>
+    <section style={{ marginBottom: 28 }}>
+      <SectionHeader title={title} count={missions.length} onSeeAll={onSeeAll} />
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollbarWidth: 'none', padding: '2px 0 4px' }}>
+        {missions.slice(0, 8).map((h) => (
+          <div key={h.id} style={{ width: 288, flexShrink: 0 }}>
+            <MissionCard hunt={h} compact />
           </div>
-        </motion.div>
-      </Link>
-    </motion.div>
+        ))}
+      </div>
+    </section>
   );
 }
 
 export default function ExplorePage() {
-  const [category, setCategory]   = useState('all');
-  const [sort, setSort]           = useState<SortId>('recommended');
-  const [locationFilter, setLoc]  = useState('all');
-  const [radiusKm, setRadiusKm]   = useState(50);
+  const [allMissions, setAll]     = useState<Hunt[]>([]);
+  const [recs, setRecs]           = useState<Hunt[]>([]);
+  const [loading, setLoading]     = useState(true);
   const [query, setQuery]         = useState('');
-  const [hunts, setHunts]         = useState<Hunt[]>([]);
-  const [completedIds, setIds]    = useState<string[]>([]);
-  const [savedHunts, setSavedHunts] = useState<string[]>([]);
-  const [recs, setRecs]           = useState<Recommendation[]>([]);
-  const [recsLoading, setRL]      = useState(true);
-  const [profile, setProfile]     = useState<ImpactProfile | null>(null);
-  const [showFilters, setFilters] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
-  const proximity = useProximity();
-
-  // When "Nearby" sort is picked and we don't have coords yet, trigger the request
-  useEffect(() => {
-    if ((sort === 'nearby' || locationFilter === 'local') && proximity.status === 'idle') {
-      proximity.requestLocation();
-    }
-  }, [sort, locationFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [category, setCategory]   = useState('all');
+  const [sort, setSort]           = useState('recommended');
+  const [location, setLocation]   = useState('All');
+  const [difficulty, setDiff]     = useState('All');
+  const [filterOpen, setFilter]   = useState(false);
+  const [locDraft, setLocDraft]   = useState('All');
+  const [diffDraft, setDiffDraft] = useState('All');
 
   useEffect(() => {
-    const state = loadState();
-    setIds(state.completedHunts.map(h => h.huntId));
-    setSavedHunts(state.savedHunts ?? []);
-    const initialHunts = state.hunts.length > 0 ? state.hunts : MOCK_HUNTS;
-    setHunts(initialHunts);
-    setProfile(loadProfile());
-    void fetchSupabaseMissions().then(r => { if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } else if (!state.hunts.length) { setHunts(MOCK_HUNTS); } });
-
-    const recUrl = proximity.coords
-      ? `/api/recommendations?limit=5&lat=${proximity.coords.lat}&lng=${proximity.coords.lng}`
-      : '/api/recommendations?limit=5';
-    void fetch(recUrl)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.recommendations?.length) setRecs(d.recommendations); })
+    const base = loadState().hunts ?? [];
+    setAll(base);
+    fetch('/api/recommendations?limit=8')
+      .then(r => r.json())
+      .then((d) => {
+        const list = Array.isArray(d) ? d : (d.recommendations ?? d.hunts ?? []);
+        setRecs(list);
+        if (base.length === 0 && list.length > 0) setAll(list);
+      })
       .catch(() => {})
-      .finally(() => setRL(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+      .finally(() => setLoading(false));
+    if (base.length > 0) setLoading(false);
+  }, []);
 
-  // Annotate hunts with distance when user has coords
-  const huntsWithDistance = proximity.coords
-    ? sortByProximity(hunts, proximity.coords)
-    : hunts.map(h => ({ ...h, distanceKm: null as number | null }));
+  const filtered = useCallback(
+    () => sortMissions(filterMissions(allMissions, { category, location, difficulty, query }), sort),
+    [allMissions, category, location, difficulty, query, sort]
+  )();
 
-  const filtered = huntsWithDistance
-    .filter(h => {
-      if (query) {
-        const q = query.toLowerCase();
-        return h.title.toLowerCase().includes(q)
-          || h.tags.some(tag => tag.toLowerCase().includes(q))
-          || (h.story_context ?? '').toLowerCase().includes(q)
-          || (h.missionType ?? '').includes(q);
-      }
-      const catMatch = category === 'all'
-        || h.tags.some(tag => tag.toLowerCase().includes(category))
-        || h.category === category
-        || resolveCategory(h.tags, h.category).id === category;
-      const locMatch = locationFilter === 'all' || h.locationType === locationFilter;
-      // Radius filter — only when user coords are known and local filter is active
-      const radiusMatch = (() => {
-        if (locationFilter !== 'local' || !proximity.coords || radiusKm === 0) return true;
-        if (h.locationType === 'remote') return false;
-        if (h.distanceKm == null) return true; // no coords on mission → show it
-        return h.distanceKm <= radiusKm;
-      })();
-      return catMatch && locMatch && radiusMatch;
-    })
-    .sort((a, b) => {
-      const dr = { easy: 0, medium: 1, hard: 2 } as const;
-      if (sort === 'easy')     return (dr[a.difficulty as keyof typeof dr] ?? 1) - (dr[b.difficulty as keyof typeof dr] ?? 1);
-      if (sort === 'hard')     return (dr[b.difficulty as keyof typeof dr] ?? 1) - (dr[a.difficulty as keyof typeof dr] ?? 1);
-      if (sort === 'quick')    return (parseInt(a.estimated_time) || 60) - (parseInt(b.estimated_time) || 60);
-      if (sort === 'reward')   return estimateCashReward(b.cashReward, b.difficulty, b.missionType) - estimateCashReward(a.cashReward, a.difficulty, a.missionType);
-      if (sort === 'deadline') {
-        const da = a.deadline ? new Date(a.deadline).getTime() : Infinity;
-        const db = b.deadline ? new Date(b.deadline).getTime() : Infinity;
-        return da - db;
-      }
-      if (sort === 'nearby') {
-        if (a.distanceKm == null && b.distanceKm == null) return 0;
-        if (a.distanceKm == null) return 1;
-        if (b.distanceKm == null) return -1;
-        return a.distanceKm - b.distanceKm;
-      }
-      if (profile) {
-        const sm = (computeMatch(b, profile) ?? 55) - (computeMatch(a, profile) ?? 55);
-        if (sm !== 0) return sm;
-      }
-      return 0;
-    });
-
-  const showRecs = !query && category === 'all' && sort === 'recommended' && locationFilter === 'all';
-  const totalCash = filtered.reduce((acc, h) => acc + estimateCashReward(h.cashReward, h.difficulty, h.missionType), 0);
-  const showLocalProximity = locationFilter === 'local' || sort === 'nearby';
+  const isFiltering = query.length > 0 || category !== 'all';
+  const trending    = sortMissions(allMissions.filter(h => (h.applicationCount ?? 0) >= 5), 'recommended').slice(0, 8);
+  const newest      = sortMissions(allMissions, 'newest').slice(0, 8);
+  const highReward  = sortMissions(allMissions, 'reward').slice(0, 8);
+  const urgent      = allMissions.filter(h => { const dl = deadlineLabel(h.deadline); return dl && dl.label.includes('d left') && parseInt(dl.label) <= 7; }).slice(0, 8);
 
   return (
-    <div className="consumer-app" style={{ minHeight: '100vh', paddingBottom: 100, background: t.bg }}>
-      <div style={{ maxWidth: 680, margin: '0 auto' }}>
+    <div className="consumer-app" style={{ background: t.bg, minHeight: '100vh' }}>
+      <div className="consumer-app-inner">
 
-        {/* Sticky header */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(5,8,22,.94)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,.06)', padding: '52px 20px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 900, color: t.txt, letterSpacing: '-.03em' }}>Explore</h1>
-              {proximity.coords && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 999, background: `${t.accent}0A`, border: `1px solid ${t.accent}18` }}>
-                  <Navigation size={9} strokeWidth={2.5} style={{ color: t.accent }} />
-                  <span style={{ fontSize: 9.5, fontWeight: 700, color: t.accent }}>
-                    {proximity.place?.city ?? 'Located'}
-                  </span>
-                </div>
-              )}
-            </div>
-            <button onClick={() => setFilters(!showFilters)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 999, border: `1px solid ${showFilters ? t.accent + '35' : 'rgba(255,255,255,.1)'}`, background: showFilters ? `${t.accent}0A` : 'rgba(255,255,255,.04)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: showFilters ? t.accent : t.txtDim }}>
-              <SlidersHorizontal size={13} strokeWidth={2} />
-              Filters {showFilters ? '▲' : '▼'}
-            </button>
-          </div>
-
-          {/* Search */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, ...LIQUID_GLASS_STYLE, borderRadius: 14, padding: '0 14px', marginBottom: 12 }}>
-            <Search size={15} strokeWidth={2} style={{ color: t.txtFaint, flexShrink: 0 }} />
-            <input ref={searchRef} value={query} onChange={e => setQuery(e.target.value)}
-              placeholder="Search missions, skills, causes, orgs…"
-              style={{ flex: 1, height: 44, background: 'none', border: 'none', outline: 'none', fontSize: 13.5, color: t.txt, fontFamily: 'inherit' }} />
+        {/* Sticky search header */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 30, background: `${t.bg}F0`, backdropFilter: 'blur(16px)', padding: '14px 20px 12px', borderBottom: `1px solid ${t.border}` }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={16} strokeWidth={2} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: t.txtFaint, pointerEvents: 'none' }} />
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search missions, organizations, causes..."
+              style={{ width: '100%', height: 44, paddingLeft: 42, paddingRight: query ? 40 : 16, borderRadius: 14, border: `1px solid ${t.border}`, background: t.card, color: t.txt, fontSize: 14, fontFamily: 'var(--font-onest, system-ui)', outline: 'none', boxSizing: 'border-box' }}
+            />
             {query && (
-              <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.txtFaint }}>
+              <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: t.txtFaint }}>
                 <X size={14} strokeWidth={2} />
               </button>
             )}
           </div>
-
-          {/* Category chips */}
-          <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 12, scrollbarWidth: 'none' }}>
-            {IMPACT_CATEGORIES.map(cat => {
-              const active = category === cat.id;
-              return (
-                <button key={cat.id} onClick={() => setCategory(cat.id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, padding: '6px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: active ? 700 : 500, background: active ? cat.color : 'rgba(255,255,255,.06)', color: active ? t.bg : t.txtDim, boxShadow: active ? `0 0 18px ${cat.color}40` : 'none', transition: 'all .15s' }}>
-                  {cat.emoji} {cat.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Expanded filters */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                style={{ overflow: 'hidden', paddingBottom: 12 }}>
-                <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>Sort by</p>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-                  {SORT_OPTS.map(opt => {
-                    const active = sort === opt.id;
-                    const isNearby = opt.id === 'nearby';
-                    const clr = isNearby ? t.accent : t.accent;
-                    return (
-                      <button key={opt.id} onClick={() => setSort(opt.id as SortId)}
-                        style={{ padding: '5px 12px', borderRadius: 999, border: `1px solid ${active ? clr : 'rgba(255,255,255,.07)'}`, background: active ? `${clr}10` : 'transparent', color: active ? clr : t.txtDim, fontSize: 11.5, fontWeight: active ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' }}>
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>Location</p>
-                <div style={{ display: 'flex', gap: 6, marginBottom: locationFilter === 'local' ? 10 : 0 }}>
-                  {LOCATION_OPTS.map(opt => {
-                    const active = locationFilter === opt.id;
-                    return (
-                      <button key={opt.id} onClick={() => setLoc(opt.id)}
-                        style={{ padding: '5px 14px', borderRadius: 999, border: `1px solid ${active ? t.ai : 'rgba(255,255,255,.07)'}`, background: active ? `${t.ai}10` : 'transparent', color: active ? t.ai : t.txtDim, fontSize: 11.5, fontWeight: active ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' }}>
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                {/* Radius filter — shown only when Local is active */}
-                <AnimatePresence>
-                  {locationFilter === 'local' && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                      style={{ overflow: 'hidden' }}>
-                      <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>Radius</p>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {RADIUS_OPTS.map(opt => {
-                          const active = radiusKm === opt.km;
-                          return (
-                            <button key={opt.km} onClick={() => setRadiusKm(opt.km)}
-                              style={{ padding: '4px 11px', borderRadius: 999, border: `1px solid ${active ? t.accent : 'rgba(255,255,255,.07)'}`, background: active ? `${t.accent}10` : 'transparent', color: active ? t.accent : t.txtDim, fontSize: 11, fontWeight: active ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' }}>
-                              {opt.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         <div style={{ padding: '16px 20px 0' }}>
-          {/* Location permission card — shown when local/nearby is active */}
-          {showLocalProximity && (
-            <LocationPermissionCard
-              status={proximity.status}
-              loading={proximity.loading}
-              cityName={proximity.place?.city}
-              onRequest={proximity.requestLocation}
-            />
-          )}
+          <div style={{ marginBottom: 20 }}>
+            <FilterBar categories={IMPACT_CATEGORIES} activeCategory={category} onCategory={setCategory} sortOptions={SORT_OPTIONS} activeSort={sort} onSort={setSort} onFilterSheet={() => setFilter(true)} />
+          </div>
 
-          {/* Market summary */}
-          {filtered.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, padding: '9px 14px', borderRadius: 12, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)' }}>
-              <Target size={12} strokeWidth={2} style={{ color: t.txtFaint }} />
-              <span style={{ fontSize: 11, color: t.txtFaint }}>{filtered.length} mission{filtered.length !== 1 ? 's' : ''}</span>
-              <div style={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: t.accent }}>${totalCash.toLocaleString()} available</span>
-              {proximity.coords && (
-                <>
-                  <div style={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
-                  <MapPin size={11} strokeWidth={2} style={{ color: t.accent }} />
-                  <span style={{ fontSize: 11, color: t.accent }}>proximity on</span>
-                </>
-              )}
-              {profile && !proximity.coords && (
-                <>
-                  <div style={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
-                  <Brain size={11} strokeWidth={2} style={{ color: t.ai }} />
-                  <span style={{ fontSize: 11, color: t.ai }}>AI ranked</span>
-                </>
-              )}
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {[1,2,3].map(i => <div key={i} style={{ height: 180, borderRadius: 20, background: t.card, border: `1px solid ${t.border}`, opacity: 0.6 }} className="breathe" />)}
             </div>
-          )}
-
-          {/* AI Recommendations */}
-          <AnimatePresence>
-            {showRecs && !recsLoading && recs.length > 0 && (
-              <motion.section key="recs" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} style={{ marginBottom: 26 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 26, height: 26, borderRadius: 8, background: `${t.ai}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Brain size={13} strokeWidth={2} style={{ color: t.ai }} />
-                    </div>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: t.txt }}>AI Picks for You</span>
-                  </div>
-                  <span style={{ fontSize: 10.5, color: t.txtFaint }}>Impact DNA · ranked</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {recs.map((rec, i) => (
-                    <motion.div key={rec.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}>
-                      <AIRecCard rec={rec} />
-                    </motion.div>
-                  ))}
-                </div>
-                <div style={{ height: 1, background: 'rgba(255,255,255,.05)', margin: '20px 0 0' }} />
-              </motion.section>
-            )}
-            {showRecs && recsLoading && (
-              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ marginBottom: 22 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <Brain size={14} strokeWidth={2} style={{ color: t.ai }} />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: t.txtFaint }}>AI matching your Impact DNA…</span>
-                </div>
-                {[1, 2, 3].map(i => (
-                  <div key={i} style={{ height: 88, borderRadius: 20, background: t.surface, marginBottom: 10, border: `1px solid ${t.ai}08`, opacity: 0.5 }} />
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Marketplace Sections — shown when browsing unfiltered */}
-          {showRecs && !recsLoading && filtered.length > 0 && (
-            <>
-              {/* High Reward */}
-              {(() => {
-                const highReward = [...huntsWithDistance]
-                  .sort((a, b) => estimateCashReward(b.cashReward, b.difficulty, b.missionType) - estimateCashReward(a.cashReward, a.difficulty, a.missionType))
-                  .slice(0, 5);
-                return (
-                  <div style={{ marginBottom: 24 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: t.txt }}>💰 High Reward</span>
-                      <span style={{ fontSize: 10.5, color: t.txtFaint }}>Top payers right now</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
-                      {highReward.map((hunt) => {
-                        const cash = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
-                        const cat = resolveCategory(hunt.tags, hunt.category);
-                        return (
-                          <Link key={hunt.id} href={`/hunt/${hunt.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
-                            <motion.div whileTap={{ scale: .96 }} style={{ width: 160, padding: '12px 13px', borderRadius: 16, background: t.card, border: `1px solid ${cat.color}18`, cursor: 'pointer' }}>
-                              <div style={{ fontSize: 22, marginBottom: 6 }}>{cat.emoji}</div>
-                              <p style={{ margin: '0 0 6px', fontSize: 12.5, fontWeight: 700, color: t.txt, lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{hunt.title}</p>
-                              <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: t.accent }}>${cash}</p>
-                              <p style={{ margin: '2px 0 0', fontSize: 10, color: t.txtFaint }}>{hunt.estimated_time}</p>
-                            </motion.div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Ending Soon */}
-              {(() => {
-                const now = Date.now();
-                const soon = huntsWithDistance
-                  .filter(h => h.deadline && (new Date(h.deadline).getTime() - now) < 7 * 24 * 60 * 60 * 1000 && new Date(h.deadline).getTime() > now)
-                  .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())
-                  .slice(0, 5);
-                if (!soon.length) return null;
-                return (
-                  <div style={{ marginBottom: 24 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: t.txt }}>⏰ Ending Soon</span>
-                      <span style={{ fontSize: 10.5, color: t.error }}>Don&apos;t miss these</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
-                      {soon.map((hunt) => {
-                        const cash = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
-                        const cat = resolveCategory(hunt.tags, hunt.category);
-                        const deadline = new Date(hunt.deadline!);
-                        const daysLeft = Math.ceil((deadline.getTime() - now) / (24 * 60 * 60 * 1000));
-                        return (
-                          <Link key={hunt.id} href={`/hunt/${hunt.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
-                            <motion.div whileTap={{ scale: .96 }} style={{ width: 160, padding: '12px 13px', borderRadius: 16, background: t.card, border: `1px solid ${t.error}18`, cursor: 'pointer' }}>
-                              <div style={{ fontSize: 22, marginBottom: 6 }}>{cat.emoji}</div>
-                              <p style={{ margin: '0 0 6px', fontSize: 12.5, fontWeight: 700, color: t.txt, lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{hunt.title}</p>
-                              <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: t.accent }}>${cash}</p>
-                              <p style={{ margin: '2px 0 0', fontSize: 10, fontWeight: 700, color: t.error }}>{daysLeft}d left</p>
-                            </motion.div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Quick Wins */}
-              {(() => {
-                const quick = huntsWithDistance
-                  .filter(h => h.difficulty === 'easy' || parseInt(h.estimated_time) <= 30)
-                  .sort((a, b) => (parseInt(a.estimated_time) || 60) - (parseInt(b.estimated_time) || 60))
-                  .slice(0, 5);
-                if (!quick.length) return null;
-                return (
-                  <div style={{ marginBottom: 24 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: t.txt }}>⚡ Quick Wins</span>
-                      <span style={{ fontSize: 10.5, color: t.txtFaint }}>Under 30 min · Easy entry</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
-                      {quick.map((hunt) => {
-                        const cash = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
-                        const cat = resolveCategory(hunt.tags, hunt.category);
-                        return (
-                          <Link key={hunt.id} href={`/hunt/${hunt.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
-                            <motion.div whileTap={{ scale: .96 }} style={{ width: 160, padding: '12px 13px', borderRadius: 16, background: t.card, border: `1px solid ${t.accent}18`, cursor: 'pointer' }}>
-                              <div style={{ fontSize: 22, marginBottom: 6 }}>{cat.emoji}</div>
-                              <p style={{ margin: '0 0 6px', fontSize: 12.5, fontWeight: 700, color: t.txt, lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{hunt.title}</p>
-                              <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: t.accent }}>${cash}</p>
-                              <p style={{ margin: '2px 0 0', fontSize: 10, color: t.txtFaint }}>{hunt.estimated_time}</p>
-                            </motion.div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.05)' }} />
-                <span style={{ fontSize: 10.5, color: t.txtFaint, fontWeight: 600 }}>All Opportunities</span>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.05)' }} />
-              </div>
-            </>
-          )}
-
-          {/* Mission list */}
-          {filtered.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0', textAlign: 'center' }}>
-              <div style={{ width: 52, height: 52, borderRadius: '50%', background: `${t.accent}0A`, border: `1px solid ${t.accent}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-                {showLocalProximity
-                  ? <Navigation size={22} strokeWidth={1.6} style={{ color: t.accent }} />
-                  : <Target size={22} strokeWidth={1.6} style={{ color: t.accent }} />
-                }
-              </div>
-              <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: t.txt }}>
-                {showLocalProximity && proximity.status !== 'granted' ? 'Enable location to see nearby missions' : 'No missions found'}
-              </p>
-              <p style={{ margin: '6px 0 0', fontSize: 13, color: t.txtDim }}>
-                {showLocalProximity && proximity.status !== 'granted'
-                  ? 'Tap Allow above to find missions near you.'
-                  : query ? `No results for "${query}"` : `No ${category} missions yet.`
-                }
-              </p>
-              {(query || locationFilter !== 'all') && (
-                <button onClick={() => { setQuery(''); setCategory('all'); setLoc('all'); setSort('recommended'); }}
-                  style={{ marginTop: 16, padding: '8px 20px', borderRadius: 999, background: t.accent, color: t.bg, fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Clear all filters
-                </button>
+          ) : isFiltering ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {filtered.length > 0 ? (
+                <>
+                  <p style={{ margin: '0 0 4px', fontSize: 12, color: t.txtFaint }}>{filtered.length} mission{filtered.length !== 1 ? 's' : ''} found</p>
+                  {filtered.map(h => <MissionCard key={h.id} hunt={h} />)}
+                </>
+              ) : (
+                <EmptyState emoji="🔍" title="No missions found" description="Try adjusting your search or filters." action={{ label: 'Clear filters', onClick: () => { setQuery(''); setCategory('all'); } }} />
               )}
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {filtered.map((hunt, i) => (
-                <ExploreCard
-                  key={hunt.id}
-                  hunt={hunt}
-                  index={i}
-                  completedIds={completedIds}
-                  profile={profile}
-                  distanceKm={hunt.distanceKm}
-                  savedHunts={savedHunts}
-                  onToggleSave={(id) => {
-                    toggleSavedHunt(id);
-                    setSavedHunts(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-                  }}
-                />
-              ))}
-            </div>
+            <>
+              {recs.length > 0 && <SectionRail title="Recommended for You" missions={recs} />}
+              {trending.length > 0 && <SectionRail title="Trending Now" missions={trending} />}
+              {urgent.length > 0 && (
+                <section style={{ marginBottom: 28 }}>
+                  <SectionHeader title="Closing Soon" count={urgent.length} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {urgent.slice(0, 3).map(h => <MissionCard key={h.id} hunt={h} />)}
+                  </div>
+                </section>
+              )}
+              {highReward.length > 0 && <SectionRail title="High Reward" missions={highReward} />}
+              {newest.length > 0 && <SectionRail title="New Missions" missions={newest} />}
+              {['climate','education','tech','future-of-work','health'].map(catId => {
+                const cat = IMPACT_CATEGORIES.find(c => c.id === catId);
+                if (!cat) return null;
+                const ms = allMissions.filter(h => resolveCategory(h.tags ?? [], h.category).id === catId).slice(0, 6);
+                if (ms.length < 2) return null;
+                return <SectionRail key={catId} title={`${cat.emoji} ${cat.label}`} missions={ms} onSeeAll={() => setCategory(catId)} />;
+              })}
+              {allMissions.length === 0 && <EmptyState emoji="🌍" title="No missions yet" description="Missions from organizations will appear here. Check back soon!" />}
+            </>
           )}
         </div>
       </div>
+
+      <BottomSheet isOpen={filterOpen} onClose={() => setFilter(false)} title="Filters">
+        <div style={{ padding: '0 20px 12px' }}>
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Location</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {LOCATION_OPTS.map(opt => (
+                <button key={opt} onClick={() => setLocDraft(opt)} style={{ padding: '7px 16px', borderRadius: 100, border: `1.5px solid ${locDraft === opt ? t.accent : t.border}`, background: locDraft === opt ? `${t.accent}18` : t.card, color: locDraft === opt ? t.accent : t.txtDim, fontSize: 13, fontWeight: locDraft === opt ? 700 : 500, cursor: 'pointer' }}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom: 24 }}>
+            <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Difficulty</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {DIFFICULTY_OPTS.map(opt => (
+                <button key={opt} onClick={() => setDiffDraft(opt)} style={{ padding: '7px 16px', borderRadius: 100, border: `1.5px solid ${diffDraft === opt ? t.ai : t.border}`, background: diffDraft === opt ? `${t.ai}18` : t.card, color: diffDraft === opt ? t.ai : t.txtDim, fontSize: 13, fontWeight: diffDraft === opt ? 700 : 500, cursor: 'pointer' }}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => { setLocDraft('All'); setDiffDraft('All'); }} style={{ flex: 1, height: 46, borderRadius: 14, background: t.card, border: `1px solid ${t.border}`, color: t.txtDim, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Clear All</button>
+            <button onClick={() => { setLocation(locDraft); setDiff(diffDraft); setFilter(false); }} style={{ flex: 2, height: 46, borderRadius: 14, background: t.accent, color: t.bg, fontSize: 14, fontWeight: 700, cursor: 'pointer', border: 'none' }}>Apply Filters</button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      <CopilotFab />
       <BottomNav />
     </div>
   );

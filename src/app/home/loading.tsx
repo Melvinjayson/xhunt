@@ -1,24 +1,24 @@
 export default function HomeLoading() {
   return (
-    <div className="min-h-screen bg-[#050816] flex flex-col">
+    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', flexDirection: 'column' }}>
       {/* Top bar */}
-      <div className="h-14 border-b border-[#0F1D35] flex items-center px-4 gap-3">
-        <div className="h-7 w-24 rounded-lg bg-[#0A1226] animate-pulse" />
-        <div className="flex-1" />
-        <div className="h-8 w-8 rounded-full bg-[#0A1226] animate-pulse" />
+      <div style={{ height: 56, borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12 }}>
+        <div style={{ height: 28, width: 96, borderRadius: 8, background: 'var(--t-card)' }} className="animate-pulse" />
+        <div style={{ flex: 1 }} />
+        <div style={{ height: 32, width: 32, borderRadius: '50%', background: 'var(--t-card)' }} className="animate-pulse" />
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-4 flex flex-col gap-4">
-        <div className="h-32 rounded-2xl bg-[#0A1226] animate-pulse" />
+      <div style={{ flex: 1, padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ height: 128, borderRadius: 16, background: 'var(--t-card)' }} className="animate-pulse" />
         <div className="grid grid-cols-2 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-28 rounded-2xl bg-[#0A1226] animate-pulse" />
+            <div key={i} style={{ height: 112, borderRadius: 16, background: 'var(--t-card)' }} className="animate-pulse" />
           ))}
         </div>
-        <div className="flex flex-col gap-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-14 rounded-xl bg-[#0A1226] animate-pulse" style={{ opacity: 1 - i * 0.2 }} />
+            <div key={i} style={{ height: 56, borderRadius: 10, background: 'var(--t-card)', opacity: 1 - i * 0.2 }} className="animate-pulse" />
           ))}
         </div>
       </div>

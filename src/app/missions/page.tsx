@@ -1,28 +1,53 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth/context';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Target, Clock, Zap, Trophy, CheckCircle2, ShieldCheck, Building2,
-  Lock, Sparkles, Bell, DollarSign, Star, Users, Calendar,
-  Brain, TrendingUp, Award, MapPin, ChevronRight, Bookmark, BookmarkCheck, Clock as ClockIcon,
+  Target, Clock, CheckCircle2, ChevronRight, Bookmark, BookmarkX,
+  Play, Eye, Gift, Share2, Award, Zap, ShieldCheck, Users,
+  MailCheck, Bot, Search, Compass, Trophy, Star, DollarSign,
+  ArrowRight, AlertCircle,
 } from 'lucide-react';
-import LinearProgress from '@mui/material/LinearProgress';
 import BottomNav from '@/components/BottomNav';
-import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
-import { loadState, saveState, loadProfile, toggleSavedHunt, getVerificationStatus } from '@/lib/store';
+import { loadState, saveState } from '@/lib/store';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
-import { MOCK_HUNTS } from '@/lib/mockHunts';
+import { createClient } from '@/lib/supabase/client';
 import {
-  DIFF_META, MISSION_TYPE_META, ORG_TYPE_META, SDG_META,
-  estimateCashReward, estimateXP, deadlineLabel, spotsLabel, resolveCategory,
+  DIFF_META, MISSION_TYPE_META, resolveCategory, estimateCashReward, estimateXP,
 } from '@/lib/missionCategories';
-import type { Hunt, ImpactProfile, VerificationRecord } from '@/lib/types';
+import { t } from '@/theme/colors';
+import type { Hunt, HuntProgress, CompletedHunt } from '@/lib/types';
+import type { DbMissionProgress } from '@/lib/supabase/types';
 
-/* ─── Unsplash thumbnails ─── */
+// ─── local storage key for saved hunts ───────────────────────────────────────
+const SAVED_KEY = 'xhunt_saved_v1';
+
+function loadSaved(): string[] {
+  if (typeof window === 'undefined') return [];
+  try { return JSON.parse(localStorage.getItem(SAVED_KEY) ?? '[]'); } catch { return []; }
+}
+function writeSaved(ids: string[]): void {
+  if (typeof window === 'undefined') return;
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify(ids)); } catch {}
+}
+
+// ─── verification record shape (from mission_progress) ───────────────────────
+type VerifStatus = 'submitted' | 'ai_reviewing' | 'manual_review' | 'approved' | 'rejected';
+interface VerifRecord {
+  missionId: string;
+  status: VerifStatus;
+  submittedAt?: string;
+}
+
+// ─── tabs ─────────────────────────────────────────────────────────────────────
+const TABS = ['Active', 'Pending Review', 'Approved', 'Completed', 'Saved'] as const;
+type Tab = typeof TABS[number];
+
+// ─── Unsplash thumbnails ──────────────────────────────────────────────────────
 const MISSION_IMAGES: Record<string, string> = {
   fitness:   'photo-1571019613454-1cb2f99b2d8b',
   adventure: 'photo-1476514525535-07fb3b4ae5f1',
@@ -38,138 +63,263 @@ const MISSION_IMAGES: Record<string, string> = {
   finance:   'photo-1611974789855-9c2a0a7236a3',
   default:   'photo-1519389950473-47ba0277781c',
 };
-function getMissionImage(tags: string[], w = 700, h = 260): string {
-  for (const t of tags) { const id = MISSION_IMAGES[t.toLowerCase()]; if (id) return `https://images.unsplash.com/${id}?w=${w}&h=${h}&fit=crop&q=75&auto=format`; }
-  return `https://images.unsplash.com/${MISSION_IMAGES.default}?w=${w}&h=${h}&fit=crop&q=75&auto=format`;
-}
-
-/* ─── tokens ─── */
-const BG     = '#050816';
-const CARD   = '#0A1226';
-const SURF   = '#07101F';
-const ACCENT = '#22FFAA';
-const AI_CLR = '#6D5DFD';
-const WARN   = '#FFB84D';
-const ERR    = '#FF5C7A';
-const TXT    = '#F0F4FF';
-const DIM    = '#8B9CC0';
-const FAINT  = '#4A5578';
-const XGLASS: React.CSSProperties = LIQUID_GLASS_STYLE;
-
-/* ─── helpers ─── */
-function matchScore(hunt: Hunt, profile: ImpactProfile | null): number | null {
-  if (!profile) return null;
-  const tl = hunt.tags.map((t) => t.toLowerCase());
-  const cl = profile.causes.map((c) => c.toLowerCase());
-  const sl = profile.strengths.map((s) => s.name.toLowerCase());
-  let s = 55;
-  for (const t of tl) {
-    if (cl.some((c) => c.includes(t) || t.includes(c))) s += 12;
-    if (sl.some((k) => k.includes(t) || t.includes(k))) s += 8;
+function getMissionImage(tags: string[]): string {
+  for (const tag of tags) {
+    const id = MISSION_IMAGES[tag.toLowerCase()];
+    if (id) return `https://images.unsplash.com/${id}?w=700&h=220&fit=crop&q=75&auto=format`;
   }
-  return Math.min(98, s + Math.round((profile.impactScore / 100) * 8));
+  return `https://images.unsplash.com/${MISSION_IMAGES.default}?w=700&h=220&fit=crop&q=75&auto=format`;
 }
 
-/* ─── tabs ─── */
-const TABS = ['All', 'Active', 'Pending', 'Saved', 'Completed'] as const;
-type Tab = typeof TABS[number];
-
-/* ─── interface ─── */
-interface SubStatus { canAccessPremiumMissions: boolean; isTrialActive: boolean; trialDaysLeft: number; tier: string; hasUsedTrial: boolean; }
-function isPremium(h: Hunt) { return h.isVerified || !!h.tenantName; }
-
-/* ─── verification badge ─── */
-const VERI_META: Record<string, { label: string; color: string; bg: string }> = {
-  submitted:      { label: 'Submitted',     color: '#60A5FA', bg: 'rgba(96,165,250,.1)'  },
-  ai_reviewing:   { label: 'AI Reviewing',  color: '#FFB84D', bg: 'rgba(255,184,77,.1)'  },
-  manual_review:  { label: 'In Review',     color: '#A99FFE', bg: 'rgba(109,93,253,.1)'  },
-  approved:       { label: 'Approved ✓',    color: '#22FFAA', bg: 'rgba(34,255,170,.1)'  },
-  rejected:       { label: 'Rejected',      color: '#FF5C7A', bg: 'rgba(255,92,122,.1)'  },
-  needs_info:     { label: 'Needs Info',    color: '#FFB84D', bg: 'rgba(255,184,77,.1)'  },
-};
-
-function VerificationBadge({ status }: { status: string }) {
-  const meta = VERI_META[status] ?? VERI_META.submitted;
+// ─── ProgressBar ─────────────────────────────────────────────────────────────
+function ProgressBar({ value, max, color = t.accent }: { value: number; max: number; color?: string }) {
+  const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: meta.color, background: meta.bg, border: `1px solid ${meta.color}25`, borderRadius: 8, padding: '3px 9px' }}>
-      <span style={{ width: 5, height: 5, borderRadius: '50%', background: meta.color, display: 'inline-block' }} />
-      {meta.label}
-    </span>
+    <div style={{ height: 4, borderRadius: 999, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${pct}%` }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        style={{ height: '100%', borderRadius: 999, background: color, boxShadow: `0 0 6px ${color}60` }}
+      />
+    </div>
   );
 }
 
-/* ─── rich mission card ─── */
-function MissionCard({ hunt, done, locked, profile, index, savedHunts, onToggleSave, verificationRecord, stepProgress }: {
-  hunt: Hunt; done: boolean; locked: boolean;
-  profile: ImpactProfile | null; index: number;
-  savedHunts: string[];
-  onToggleSave: (id: string) => void;
-  verificationRecord?: VerificationRecord | null;
-  stepProgress?: { currentStepIndex: number; completedSteps: number[] } | null;
+// ─── StatusPill ───────────────────────────────────────────────────────────────
+type PillVariant = 'active' | 'pending' | 'reviewing' | 'approved' | 'completed' | 'saved' | 'rejected';
+const PILL_STYLES: Record<PillVariant, { label: string; color: string; Icon: React.ElementType }> = {
+  active:    { label: 'Active',        color: t.accent,   Icon: Play          },
+  pending:   { label: 'Submitted',     color: t.info,     Icon: MailCheck     },
+  reviewing: { label: 'AI Review',     color: t.ai,       Icon: Bot           },
+  approved:  { label: 'Approved',      color: t.success,  Icon: CheckCircle2  },
+  completed: { label: 'Completed',     color: t.accent,   Icon: Trophy        },
+  saved:     { label: 'Saved',         color: t.txtDim,   Icon: Bookmark      },
+  rejected:  { label: 'Not Approved',  color: t.error,    Icon: AlertCircle   },
+};
+
+function StatusPill({ variant }: { variant: PillVariant }) {
+  const { label, color, Icon } = PILL_STYLES[variant];
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      fontSize: 9.5, fontWeight: 700, color,
+      background: `${color}12`, border: `1px solid ${color}28`,
+      padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '.04em',
+    }}>
+      <Icon size={9} strokeWidth={2.5} />
+      {label}
+    </div>
+  );
+}
+
+// ─── Verification Timeline ────────────────────────────────────────────────────
+const VERIF_STAGES: { key: VerifStatus; label: string; Icon: React.ElementType }[] = [
+  { key: 'submitted',    label: 'Submitted',    Icon: MailCheck },
+  { key: 'ai_reviewing', label: 'AI Review',    Icon: Bot       },
+  { key: 'manual_review',label: 'Human Review', Icon: Search    },
+  { key: 'approved',     label: 'Approved',     Icon: CheckCircle2 },
+];
+
+function VerifTimeline({ status }: { status: VerifStatus }) {
+  const stageKeys = VERIF_STAGES.map((s) => s.key);
+  const currentIdx = stageKeys.indexOf(status);
+  return (
+    <div style={{ paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.05)' }}>
+      <p style={{ margin: '0 0 10px', fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.07em' }}>
+        Verification Progress
+      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+        {VERIF_STAGES.map((stage, i) => {
+          const done    = i < currentIdx;
+          const current = i === currentIdx;
+          const pending = i > currentIdx;
+          const color   = done ? t.accent : current ? t.ai : t.txtFaint;
+          const { Icon } = stage;
+          return (
+            <div key={stage.key} style={{ display: 'flex', alignItems: 'center', flex: i < VERIF_STAGES.length - 1 ? '1 1 auto' : undefined }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                  background: done ? `${t.accent}18` : current ? `${t.ai}18` : 'rgba(255,255,255,.04)',
+                  border: `1.5px solid ${color}${done ? '60' : current ? '80' : '28'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: current ? `0 0 10px ${t.ai}40` : 'none',
+                }}>
+                  <Icon size={11} strokeWidth={2.5} style={{ color }} />
+                </div>
+                <span style={{ fontSize: 8.5, fontWeight: current ? 800 : 600, color, whiteSpace: 'nowrap', textAlign: 'center', maxWidth: 52 }}>
+                  {stage.label}
+                </span>
+              </div>
+              {i < VERIF_STAGES.length - 1 && (
+                <div style={{ flex: 1, height: 1.5, background: done ? `linear-gradient(90deg,${t.accent}60,${t.accent}20)` : 'rgba(255,255,255,.08)', margin: '0 2px', marginBottom: 18 }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── EmptyState ───────────────────────────────────────────────────────────────
+function EmptyState({
+  icon: Icon, title, subtitle, actionLabel, actionHref,
+}: {
+  icon: React.ElementType; title: string; subtitle: string;
+  actionLabel?: string; actionHref?: string;
 }) {
-  const cash    = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
-  const xp      = estimateXP(hunt.xpReward, hunt.difficulty, hunt.steps.length);
-  const diff    = DIFF_META[hunt.difficulty] ?? DIFF_META.easy;
-  const cat     = resolveCategory(hunt.tags, hunt.category);
-  const mtype   = hunt.missionType ? MISSION_TYPE_META[hunt.missionType] : null;
-  const orgType = hunt.organizationType ? ORG_TYPE_META[hunt.organizationType] : null;
-  const dlLabel = deadlineLabel(hunt.deadline);
-  const spLabel = spotsLabel(hunt.spotsRemaining, hunt.spotsTotal);
-  const ms      = matchScore(hunt, profile);
-  const msColor = ms == null ? DIM : ms >= 80 ? ACCENT : ms >= 65 ? WARN : DIM;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '64px 24px', textAlign: 'center' }}
+    >
+      <div style={{
+        width: 56, height: 56, borderRadius: '50%',
+        background: `${t.accent}0D`, border: `1px solid ${t.accent}20`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+      }}>
+        <Icon size={24} strokeWidth={1.4} style={{ color: t.accent }} />
+      </div>
+      <p style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, color: t.txt }}>{title}</p>
+      <p style={{ margin: '0 0 20px', fontSize: 13, color: t.txtDim, lineHeight: 1.5 }}>{subtitle}</p>
+      {actionLabel && actionHref && (
+        <Link href={actionHref} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 7,
+          padding: '11px 22px', borderRadius: 14,
+          background: t.accent, color: t.bg,
+          fontWeight: 800, fontSize: 13, textDecoration: 'none',
+          boxShadow: `0 0 24px ${t.accent}35`,
+        }}>
+          <Compass size={13} strokeWidth={2.5} />
+          {actionLabel}
+        </Link>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── MissionCard row ─────────────────────────────────────────────────────────
+interface MissionRowProps {
+  hunt: Hunt;
+  tab: Tab;
+  progress?: HuntProgress;
+  verif?: VerifRecord;
+  saved?: boolean;
+  onRemoveSaved?: (id: string) => void;
+  index: number;
+}
+
+function MissionRow({ hunt, tab, progress, verif, saved, onRemoveSaved, index }: MissionRowProps) {
   const [imgFailed, setImgFailed] = useState(false);
+  const cat      = resolveCategory(hunt.tags, hunt.category);
+  const diff     = DIFF_META[hunt.difficulty] ?? DIFF_META.easy;
+  const mtype    = hunt.missionType ? MISSION_TYPE_META[hunt.missionType] : null;
+  const cash     = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
+  const xp       = estimateXP(hunt.xpReward, hunt.difficulty, hunt.steps.length);
   const thumbImg = getMissionImage(hunt.tags);
+
+  const stepsDone  = progress?.completedSteps.length ?? 0;
+  const stepsTotal = hunt.steps.length;
+
+  // pill variant
+  const pillVariant: PillVariant =
+    tab === 'Active'        ? 'active'
+    : tab === 'Approved'    ? 'approved'
+    : tab === 'Completed'   ? 'completed'
+    : tab === 'Saved'       ? 'saved'
+    : verif?.status === 'ai_reviewing'  ? 'reviewing'
+    : verif?.status === 'manual_review' ? 'reviewing'
+    : 'pending';
+
+  // primary CTA
+  let ctaHref  = `/hunt/${hunt.id}`;
+  let ctaLabel = 'View Mission';
+  let ctaIcon  = <Eye size={13} strokeWidth={2.5} />;
+  let ctaBg: string    = `${t.ai}14`;
+  let ctaColor: string = t.ai;
+  let ctaBorder: string= `1px solid ${t.ai}28`;
+  let ctaShadow: string= 'none';
+
+  if (tab === 'Active') {
+    ctaHref   = `/active/${hunt.id}`;
+    ctaLabel  = 'Continue';
+    ctaIcon   = <Play size={13} strokeWidth={2.5} />;
+    ctaBg     = t.accent;
+    ctaColor  = t.bg;
+    ctaBorder = 'none';
+    ctaShadow = `0 0 24px ${t.accent}35`;
+  } else if (tab === 'Pending Review') {
+    ctaHref   = `/complete/${hunt.id}`;
+    ctaLabel  = 'View Status';
+    ctaIcon   = <Eye size={13} strokeWidth={2.5} />;
+    ctaBg     = `${t.ai}14`;
+    ctaColor  = t.ai;
+    ctaBorder = `1px solid ${t.ai}28`;
+  } else if (tab === 'Approved') {
+    ctaHref   = `/complete/${hunt.id}`;
+    ctaLabel  = 'Claim Reward';
+    ctaIcon   = <Gift size={13} strokeWidth={2.5} />;
+    ctaBg     = `${t.accent}14`;
+    ctaColor  = t.accent;
+    ctaBorder = `1px solid ${t.accent}28`;
+  } else if (tab === 'Completed') {
+    ctaHref   = `/complete/${hunt.id}`;
+    ctaLabel  = 'View Certificate';
+    ctaIcon   = <Award size={13} strokeWidth={2.5} />;
+    ctaBg     = `${t.accent}08`;
+    ctaColor  = t.accent;
+    ctaBorder = `1px solid ${t.accent}18`;
+  } else if (tab === 'Saved') {
+    ctaHref   = `/hunt/${hunt.id}`;
+    ctaLabel  = 'View Mission';
+    ctaIcon   = <ArrowRight size={13} strokeWidth={2.5} />;
+    ctaBg     = `${t.accent}14`;
+    ctaColor  = t.accent;
+    ctaBorder = `1px solid ${t.accent}28`;
+  }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.055, duration: 0.28 }}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, duration: 0.28 }}
       className="liquid-glass"
-      style={{ borderRadius: 22, overflow: 'hidden', opacity: locked ? 0.78 : 1, position: 'relative',
-        background: done ? 'rgba(255,255,255,.025)' : CARD,
-        border: `1px solid ${done ? 'rgba(255,255,255,.06)' : cat.color + '22'}`,
-        boxShadow: done ? 'none' : `0 0 40px ${cat.color}08` }}>
-
-      {/* ── thumbnail banner ── */}
-      <div style={{ position: 'relative', height: 120, overflow: 'hidden', background: '#030A18' }}>
+      style={{
+        borderRadius: 22, overflow: 'hidden', position: 'relative',
+        background: t.card,
+        border: `1px solid ${cat.color}1A`,
+        boxShadow: `0 0 40px ${cat.color}06`,
+      }}
+    >
+      {/* thumbnail */}
+      <div style={{ position: 'relative', height: 108, overflow: 'hidden', background: t.bg }}>
         {!imgFailed && (
-          <Image src={thumbImg} alt="" fill style={{ objectFit: 'cover', objectPosition: 'center', opacity: done ? 0.3 : locked ? 0.4 : 0.78 }}
-            onError={() => setImgFailed(true)} unoptimized />
+          <Image
+            src={thumbImg} alt="" fill unoptimized
+            style={{ objectFit: 'cover', objectPosition: 'center', opacity: 0.72 }}
+            onError={() => setImgFailed(true)}
+          />
         )}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(10,18,38,.9) 100%)' }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: done ? 'rgba(255,255,255,.08)' : `linear-gradient(90deg,${cat.color},${cat.color}00)` }} />
-        {/* status badge */}
-        {done && (
-          <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(5,8,22,.88)', border: `1px solid ${ACCENT}40`, borderRadius: 999, padding: '3px 9px' }}>
-            <CheckCircle2 size={9} strokeWidth={2.5} style={{ color: ACCENT }} /><span style={{ fontSize: 9.5, fontWeight: 700, color: ACCENT }}>Completed</span>
-          </div>
-        )}
-        {locked && (
-          <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(5,8,22,.88)', border: `1px solid ${AI_CLR}40`, borderRadius: 999, padding: '3px 9px' }}>
-            <Sparkles size={9} strokeWidth={2.5} style={{ color: AI_CLR }} /><span style={{ fontSize: 9.5, fontWeight: 700, color: AI_CLR }}>Premium</span>
-          </div>
-        )}
-        {ms != null && !done && !locked && (
-          <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', alignItems: 'center', gap: 3, background: 'rgba(5,8,22,.88)', border: `1px solid ${msColor}40`, borderRadius: 999, padding: '3px 9px' }}>
-            <TrendingUp size={9} strokeWidth={2.5} style={{ color: msColor }} /><span style={{ fontSize: 9.5, fontWeight: 800, color: msColor }}>{ms}% match</span>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,transparent 0%,rgba(10,18,38,.92) 100%)' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1.5, background: `linear-gradient(90deg,${cat.color}60,${cat.color}00)` }} />
+        {/* status badge overlay */}
+        <div style={{ position: 'absolute', top: 10, left: 10 }}>
+          <StatusPill variant={pillVariant} />
+        </div>
+        {/* match score or cert */}
+        {hunt.certificationReward && (
+          <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', alignItems: 'center', gap: 3, background: 'rgba(5,8,22,.75)', border: `1px solid ${t.warning}40`, borderRadius: 999, padding: '3px 9px', backdropFilter: 'blur(8px)' }}>
+            <Award size={9} strokeWidth={2.5} style={{ color: t.warning }} />
+            <span style={{ fontSize: 9.5, fontWeight: 700, color: t.warning }}>Certificate</span>
           </div>
         )}
       </div>
 
       <div style={{ padding: '14px 16px 0' }}>
-
-        {/* row 1 — type + org + status badges */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-          {done && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9.5, fontWeight: 700, color: ACCENT, background: `${ACCENT}10`, border: `1px solid ${ACCENT}20`, padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '.04em' }}>
-              <CheckCircle2 size={9} strokeWidth={2.5} /> Completed
-            </div>
-          )}
-          {locked && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9.5, fontWeight: 700, color: AI_CLR, background: `${AI_CLR}10`, border: `1px solid ${AI_CLR}20`, padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '.04em' }}>
-              <Sparkles size={9} strokeWidth={2.5} /> Premium
-            </div>
-          )}
+        {/* badges row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 10, flexWrap: 'wrap' }}>
           {mtype && (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9.5, fontWeight: 700, color: mtype.color, background: `${mtype.color}10`, border: `1px solid ${mtype.color}20`, padding: '2px 8px', borderRadius: 999 }}>
               <span style={{ fontSize: 10 }}>{mtype.emoji}</span> {mtype.label}
@@ -178,293 +328,376 @@ function MissionCard({ hunt, done, locked, profile, index, savedHunts, onToggleS
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9.5, fontWeight: 700, color: cat.color, background: `${cat.color}10`, border: `1px solid ${cat.color}20`, padding: '2px 8px', borderRadius: 999 }}>
             <span style={{ fontSize: 10 }}>{cat.emoji}</span> {cat.label}
           </div>
-        </div>
-
-        {/* row 2 — icon + title + match */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 8 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: locked ? 'rgba(255,255,255,.04)' : `${cat.color}14`, border: `1px solid ${locked ? 'rgba(255,255,255,.06)' : cat.color + '22'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
-            {locked ? <Lock size={18} style={{ color: FAINT }} strokeWidth={2} /> : cat.emoji}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{ margin: '0 0 3px', fontSize: 15, fontWeight: 800, color: done ? DIM : TXT, lineHeight: 1.25, letterSpacing: '-.01em' }}>{hunt.title}</h3>
-            {/* org + verified */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              {orgType && <span style={{ fontSize: 10 }}>{orgType.emoji}</span>}
-              <span style={{ fontSize: 11, color: FAINT, fontWeight: 500 }}>{hunt.tenantName ?? 'X-Hunt Community'}</span>
-              {hunt.isVerified && <ShieldCheck size={10} strokeWidth={2.5} style={{ color: ACCENT }} />}
-            </div>
-          </div>
-        </div>
-
-        {/* description excerpt */}
-        <p style={{ margin: '0 0 10px', fontSize: 12.5, color: DIM, lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {hunt.story_context}
-        </p>
-
-        {/* skills/tags */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
-          {(hunt.requiredSkills ?? hunt.tags).slice(0, 4).map((tag) => (
-            <span key={tag} style={{ fontSize: 10, color: DIM, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', padding: '2px 9px', borderRadius: 999 }}>{tag}</span>
-          ))}
-        </div>
-
-        {/* SDG pills */}
-        {(hunt.sdgGoals?.length ?? 0) > 0 && (
-          <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>
-            {(hunt.sdgGoals ?? []).slice(0, 3).map((g) => {
-              const meta = SDG_META[g as keyof typeof SDG_META];
-              return meta ? (
-                <div key={g} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: `${meta.color}14`, border: `1px solid ${meta.color}22`, borderRadius: 8, padding: '2px 7px' }}>
-                  <span style={{ fontSize: 10 }}>{meta.emoji}</span>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: meta.color }}>SDG {g}</span>
-                </div>
-              ) : null;
-            })}
-          </div>
-        )}
-
-        {/* econometrics bar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,.06)', marginBottom: 12 }}>
-          {/* cash */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <DollarSign size={12} strokeWidth={2} style={{ color: ACCENT }} />
-            <span style={{ fontSize: 13.5, fontWeight: 900, color: done ? FAINT : ACCENT, letterSpacing: '-.02em' }}>${cash}</span>
-          </div>
-          <div style={{ width: 3, height: 3, borderRadius: '50%', background: FAINT }} />
-          {/* xp */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Star size={11} strokeWidth={2} style={{ color: AI_CLR }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: done ? FAINT : AI_CLR }}>+{xp} XP</span>
-          </div>
-          {/* cert */}
-          {hunt.certificationReward && (
-            <>
-              <div style={{ width: 3, height: 3, borderRadius: '50%', background: FAINT }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Award size={11} strokeWidth={2} style={{ color: WARN }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: WARN }}>Cert</span>
-              </div>
-            </>
-          )}
-          {/* time */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-            <Clock size={11} strokeWidth={2} style={{ color: FAINT }} />
-            <span style={{ fontSize: 11, color: DIM }}>{hunt.estimated_time}</span>
-          </div>
-        </div>
-
-        {/* urgency + location row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, background: `${diff.color}10`, border: `1px solid ${diff.color}20` }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, background: `${diff.color}10`, border: `1px solid ${diff.color}20` }}>
             <Zap size={9} strokeWidth={2.5} style={{ color: diff.color }} />
             <span style={{ fontSize: 9.5, fontWeight: 700, color: diff.color }}>{diff.label}</span>
           </div>
-          {hunt.locationType && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <MapPin size={10} strokeWidth={2} style={{ color: FAINT }} />
-              <span style={{ fontSize: 10, color: FAINT, textTransform: 'capitalize' }}>{hunt.locationType}</span>
-            </div>
-          )}
-          {dlLabel && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Calendar size={10} strokeWidth={2} style={{ color: dlLabel.color }} />
-              <span style={{ fontSize: 10, fontWeight: 700, color: dlLabel.color }}>{dlLabel.label}</span>
-            </div>
-          )}
-          {spLabel && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-              <Users size={10} strokeWidth={2} style={{ color: spLabel.color }} />
-              <span style={{ fontSize: 10, fontWeight: 700, color: spLabel.color }}>{spLabel.label}</span>
-            </div>
-          )}
         </div>
+
+        {/* title + org */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 8 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 13, flexShrink: 0, background: `${cat.color}12`, border: `1px solid ${cat.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
+            {cat.emoji}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h3 style={{ margin: '0 0 3px', fontSize: 15, fontWeight: 800, color: t.txt, lineHeight: 1.25, letterSpacing: '-.01em' }}>
+              {hunt.title}
+            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ fontSize: 11, color: t.txtFaint, fontWeight: 500 }}>{hunt.tenantName ?? 'X-Hunt Community'}</span>
+              {hunt.isVerified && <ShieldCheck size={10} strokeWidth={2.5} style={{ color: t.accent }} />}
+            </div>
+          </div>
+        </div>
+
+        {/* description */}
+        <p style={{ margin: '0 0 10px', fontSize: 12.5, color: t.txtDim, lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {hunt.story_context}
+        </p>
+
+        {/* econometrics row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,.06)', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <DollarSign size={12} strokeWidth={2} style={{ color: t.accent }} />
+            <span style={{ fontSize: 13.5, fontWeight: 900, color: t.accent, letterSpacing: '-.02em' }}>${cash}</span>
+          </div>
+          <div style={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Star size={11} strokeWidth={2} style={{ color: t.ai }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: t.ai }}>+{xp} XP</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+            <Clock size={11} strokeWidth={2} style={{ color: t.txtFaint }} />
+            <span style={{ fontSize: 11, color: t.txtDim }}>{hunt.estimated_time}</span>
+          </div>
+        </div>
+
+        {/* active progress bar */}
+        {tab === 'Active' && stepsTotal > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 10.5, color: t.txtDim, fontWeight: 600 }}>Progress</span>
+              <span style={{ fontSize: 10.5, color: t.accent, fontWeight: 700 }}>
+                Step {(progress?.currentStepIndex ?? 0) + 1} of {stepsTotal}
+              </span>
+            </div>
+            <ProgressBar value={stepsDone} max={stepsTotal} color={t.accent} />
+          </div>
+        )}
+
+        {/* pending review verification timeline */}
+        {tab === 'Pending Review' && verif && (
+          <div style={{ marginBottom: 12 }}>
+            <VerifTimeline status={verif.status} />
+          </div>
+        )}
+
+        {/* completed: participants badge */}
+        {tab === 'Completed' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, padding: '8px 12px', borderRadius: 12, background: `${t.accent}08`, border: `1px solid ${t.accent}18` }}>
+            <Trophy size={13} strokeWidth={2} style={{ color: t.accent }} />
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: t.accent }}>Mission Complete</span>
+            {hunt.applicationCount != null && (
+              <span style={{ fontSize: 10, color: t.txtFaint, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3 }}>
+                <Users size={10} strokeWidth={2} /> {hunt.applicationCount} participants
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* CTA */}
-      <div style={{ padding: '0 16px 16px' }}>
-        {done ? (
-          <Link href="/profile" style={{ height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: `${ACCENT}06`, border: `1px solid ${ACCENT}14`, textDecoration: 'none' }}>
-            <CheckCircle2 size={14} strokeWidth={2.5} style={{ color: ACCENT }} />
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: ACCENT }}>Completed · View Portfolio</span>
-          </Link>
-        ) : locked ? (
-          <Link href="/upgrade" style={{ height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: `${AI_CLR}0A`, border: `1px solid ${AI_CLR}22`, color: AI_CLR, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-            <Sparkles size={13} strokeWidth={2.5} /> Unlock with Trial
-          </Link>
-        ) : (
-          <Link href={`/missions/${hunt.id}`} style={{ height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: ACCENT, boxShadow: `0 0 24px ${ACCENT}30`, color: BG, fontSize: 13.5, fontWeight: 900, textDecoration: 'none' }}>
-            <Target size={14} strokeWidth={2.5} /> Start Mission
-          </Link>
+      {/* CTAs */}
+      <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>
+        <Link href={ctaHref} style={{
+          flex: 1, height: 44, borderRadius: 14,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+          background: ctaBg, color: ctaColor, border: ctaBorder,
+          boxShadow: ctaShadow, fontSize: 13, fontWeight: 700, textDecoration: 'none',
+        }}>
+          {ctaIcon}
+          {ctaLabel}
+        </Link>
+        {/* secondary action */}
+        {tab === 'Approved' && (
+          <button style={{
+            width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.09)',
+            cursor: 'pointer',
+          }}>
+            <Share2 size={14} strokeWidth={2} style={{ color: t.txtDim }} />
+          </button>
+        )}
+        {tab === 'Completed' && (
+          <button style={{
+            width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.09)',
+            cursor: 'pointer',
+          }}>
+            <Share2 size={14} strokeWidth={2} style={{ color: t.txtDim }} />
+          </button>
+        )}
+        {tab === 'Saved' && (
+          <button
+            onClick={() => onRemoveSaved?.(hunt.id)}
+            style={{
+              width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: `${t.error}0A`, border: `1px solid ${t.error}22`,
+              cursor: 'pointer',
+            }}
+          >
+            <BookmarkX size={14} strokeWidth={2} style={{ color: t.error }} />
+          </button>
         )}
       </div>
     </motion.div>
   );
 }
 
-/* ─── page ─── */
-export default function MissionsPage() {
-  const router = useRouter();
-  const [hunts, setHunts]         = useState<Hunt[]>([]);
-  const [completedIds, setIds]    = useState<string[]>([]);
-  const [streak, setStreak]       = useState(0);
-  const [tab, setTab]             = useState<Tab>('All');
-  const [mounted, setMounted]     = useState(false);
-  const [subStatus, setSub]       = useState<SubStatus | null>(null);
-  const [profile, setProfile]     = useState<ImpactProfile | null>(null);
-  const [savedHunts, setSavedHunts] = useState<string[]>([]);
-  const [verificationMap, setVMap] = useState<Record<string, VerificationRecord>>({});
-  const [progress, setProgress]   = useState<Record<string, { currentStepIndex: number; completedSteps: number[] }>>({});
+// ─── CopilotFab ───────────────────────────────────────────────────────────────
+function CopilotFab() {
+  return (
+    <motion.button
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ delay: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
+      whileTap={{ scale: 0.9 }}
+      style={{
+        position: 'fixed', bottom: 84, right: 18, zIndex: 60,
+        width: 52, height: 52, borderRadius: '50%',
+        background: `linear-gradient(135deg, ${t.ai}, ${t.accent})`,
+        border: 'none', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: `0 4px 24px ${t.ai}50, 0 0 0 1px ${t.ai}30`,
+      }}
+    >
+      <Bot size={22} strokeWidth={2} style={{ color: '#fff' }} />
+    </motion.button>
+  );
+}
 
+// ─── page ─────────────────────────────────────────────────────────────────────
+export default function MyMissionsPage() {
+  const router  = useRouter();
+  const { user: authUser, isLoaded } = useAuth();
+
+  const [mounted, setMounted]           = useState(false);
+  const [tab, setTab]                   = useState<Tab>('Active');
+  const [hunts, setHunts]               = useState<Hunt[]>([]);
+  const [progress, setProgress]         = useState<Record<string, HuntProgress>>({});
+  const [completedHunts, setCompleted]  = useState<CompletedHunt[]>([]);
+  const [savedIds, setSavedIds]         = useState<string[]>([]);
+  const [verifMap, setVerifMap]         = useState<Record<string, VerifRecord>>({});
+
+  // ── auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!isLoaded) return;
+    if (!authUser) { router.replace('/sign-in'); return; }
+
     const state = loadState();
     if (!state.user?.onboardingComplete) { router.replace('/get-started'); return; }
-    setIds(state.completedHunts.map((h) => h.huntId));
-    setStreak(state.streak);
-    setHunts(state.hunts.length > 0 ? state.hunts : MOCK_HUNTS);
-    setProfile(loadProfile());
+
+    setProgress(state.progress);
+    setCompleted(state.completedHunts);
+    setHunts(state.hunts);
+    setSavedIds(loadSaved());
     setMounted(true);
-    setSavedHunts(state.savedHunts ?? []);
-    setVMap(state.verificationStatus ?? {});
-    setProgress(state.progress ?? {});
-    void fetch('/api/subscription/status').then((r) => r.json())
-      .then((d: SubStatus) => setSub(d))
-      .catch(() => setSub({ canAccessPremiumMissions: false, isTrialActive: false, trialDaysLeft: 0, tier: 'free', hasUsedTrial: false }));
+
+    // fetch fresh missions from Supabase
     void fetchSupabaseMissions().then((r) => {
-      if (r?.length) { setHunts(r); const s = loadState(); saveState({ ...s, hunts: r }); } else if (!state.hunts.length) { setHunts(MOCK_HUNTS); }
+      if (r?.length) {
+        setHunts(r);
+        const s = loadState();
+        saveState({ ...s, hunts: r });
+      }
     });
-  }, [router]);
 
-  if (!mounted) return (
-    <div style={{ minHeight: '100vh', background: BG, padding: '80px 16px' }}>
-      <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} style={{ height: 140, borderRadius: 20, background: SURF, opacity: 0.5, border: `1px solid rgba(240,244,255,0.04)` }} />
-        ))}
-      </div>
-    </div>
-  );
+    // fetch verification statuses from mission_progress
+    void (async () => {
+      try {
+        const sb = createClient();
+        const { data } = await sb
+          .from('mission_progress')
+          .select('*')
+          .order('started_at', { ascending: false }) as { data: DbMissionProgress[] | null };
+        if (!data) return;
+        const map: Record<string, VerifRecord> = {};
+        for (const row of data) {
+          // map DB completion state to verif status
+          let status: VerifStatus = 'submitted';
+          if (row.completed_at) status = 'approved';
+          else if (row.current_step_index > 0) status = 'ai_reviewing';
+          map[row.mission_id] = { missionId: row.mission_id, status, submittedAt: row.started_at };
+        }
+        setVerifMap(map);
+      } catch {
+        // non-fatal — continue with empty map
+      }
+    })();
+  }, [isLoaded, authUser, router]);
 
-  const canPremium   = subStatus?.canAccessPremiumMissions ?? false;
-  const activeHunts  = hunts.filter((h) => !completedIds.includes(h.id));
-  const doneHunts    = hunts.filter((h) =>  completedIds.includes(h.id));
-  const pendingHunts = hunts.filter((h) => {
-    const v = verificationMap[h.id];
-    return v && ['submitted', 'ai_reviewing', 'manual_review'].includes(v.status);
-  });
-  const savedHuntsList = hunts.filter((h) => savedHunts.includes(h.id));
-  const filtered = tab === 'Active' ? activeHunts
-    : tab === 'Completed' ? doneHunts
-    : tab === 'Pending' ? pendingHunts
-    : tab === 'Saved' ? savedHuntsList
-    : hunts;
+  const removeSaved = useCallback((id: string) => {
+    setSavedIds((prev) => {
+      const next = prev.filter((x) => x !== id);
+      writeSaved(next);
+      return next;
+    });
+  }, []);
 
-  /* aggregate econometrics */
-  const totalCashAvailable = activeHunts.reduce((acc, h) => acc + estimateCashReward(h.cashReward, h.difficulty, h.missionType), 0);
-  const totalXPAvailable   = activeHunts.reduce((acc, h) => acc + estimateXP(h.xpReward, h.difficulty, h.steps.length), 0);
-  const totalEarned        = doneHunts.reduce((acc, h) => acc + estimateCashReward(h.cashReward, h.difficulty, h.missionType), 0);
+  if (!mounted) return null;
 
-  function handleClick(hunt: Hunt) {
-    const locked = isPremium(hunt) && !canPremium && !completedIds.includes(hunt.id);
-    router.push(locked ? '/upgrade' : `/hunt/${hunt.id}`);
-  }
+  // ── tab filtering ─────────────────────────────────────────────────────────
+  const completedIds = new Set(completedHunts.map((c) => c.huntId));
+
+  const huntById = (id: string) => hunts.find((h) => h.id === id) ?? null;
+
+  const activeHunts = Object.entries(progress)
+    .filter(([, p]) => !p.completedAt && !completedIds.has(p.huntId))
+    .map(([id]) => huntById(id))
+    .filter(Boolean) as Hunt[];
+
+  const pendingHunts = Object.values(verifMap)
+    .filter((v) => ['submitted', 'ai_reviewing', 'manual_review'].includes(v.status))
+    .map((v) => huntById(v.missionId))
+    .filter(Boolean) as Hunt[];
+
+  const approvedHunts = Object.values(verifMap)
+    .filter((v) => v.status === 'approved' && completedIds.has(v.missionId))
+    .map((v) => huntById(v.missionId))
+    .filter(Boolean) as Hunt[];
+
+  const completedList = completedHunts
+    .map((c) => huntById(c.huntId))
+    .filter(Boolean) as Hunt[];
+
+  const savedHunts = savedIds
+    .map((id) => huntById(id))
+    .filter(Boolean) as Hunt[];
+
+  const tabCounts: Record<Tab, number> = {
+    'Active':         activeHunts.length,
+    'Pending Review': pendingHunts.length,
+    'Approved':       approvedHunts.length,
+    'Completed':      completedList.length,
+    'Saved':          savedHunts.length,
+  };
+
+  const listedHunts: Hunt[] =
+    tab === 'Active'        ? activeHunts
+    : tab === 'Pending Review' ? pendingHunts
+    : tab === 'Approved'    ? approvedHunts
+    : tab === 'Completed'   ? completedList
+    : savedHunts;
+
+  const emptyProps: Record<Tab, { icon: React.ElementType; title: string; subtitle: string; actionLabel?: string; actionHref?: string }> = {
+    'Active':         { icon: Target,   title: 'No active missions',      subtitle: 'Pick up a mission and start making an impact.', actionLabel: 'Find Opportunities', actionHref: '/explore' },
+    'Pending Review': { icon: MailCheck, title: 'Nothing under review',   subtitle: 'Submit a mission to see it here.' },
+    'Approved':       { icon: CheckCircle2, title: 'No approved missions yet', subtitle: 'Keep going — approvals appear here when earned.' },
+    'Completed':      { icon: Trophy,   title: 'No completed missions',   subtitle: 'Finish your first mission to see it here.', actionLabel: 'Start your first mission', actionHref: '/explore' },
+    'Saved':          { icon: Bookmark, title: 'No saved missions',       subtitle: 'Bookmark missions you want to revisit.', actionLabel: 'Explore missions', actionHref: '/explore' },
+  };
 
   return (
-    <div className="consumer-app" style={{ minHeight: '100vh', paddingBottom: 100, background: BG, color: TXT }}>
-      <div style={{ maxWidth: 680, margin: '0 auto' }}>
+    <div className="consumer-app" style={{ minHeight: '100vh', paddingBottom: 100, background: t.bg, color: t.txt }}>
+      {/* ambient glows */}
+      <div style={{ position: 'fixed', top: -80, right: -80, width: 300, height: 300, borderRadius: '50%', background: `radial-gradient(circle,${t.accent}07 0%,transparent 65%)`, pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'fixed', bottom: 120, left: -60, width: 200, height: 200, borderRadius: '50%', background: `radial-gradient(circle,${t.ai}06 0%,transparent 65%)`, pointerEvents: 'none', zIndex: 0 }} />
 
-        {/* ── HEADER ── */}
-        <div style={{ padding: '56px 20px 0' }}>
+      <div className="consumer-app-inner" style={{ maxWidth: 430, margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
-          {/* trial banners */}
-          {subStatus?.isTrialActive && subStatus.trialDaysLeft <= 3 && (
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-              style={{ borderRadius: 14, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10, background: `${WARN}0A`, border: `1px solid ${WARN}22` }}>
-              <span>⏳</span>
-              <p style={{ margin: 0, fontSize: 12, color: WARN, fontWeight: 600 }}>Trial ends in {subStatus.trialDaysLeft} day{subStatus.trialDaysLeft !== 1 ? 's' : ''}</p>
-              <button onClick={() => router.push('/upgrade')} style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: WARN, background: `${WARN}18`, border: 'none', padding: '4px 10px', borderRadius: 999, cursor: 'pointer' }}>Upgrade</button>
-            </motion.div>
-          )}
-          {subStatus && !subStatus.canAccessPremiumMissions && !subStatus.hasUsedTrial && (
-            <motion.button initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} onClick={() => router.push('/upgrade')}
-              style={{ width: '100%', borderRadius: 14, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10, background: `${AI_CLR}0A`, border: `1px solid ${AI_CLR}22`, cursor: 'pointer', textAlign: 'left' }}>
-              <Sparkles size={15} style={{ color: AI_CLR }} strokeWidth={2} />
-              <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: AI_CLR }}>Unlock AI + Premium Missions</p>
-                <p style={{ margin: 0, fontSize: 11, color: FAINT }}>Start your free 14-day trial</p>
-              </div>
-              <ChevronRight size={14} style={{ color: AI_CLR }} strokeWidth={2} />
-            </motion.button>
-          )}
-
-          {/* title row */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+        {/* ── PAGE HEADER ── */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ padding: '56px 20px 0' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
             <div>
-              <span style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: FAINT, marginBottom: 4 }}>Mission Marketplace</span>
-              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 900, letterSpacing: '-.03em', color: TXT }}>My Missions</h1>
+              <span style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: t.txtFaint, marginBottom: 4 }}>
+                Participation
+              </span>
+              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 900, letterSpacing: '-.03em', color: t.txt }}>
+                My Missions
+              </h1>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {streak > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 999, background: `${WARN}12`, border: `1px solid ${WARN}22` }}>
-                  <span style={{ fontSize: 13 }}>🔥</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: WARN }}>{streak}</span>
+            {/* summary chips */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, paddingTop: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 999, background: `${t.accent}0F`, border: `1px solid ${t.accent}22` }}>
+                  <Play size={10} strokeWidth={2.5} style={{ color: t.accent }} />
+                  <span style={{ fontSize: 11, fontWeight: 800, color: t.accent }}>{activeHunts.length} active</span>
                 </div>
-              )}
-              <button style={{ width: 40, height: 40, borderRadius: 12, border: '1px solid rgba(255,255,255,.08)', background: 'rgba(255,255,255,.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <Bell size={17} strokeWidth={1.8} style={{ color: DIM }} />
-              </button>
-            </div>
-          </div>
-
-          {/* ── ECONOMETRICS PANEL ── */}
-          <div style={{ borderRadius: 22, padding: '16px 18px', marginBottom: 18, background: `linear-gradient(135deg, ${ACCENT}07, ${AI_CLR}05)`, border: `1px solid ${ACCENT}15` }}>
-            <p style={{ margin: '0 0 12px', fontSize: 10, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>
-              Your Economic Opportunity
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
-              {[
-                { label: 'Available',  value: `$${totalCashAvailable}`, sub: `${activeHunts.length} missions`, icon: DollarSign, color: ACCENT },
-                { label: 'Earned',     value: `$${totalEarned}`,        sub: `${doneHunts.length} completed`,  icon: TrendingUp,  color: AI_CLR },
-                { label: 'Total XP',   value: `+${totalXPAvailable}`,   sub: 'XP available',                   icon: Star,        color: WARN   },
-              ].map(({ label, value, sub, icon: Icon, color }) => (
-                <div key={label} style={{ textAlign: 'center' }}>
-                  <Icon size={13} strokeWidth={2} style={{ color, marginBottom: 4 }} />
-                  <div style={{ fontSize: 17, fontWeight: 900, color, letterSpacing: '-.02em', lineHeight: 1 }}>{value}</div>
-                  <div style={{ fontSize: 9.5, color: DIM, marginTop: 3 }}>{sub}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 999, background: `${t.accent}0F`, border: `1px solid ${t.accent}22` }}>
+                  <Trophy size={10} strokeWidth={2.5} style={{ color: t.accent }} />
+                  <span style={{ fontSize: 11, fontWeight: 800, color: t.accent }}>{completedList.length} done</span>
                 </div>
-              ))}
-            </div>
-            {profile && (
-              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Brain size={12} strokeWidth={2} style={{ color: AI_CLR }} />
-                <span style={{ fontSize: 11, color: DIM }}>
-                  AI matching against your <span style={{ color: TXT, fontWeight: 700 }}>{profile.archetype}</span> Impact DNA
-                </span>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* impact stat chips */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 18 }}>
-            {[
-              { label: 'Total',   value: hunts.length,        color: TXT    },
-              { label: 'Active',  value: activeHunts.length,  color: ACCENT },
-              { label: 'Done',    value: doneHunts.length,    color: ACCENT },
-            ].map((s) => (
-              <div key={s.label} className="liquid-glass" style={{ ...XGLASS, borderRadius: 14, padding: '10px 8px', textAlign: 'center' }}>
-                <div style={{ fontSize: 20, fontWeight: 900, color: s.color, letterSpacing: '-.02em' }}>{s.value}</div>
-                <div style={{ fontSize: 9.5, fontWeight: 600, color: DIM, marginTop: 2, textTransform: 'uppercase', letterSpacing: '.06em' }}>{s.label}</div>
+          {/* stats summary bar */}
+          <div
+            className="liquid-glass"
+            style={{
+              background: t.card, border: `1px solid ${t.border}`, boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+              borderRadius: 18, padding: '12px 16px', marginTop: 16, marginBottom: 4,
+              display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8,
+            }}
+          >
+            {([
+              { label: 'Active',    val: activeHunts.length,   color: t.accent  },
+              { label: 'Reviewing', val: pendingHunts.length,  color: t.ai      },
+              { label: 'Approved',  val: approvedHunts.length, color: t.success },
+              { label: 'Done',      val: completedList.length, color: t.accent  },
+            ] as { label: string; val: number; color: string }[]).map(({ label, val, color }) => (
+              <div key={label} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color, letterSpacing: '-.02em', lineHeight: 1 }}>{val}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: t.txtFaint, marginTop: 3, textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</div>
               </div>
             ))}
           </div>
+        </motion.div>
 
-          {/* tabs */}
-          <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 999, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', marginBottom: 20 }}>
-            {TABS.map((t) => {
-              const active = tab === t;
-              const count = t === 'Pending' ? pendingHunts.length : t === 'Saved' ? savedHuntsList.length : null;
+        {/* ── STICKY TAB BAR ── */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 40,
+          background: `${t.bg}E8`, backdropFilter: 'blur(20px)',
+          padding: '12px 20px 0',
+          borderBottom: '1px solid rgba(255,255,255,.05)',
+        }}>
+          <div style={{ display: 'flex', gap: 0, overflowX: 'auto', paddingBottom: 1 }} className="hide-scrollbar">
+            {TABS.map((tb) => {
+              const isActive = tab === tb;
+              const count    = tabCounts[tb];
               return (
-                <button key={t} onClick={() => setTab(t)} style={{ flex: 1, height: 38, borderRadius: 999, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, letterSpacing: '-.01em', transition: 'all .18s', ...(active ? { background: ACCENT, boxShadow: `0 0 20px ${ACCENT}35`, color: BG } : { background: 'transparent', color: DIM }) }}>
-                  {t}{count != null && count > 0 ? ` (${count})` : ''}
+                <button
+                  key={tb}
+                  onClick={() => setTab(tb)}
+                  style={{
+                    flexShrink: 0, padding: '9px 14px', border: 0,
+                    background: 'transparent', cursor: 'pointer',
+                    fontFamily: 'inherit', fontSize: 12.5, fontWeight: isActive ? 800 : 600,
+                    color: isActive ? t.accent : t.txtFaint,
+                    borderBottom: isActive ? `2px solid ${t.accent}` : '2px solid transparent',
+                    transition: 'all .15s', letterSpacing: '-.01em',
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {tb}
+                  {count > 0 && (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      minWidth: 16, height: 16, borderRadius: 999, padding: '0 4px',
+                      fontSize: 9, fontWeight: 800,
+                      background: isActive ? t.accent : 'rgba(255,255,255,.09)',
+                      color: isActive ? t.bg : t.txtDim,
+                    }}>
+                      {count}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -472,48 +705,42 @@ export default function MissionsPage() {
         </div>
 
         {/* ── MISSION LIST ── */}
-        <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {filtered.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 0', textAlign: 'center' }}>
-              <Target size={44} strokeWidth={1.2} style={{ color: FAINT, marginBottom: 16 }} />
-              <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: TXT }}>
-                {tab === 'Completed' ? 'Nothing completed yet'
-                  : tab === 'Pending' ? 'No pending submissions'
-                  : tab === 'Saved' ? 'No saved missions'
-                  : 'No missions here'}
-              </p>
-              <p style={{ margin: '6px 0 0', fontSize: 13, color: DIM }}>
-                {tab === 'Completed' ? 'Finish a mission to see it here.'
-                  : tab === 'Pending' ? 'Submit a mission to track its verification status.'
-                  : tab === 'Saved' ? 'Bookmark missions from Explore to save them here.'
-                  : 'Check back soon for new opportunities.'}
-              </p>
-            </div>
-          ) : (
-            <AnimatePresence>
-              {filtered.map((hunt, i) => {
-                const done   = completedIds.includes(hunt.id);
-                const locked = isPremium(hunt) && !canPremium && !done;
-                return (
-                  <div key={hunt.id} onClick={() => handleClick(hunt)} style={{ cursor: 'pointer' }}>
-                    <MissionCard
-                      hunt={hunt} done={done} locked={locked} profile={profile} index={i}
-                      savedHunts={savedHunts}
-                      onToggleSave={(huntId) => {
-                        toggleSavedHunt(huntId);
-                        setSavedHunts(prev => prev.includes(huntId) ? prev.filter(x => x !== huntId) : [...prev, huntId]);
-                      }}
-                      verificationRecord={verificationMap[hunt.id] ?? null}
-                      stepProgress={progress[hunt.id] ?? null}
+        <div style={{ padding: '16px 20px 0' }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2 }}
+            >
+              {listedHunts.length === 0 ? (
+                <EmptyState {...emptyProps[tab]} />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {listedHunts.map((hunt, i) => (
+                    <MissionRow
+                      key={hunt.id}
+                      hunt={hunt}
+                      tab={tab}
+                      progress={progress[hunt.id]}
+                      verif={verifMap[hunt.id]}
+                      saved={savedIds.includes(hunt.id)}
+                      onRemoveSaved={removeSaved}
+                      index={i}
                     />
-                  </div>
-                );
-              })}
-            </AnimatePresence>
-          )}
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
+
+        {/* spacer above BottomNav */}
+        <div style={{ height: 24 }} />
       </div>
 
+      <CopilotFab />
       <BottomNav />
     </div>
   );

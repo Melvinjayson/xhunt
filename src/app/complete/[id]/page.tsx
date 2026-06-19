@@ -2,375 +2,776 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Trophy, Share2, ArrowRight, Home, Clock, Zap, Sparkles, Radio, CheckCircle2 } from 'lucide-react';
-import { loadState, getVerificationStatus, setVerificationStatus } from '@/lib/store';
-import { getTagGradient } from '@/lib/mockHunts';
-import type { Hunt } from '@/lib/types';
-import { cn } from '@/lib/cn';
-import { emitEvent, emitRewardClaimed } from '@/lib/supabase/events';
+import {
+  CheckCircle2, Clock, Zap, DollarSign, Share2, Home,
+  ChevronRight, AlertCircle, XCircle, RotateCcw, ArrowRight,
+  Sparkles, Shield, Eye, User2,
+} from 'lucide-react';
+import { t } from '@/theme/colors';
+import { loadState, getVerificationStatus } from '@/lib/store';
+import { estimateCashReward, estimateXP } from '@/lib/missionCategories';
+import StatusPill from '@/components/consumer/StatusPill';
+import MissionCard from '@/components/consumer/MissionCard';
+import Surface from '@/components/consumer/Surface';
+import type { Hunt, VerificationRecord, VerificationStatus } from '@/lib/types';
 
-const CONFETTI_COLORS = ['#22FFAA', '#6D5DFD', '#FFB84D', '#a78bfa', '#f472b6', '#60a5fa'];
+// ── Verification pipeline ─────────────────────────────────────────────────
 
-const CONFETTI_PIECES = Array.from({ length: 40 }, () => ({
-  color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-  dir: Math.random() > 0.5 ? 1 : -1,
-  offsetX: (Math.random() - 0.5) * 100,
-  dur: 2.5 + Math.random(),
-}));
-
-const DIFFICULTY_COLOR: Record<string, string> = {
-  easy:   '#22FFAA',
-  medium: '#FFB84D',
-  hard:   '#FF5C7A',
-};
-
-const VERI_STAGES = [
-  { id: 'submitted',     label: 'Submitted',    desc: 'Your responses are in',             icon: '📬' },
-  { id: 'ai_reviewing',  label: 'AI Review',    desc: 'AI is checking your work · ~2 min', icon: '🤖' },
-  { id: 'manual_review', label: 'Human Review', desc: 'Reviewer checking · up to 24 hrs',  icon: '👁️' },
-  { id: 'approved',      label: 'Approved',     desc: 'Reward confirmed & issued',          icon: '✅' },
-];
-const STAGE_ORDER = ['submitted', 'ai_reviewing', 'manual_review', 'approved'];
-
-interface Recommendation {
-  id: string;
-  title: string;
-  difficulty: string;
-  estimated_time: string | null;
-  tags: string[];
-  confidence_pct: number;
-  reason: string;
+interface PipelineStage {
+  key: VerificationStatus | 'terminal';
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  eta: string;
 }
 
-function ConfettiPiece({ delay, x, piece }: { delay: number; x: number; piece: { color: string; dir: number; offsetX: number; dur: number } }) {
+const PIPELINE: PipelineStage[] = [
+  {
+    key: 'submitted',
+    label: 'Submitted',
+    description: 'Your proof of work has been received and queued.',
+    icon: <CheckCircle2 size={18} />,
+    eta: 'Instant',
+  },
+  {
+    key: 'ai_reviewing',
+    label: 'AI Review',
+    description: 'Our AI agent is checking your submission against requirements.',
+    icon: <Sparkles size={18} />,
+    eta: '5–15 min',
+  },
+  {
+    key: 'manual_review',
+    label: 'Human Review',
+    description: 'A mission reviewer is evaluating your work.',
+    icon: <Eye size={18} />,
+    eta: '24–48 hrs',
+  },
+  {
+    key: 'terminal',
+    label: 'Decision',
+    description: 'Your verification result is available.',
+    icon: <Shield size={18} />,
+    eta: '',
+  },
+];
+
+const TERMINAL_STATUSES: VerificationStatus[] = ['approved', 'rejected', 'needs_info'];
+
+function getPipelineIndex(status: VerificationStatus): number {
+  if (status === 'submitted') return 0;
+  if (status === 'ai_reviewing') return 1;
+  if (status === 'manual_review') return 2;
+  if (TERMINAL_STATUSES.includes(status)) return 3;
+  return 0;
+}
+
+// ── Hero ──────────────────────────────────────────────────────────────────
+
+function HeroSection({
+  status,
+  hunt,
+}: {
+  status: VerificationStatus;
+  hunt: Hunt;
+}) {
+  const cash = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
+  const xp = estimateXP(hunt.xpReward, hunt.difficulty, hunt.steps?.length ?? 3);
+  const isTerminal = TERMINAL_STATUSES.includes(status);
+  const isApproved = status === 'approved';
+  const isRejected = status === 'rejected';
+  const isNeedsInfo = status === 'needs_info';
+
+  const heroColor = isApproved ? t.accent : isRejected ? t.error : isNeedsInfo ? t.warning : t.ai;
+  const heroGlow = isApproved
+    ? `radial-gradient(ellipse 60% 40% at 50% 0%, ${t.accent}22 0%, transparent 70%)`
+    : isRejected
+    ? `radial-gradient(ellipse 60% 40% at 50% 0%, ${t.error}22 0%, transparent 70%)`
+    : `radial-gradient(ellipse 60% 40% at 50% 0%, ${t.ai}22 0%, transparent 70%)`;
+
+  const heroIcon = isApproved ? (
+    <CheckCircle2 size={48} color={t.accent} />
+  ) : isRejected ? (
+    <XCircle size={48} color={t.error} />
+  ) : isNeedsInfo ? (
+    <AlertCircle size={48} color={t.warning} />
+  ) : (
+    <div className="breathe" style={{ color: t.ai }}>
+      <Sparkles size={48} />
+    </div>
+  );
+
+  const heroTitle = isApproved
+    ? 'Mission Approved!'
+    : isRejected
+    ? 'Submission Rejected'
+    : isNeedsInfo
+    ? 'More Info Needed'
+    : 'Verification In Progress';
+
+  const heroSubtitle = isApproved
+    ? 'Your proof was accepted. Reward is being processed.'
+    : isRejected
+    ? 'Your submission didn\'t meet requirements. See feedback below.'
+    : isNeedsInfo
+    ? 'The reviewer needs additional information from you.'
+    : 'Your submission is being reviewed. We\'ll notify you when done.';
+
   return (
-    <motion.div
-      className="absolute top-0 w-2 h-3 rounded-sm"
-      style={{ left: `${x}%`, backgroundColor: piece.color }}
-      initial={{ y: -20, opacity: 1, rotate: 0 }}
-      animate={{
-        y: ['0%', '120vh'],
-        opacity: [1, 1, 0],
-        rotate: [0, 360 * piece.dir],
-        x: [piece.offsetX],
+    <div
+      style={{
+        background: heroGlow,
+        padding: '40px 24px 32px',
+        textAlign: 'center',
+        borderBottom: `1px solid ${t.border}`,
       }}
-      transition={{ duration: piece.dur, delay, ease: 'easeIn' }}
-    />
+    >
+      {/* Status icon */}
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+        {heroIcon}
+      </div>
+
+      {/* Status pill */}
+      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+        <StatusPill status={status} size="md" />
+      </div>
+
+      {/* Title */}
+      <h1
+        style={{
+          fontSize: 22,
+          fontWeight: 700,
+          color: t.txt,
+          margin: '0 0 8px',
+          lineHeight: 1.2,
+        }}
+      >
+        {heroTitle}
+      </h1>
+      <p style={{ fontSize: 13, color: t.txtDim, margin: '0 0 24px', lineHeight: 1.5 }}>
+        {heroSubtitle}
+      </p>
+
+      {/* Mission name */}
+      <p
+        style={{
+          fontSize: 12,
+          color: heroColor,
+          fontWeight: 600,
+          margin: '0 0 20px',
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase',
+        }}
+      >
+        {hunt.tenantName ?? 'Mission'} · {hunt.title}
+      </p>
+
+      {/* Reward pills — only show if not rejected */}
+      {!isRejected && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          {cash > 0 && (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 14px',
+                borderRadius: 100,
+                background: isApproved ? `${t.accent}18` : `${t.txtFaint}18`,
+                border: `1px solid ${isApproved ? `${t.accent}30` : t.border}`,
+                color: isApproved ? t.accent : t.txtDim,
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              <DollarSign size={14} />
+              {isApproved ? `$${cash} USD` : `$${cash} Pending`}
+            </div>
+          )}
+          {xp > 0 && (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 14px',
+                borderRadius: 100,
+                background: isApproved ? `${t.ai}18` : `${t.txtFaint}18`,
+                border: `1px solid ${isApproved ? `${t.ai}30` : t.border}`,
+                color: isApproved ? t.aiLight : t.txtDim,
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              <Zap size={14} />
+              {isApproved ? `+${xp} XP` : `${xp} XP Pending`}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
+
+// ── Verification timeline ─────────────────────────────────────────────────
+
+function VerificationTimeline({
+  status,
+  record,
+}: {
+  status: VerificationStatus;
+  record: VerificationRecord;
+}) {
+  const activeIndex = getPipelineIndex(status);
+  const isTerminal = TERMINAL_STATUSES.includes(status);
+
+  const terminalColor =
+    status === 'approved' ? t.accent : status === 'rejected' ? t.error : t.warning;
+
+  return (
+    <Surface variant="card" style={{ margin: '0 16px 16px' }}>
+      <div style={{ padding: '20px 20px 8px' }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: t.txt, margin: '0 0 20px' }}>
+          Verification Timeline
+        </h2>
+
+        <div style={{ position: 'relative' }}>
+          {/* Vertical track */}
+          <div
+            style={{
+              position: 'absolute',
+              left: 17,
+              top: 20,
+              bottom: 20,
+              width: 2,
+              background: t.border,
+            }}
+          />
+
+          {PIPELINE.map((stage, i) => {
+            const isCompleted = i < activeIndex;
+            const isCurrent = i === activeIndex;
+            const isPending = i > activeIndex;
+            const isTerminalStage = i === 3;
+
+            const stageColor = isCompleted
+              ? t.accent
+              : isCurrent
+              ? isTerminalStage
+                ? terminalColor
+                : t.ai
+              : t.txtFaint;
+
+            const bgColor = isCompleted
+              ? `${t.accent}20`
+              : isCurrent
+              ? isTerminalStage
+                ? `${terminalColor}20`
+                : `${t.ai}20`
+              : `${t.txtFaint}10`;
+
+            return (
+              <div
+                key={stage.key}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 14,
+                  marginBottom: i < PIPELINE.length - 1 ? 24 : 8,
+                  position: 'relative',
+                  zIndex: 1,
+                }}
+              >
+                {/* Node */}
+                <div
+                  className={isCurrent && !isTerminalStage ? 'breathe' : undefined}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    background: bgColor,
+                    border: `2px solid ${stageColor}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: stageColor,
+                    flexShrink: 0,
+                  }}
+                >
+                  {isCompleted ? <CheckCircle2 size={16} /> : stage.icon}
+                </div>
+
+                {/* Content */}
+                <div style={{ flex: 1, paddingTop: 4 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      marginBottom: 3,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: isPending ? t.txtFaint : t.txt,
+                      }}
+                    >
+                      {isTerminalStage && isTerminal
+                        ? status === 'approved'
+                          ? 'Approved'
+                          : status === 'rejected'
+                          ? 'Rejected'
+                          : 'Needs More Info'
+                        : stage.label}
+                    </span>
+                    {isCurrent && (
+                      <StatusPill
+                        status={
+                          isTerminalStage
+                            ? (status as VerificationStatus)
+                            : status
+                        }
+                        size="sm"
+                      />
+                    )}
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: isPending ? t.txtFaint : t.txtDim,
+                      margin: 0,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {isTerminalStage && isTerminal
+                      ? status === 'approved'
+                        ? 'Congratulations! Your submission was accepted.'
+                        : status === 'rejected'
+                        ? 'Your submission did not meet the requirements.'
+                        : 'A reviewer needs additional information.'
+                      : stage.description}
+                  </p>
+                  {!isPending && stage.eta && !isTerminalStage && (
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        marginTop: 5,
+                        padding: '2px 8px',
+                        borderRadius: 6,
+                        background: `${stageColor}10`,
+                        color: stageColor,
+                        fontSize: 11,
+                        fontWeight: 500,
+                      }}
+                    >
+                      <Clock size={10} />
+                      {stage.eta}
+                    </div>
+                  )}
+                  {i === 0 && record.submittedAt && (
+                    <p style={{ fontSize: 11, color: t.txtFaint, margin: '4px 0 0' }}>
+                      {new Date(record.submittedAt).toLocaleString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  )}
+                  {i === 3 && record.reviewedAt && (
+                    <p style={{ fontSize: 11, color: t.txtFaint, margin: '4px 0 0' }}>
+                      {new Date(record.reviewedAt).toLocaleString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Surface>
+  );
+}
+
+// ── Reviewer feedback ─────────────────────────────────────────────────────
+
+function ReviewerFeedback({
+  status,
+  feedback,
+}: {
+  status: VerificationStatus;
+  feedback?: string;
+}) {
+  if (!feedback) return null;
+  const isRejected = status === 'rejected';
+  const isNeedsInfo = status === 'needs_info';
+  if (!isRejected && !isNeedsInfo && !feedback) return null;
+
+  const color = isRejected ? t.error : t.warning;
+  const Icon = isRejected ? XCircle : AlertCircle;
+
+  return (
+    <Surface
+      variant="card"
+      style={{
+        margin: '0 16px 16px',
+        border: `1px solid ${color}30`,
+        background: `${color}08`,
+      }}
+    >
+      <div style={{ padding: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <Icon size={16} color={color} />
+          <span style={{ fontSize: 14, fontWeight: 700, color }}>
+            {isRejected ? 'Rejection Reason' : 'Reviewer Note'}
+          </span>
+        </div>
+        <p style={{ fontSize: 13, color: t.txtDim, margin: 0, lineHeight: 1.6 }}>
+          {feedback}
+        </p>
+        {isNeedsInfo && (
+          <button
+            onClick={() => {}}
+            style={{
+              marginTop: 14,
+              padding: '10px 18px',
+              borderRadius: 10,
+              background: `${t.warning}20`,
+              border: `1px solid ${t.warning}40`,
+              color: t.warning,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            Provide More Info <ArrowRight size={14} />
+          </button>
+        )}
+        {isRejected && (
+          <button
+            onClick={() => {}}
+            style={{
+              marginTop: 14,
+              padding: '10px 18px',
+              borderRadius: 10,
+              background: `${t.ai}20`,
+              border: `1px solid ${t.ai}40`,
+              color: t.aiLight,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <RotateCcw size={14} />
+            Resubmit
+          </button>
+        )}
+      </div>
+    </Surface>
+  );
+}
+
+// ── Estimated timing ──────────────────────────────────────────────────────
+
+function EstimatedTiming({ status }: { status: VerificationStatus }) {
+  if (TERMINAL_STATUSES.includes(status)) return null;
+
+  const currentStage = PIPELINE.find((s) => s.key === status);
+  if (!currentStage) return null;
+
+  return (
+    <Surface variant="inset" style={{ margin: '0 16px 16px' }}>
+      <div
+        style={{
+          padding: '14px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: `${t.info}18`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: t.info,
+            flexShrink: 0,
+          }}
+        >
+          <Clock size={18} />
+        </div>
+        <div>
+          <p style={{ fontSize: 12, color: t.txtFaint, margin: '0 0 2px' }}>
+            Expected decision time
+          </p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: t.txt, margin: 0 }}>
+            {currentStage.eta}
+          </p>
+        </div>
+      </div>
+    </Surface>
+  );
+}
+
+// ── Recommended missions ──────────────────────────────────────────────────
+
+function RecommendedMissions({
+  currentId,
+  hunts,
+}: {
+  currentId: string;
+  hunts: Hunt[];
+}) {
+  const picks = hunts.filter((h) => h.id !== currentId).slice(0, 3);
+  if (picks.length === 0) return null;
+
+  return (
+    <div style={{ margin: '0 0 24px' }}>
+      <div
+        style={{
+          padding: '0 16px 12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: t.txt, margin: 0 }}>
+          More Opportunities
+        </h2>
+        <a
+          href="/explore"
+          style={{
+            fontSize: 12,
+            color: t.accent,
+            textDecoration: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 3,
+          }}
+        >
+          See all <ChevronRight size={14} />
+        </a>
+      </div>
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {picks.map((h) => (
+          <MissionCard key={h.id} hunt={h} compact />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────
 
 export default function CompletePage() {
   const params = useParams();
   const router = useRouter();
-  const huntId = params?.id as string;
+  const huntId = params.id as string;
 
   const [hunt, setHunt] = useState<Hunt | null>(null);
-  const [completedAt, setCompletedAt] = useState<string>('');
-  const [stepsCompleted, setStepsCompleted] = useState(0);
-  const [mounted, setMounted] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [sharing, setSharing] = useState(false);
-  const [shared, setShared] = useState(false);
-  const [veriStatus, setVeriStatus] = useState<string>('submitted');
+  const [record, setRecord] = useState<VerificationRecord | null>(null);
+  const [allHunts, setAllHunts] = useState<Hunt[]>([]);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const state = loadState();
-    const allHunts = state.hunts;
-    const found = allHunts.find((h) => h.id === huntId);
-
-    if (found) {
-      setHunt(found);
-      const prog = state.progress[huntId];
-      if (prog) {
-        setStepsCompleted(prog.completedSteps.length);
-        setCompletedAt(prog.completedAt || new Date().toISOString());
-      }
-      emitEvent('mission_completed', { missionId: huntId });
-      emitRewardClaimed(huntId, found.reward);
-    }
-    setMounted(true);
-    setTimeout(() => setShowConfetti(true), 100);
-
-    const record = getVerificationStatus(huntId);
-    const currentStatus = record?.status ?? 'submitted';
-    setVeriStatus(currentStatus);
-    if (currentStatus === 'submitted') {
-      const t = setTimeout(() => {
-        setVerificationStatus(huntId, 'ai_reviewing');
-        setVeriStatus('ai_reviewing');
-      }, 3000);
-      return () => clearTimeout(t);
-    }
-
-    void fetch(`/api/recommendations?mission_id=${huntId}&limit=3`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.recommendations?.length) {
-          setRecommendations(data.recommendations as Recommendation[]);
-        }
-      })
-      .catch(() => {});
+    const found = state.hunts.find((h) => h.id === huntId) ?? null;
+    setHunt(found);
+    setAllHunts(state.hunts);
+    const rec = getVerificationStatus(huntId);
+    setRecord(rec);
   }, [huntId]);
 
-  if (!mounted || !hunt) return null;
-
-  const gradient = getTagGradient(hunt.tags);
-  const completionDate = new Date(completedAt).toLocaleDateString('en-US', {
-    month: 'long', day: 'numeric', year: 'numeric',
-  });
-
-  async function handleShareToTimeline() {
-    if (sharing || shared) return;
-    setSharing(true);
-    try {
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(huntId);
-      await fetch('/api/timeline/post', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          post_type:  'completion',
-          caption:    `Just completed "${hunt!.title}" 🏆`,
-          mission_id: isUUID ? huntId : undefined,
-          metadata:   { reward: hunt!.reward, steps: stepsCompleted, title: hunt!.title },
-        }),
-      });
-      setShared(true);
-    } finally {
-      setSharing(false);
-    }
+  if (!hunt) {
+    return (
+      <div className="consumer-app">
+        <div className="consumer-app-inner">
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '60vh',
+              gap: 12,
+              color: t.txtDim,
+            }}
+          >
+            <Sparkles size={32} color={t.txtFaint} />
+            <p style={{ fontSize: 14, margin: 0 }}>Mission not found</p>
+            <button
+              onClick={() => router.push('/missions')}
+              style={{
+                padding: '10px 20px',
+                borderRadius: 10,
+                background: `${t.accent}18`,
+                border: `1px solid ${t.accent}30`,
+                color: t.accent,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              My Missions
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
+  const status: VerificationStatus = record?.status ?? 'submitted';
+  const isTerminal = TERMINAL_STATUSES.includes(status);
+
   async function handleShare() {
+    const text = `I just submitted my proof for "${hunt!.title}" on X-Hunt!`;
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `I completed "${hunt!.title}" on X-hunt!`,
-          text: `Just finished the ${hunt!.title} hunt and earned: ${hunt!.reward} 🏆`,
-        });
-      } catch {}
+      await navigator.share({ title: 'X-Hunt Submission', text }).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden" style={{ background: '#050816' }}>
-      {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-          {CONFETTI_PIECES.map((piece, i) => (
-            <ConfettiPiece key={i} delay={i * 0.04} x={(i / 40) * 100} piece={piece} />
-          ))}
-        </div>
-      )}
-
-      <div className="max-w-[430px] mx-auto w-full flex flex-col min-h-screen px-5">
+    <div className="consumer-app">
+      <div className="consumer-app-inner" style={{ paddingBottom: 100 }}>
         {/* Hero */}
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', damping: 18, stiffness: 200, delay: 0.2 }}
-          className="flex flex-col items-center pt-20 pb-8"
-        >
-          <div
-            className={cn('w-24 h-24 rounded-full bg-gradient-to-br flex items-center justify-center mb-6', gradient)}
-            style={{ boxShadow: '0 0 40px rgba(34,255,170,.3)' }}
-          >
-            <span className="text-4xl">🏆</span>
-          </div>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.4 }}
-            className="text-center"
-          >
-            <p className="font-bold text-sm uppercase tracking-widest mb-2 text-accent">Mission Complete!</p>
-            <h1 className="text-[26px] font-bold leading-tight mb-2" style={{ color: '#F0F4FF' }}>{hunt.title}</h1>
-            <p className="text-sm" style={{ color: '#8B9CC0' }}>{completionDate}</p>
-          </motion.div>
-        </motion.div>
+        <HeroSection status={status} hunt={hunt} />
 
-        {/* Reward */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.65, duration: 0.4 }}
-          className="rounded-2xl p-5 mb-6"
-          style={{ background: 'rgba(255,184,77,.06)', border: '1px solid rgba(255,184,77,.18)' }}
-        >
-          <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: '#FFB84D' }}>Your Reward</p>
-          <div className="flex items-center gap-4">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(255,184,77,.12)' }}
-            >
-              <Trophy size={28} style={{ color: '#FFB84D' }} strokeWidth={1.8} />
-            </div>
-            <div>
-              <p className="text-[17px] font-bold leading-snug" style={{ color: '#F0F4FF' }}>{hunt.reward}</p>
-              <p className="text-[13px] mt-0.5" style={{ color: '#8B9CC0' }}>Added to your profile</p>
-            </div>
-          </div>
-        </motion.div>
+        <div style={{ height: 20 }} />
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.4 }}
-          className="grid grid-cols-2 gap-3 mb-8"
-        >
-          {[
-            { value: stepsCompleted, label: 'Steps Completed', color: '#22FFAA' },
-            { value: hunt.estimated_time, label: 'Time Well Spent', color: '#F0F4FF' },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className="rounded-2xl p-4 text-center"
-              style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,.07)' }}
-            >
-              <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
-              <p className="text-[12px] font-medium mt-1" style={{ color: '#7d8b8e' }}>{s.label}</p>
-            </div>
-          ))}
-        </motion.div>
+        {/* Estimated timing (only while pending) */}
+        <EstimatedTiming status={status} />
 
-        {/* Verification Timeline */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85 }}
-          className="rounded-2xl p-5 mb-6"
-          style={{ background: '#07101F', border: '1px solid rgba(255,255,255,.07)' }}>
-          <p className="text-[11px] font-bold uppercase tracking-wider mb-4" style={{ color: '#8B9CC0' }}>Verification Status</p>
-          <div className="flex flex-col gap-3">
-            {VERI_STAGES.map((stage) => {
-              const currentIdx = STAGE_ORDER.indexOf(veriStatus);
-              const stageIdx   = STAGE_ORDER.indexOf(stage.id);
-              const done   = stageIdx < currentIdx;
-              const active = stageIdx === currentIdx;
-              return (
-                <div key={stage.id} className="flex items-start gap-3">
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                    background: done ? 'rgba(34,255,170,.15)' : active ? 'rgba(255,184,77,.12)' : 'rgba(255,255,255,.04)',
-                    border: `1.5px solid ${done ? '#22FFAA' : active ? '#FFB84D' : 'rgba(255,255,255,.08)'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
-                  }}>
-                    {done ? '✓' : stage.icon}
-                  </div>
-                  <div style={{ flex: 1, paddingTop: 3 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: done || active ? 700 : 500,
-                      color: done ? '#22FFAA' : active ? '#FFB84D' : '#4A5578' }}>
-                      {stage.label}
-                      {active && <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.4, repeat: Infinity }}
-                        style={{ display: 'inline-block', marginLeft: 6, width: 5, height: 5, borderRadius: '50%', background: '#FFB84D', verticalAlign: 'middle' }} />}
-                    </p>
-                    <p style={{ margin: '1px 0 0', fontSize: 11, color: '#4A5578' }}>{stage.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
+        {/* Verification timeline */}
+        <VerificationTimeline status={status} record={record ?? { huntId, status, submittedAt: new Date().toISOString() }} />
 
-        {/* Recommendations */}
-        {recommendations.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.95, duration: 0.4 }}
-            className="mb-8"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles size={15} className="text-ai" strokeWidth={2} />
-              <h2 className="text-[15px] font-bold" style={{ color: '#F0F4FF' }}>What&apos;s next for you</h2>
+        {/* Reviewer feedback */}
+        <ReviewerFeedback status={status} feedback={record?.feedback} />
+
+        {/* What happens next — show while in pipeline */}
+        {!isTerminal && (
+          <Surface variant="inset" style={{ margin: '0 16px 16px' }}>
+            <div style={{ padding: '16px 18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <User2 size={16} color={t.ai} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: t.txt }}>What happens next?</span>
+              </div>
+              <ul style={{ margin: 0, padding: '0 0 0 16px', color: t.txtDim, fontSize: 12, lineHeight: 1.8 }}>
+                <li>You'll receive an in-app notification when your status changes.</li>
+                <li>If approved, your reward will be credited automatically.</li>
+                <li>If more info is needed, check back here for reviewer notes.</li>
+              </ul>
             </div>
-            <div className="flex flex-col gap-3">
-              {recommendations.map((rec) => (
-                <button
-                  key={rec.id}
-                  onClick={() => router.push(`/hunt/${rec.id}`)}
-                  className="rounded-2xl p-4 text-left transition-colors group"
-                  style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,.07)' }}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <p
-                      className="text-[14px] font-semibold leading-snug group-hover:text-accent transition-colors"
-                      style={{ color: '#F0F4FF' }}
-                    >
-                      {rec.title}
-                    </p>
-                    <ArrowRight size={15} style={{ color: '#4A5578' }} className="group-hover:text-accent transition-colors flex-shrink-0 mt-0.5" strokeWidth={2} />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {rec.estimated_time && (
-                      <span className="flex items-center gap-1 text-[11px]" style={{ color: '#8B9CC0' }}>
-                        <Clock size={10} strokeWidth={2} />{rec.estimated_time}
-                      </span>
-                    )}
-                    <span
-                      className="flex items-center gap-1 text-[11px] font-semibold"
-                      style={{ color: DIFFICULTY_COLOR[rec.difficulty] ?? '#7d8b8e' }}
-                    >
-                      <Zap size={10} strokeWidth={2} />
-                      {rec.difficulty.charAt(0).toUpperCase() + rec.difficulty.slice(1)}
-                    </span>
-                    <span
-                      className="ml-auto text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ color: '#4A5578', background: 'rgba(255,255,255,.06)' }}
-                    >
-                      {rec.reason}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </motion.div>
+          </Surface>
         )}
 
+        {/* Recommended missions */}
+        <RecommendedMissions currentId={huntId} hunts={allHunts} />
+
         {/* Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: recommendations.length > 0 ? 1.1 : 0.95, duration: 0.4 }}
-          className="flex flex-col gap-3 pb-12"
+        <div
+          style={{
+            padding: '0 16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
         >
-          {/* Share to Timeline */}
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={handleShareToTimeline}
-            disabled={sharing || shared}
-            className="w-full h-14 rounded-2xl font-semibold flex items-center justify-center gap-2"
+          <button
+            onClick={handleShare}
             style={{
-              background: shared ? 'rgba(34,255,170,.1)' : '#0A1226',
-              border: shared ? '1px solid rgba(34,255,170,.3)' : '1px solid rgba(255,255,255,.07)',
-              color: shared ? '#22FFAA' : '#F0F4FF',
+              width: '100%',
+              padding: '14px',
+              borderRadius: 14,
+              background: `${t.accent}14`,
+              border: `1px solid ${t.accent}30`,
+              color: t.accent,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
             }}
           >
-            {shared ? <CheckCircle2 size={18} strokeWidth={2} /> : <Radio size={18} strokeWidth={2} />}
-            {sharing ? 'Sharing…' : shared ? 'Shared to Timeline!' : 'Share to Timeline'}
-          </motion.button>
+            <Share2 size={16} />
+            {copied ? 'Copied!' : 'Share Submission'}
+          </button>
 
-          {/* Native share */}
-          {typeof navigator !== 'undefined' && 'share' in navigator && (
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={handleShare}
-              className="w-full h-14 rounded-2xl font-semibold flex items-center justify-center gap-2"
-              style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,.07)', color: '#F0F4FF' }}
-            >
-              <Share2 size={18} strokeWidth={2} />
-              Share Achievement
-            </motion.button>
-          )}
-
-          <motion.button
-            whileTap={{ scale: 0.98 }}
+          <button
             onClick={() => router.push('/home')}
-            className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2"
             style={{
-              background: '#22FFAA',
-              color: '#050816',
-              boxShadow: '0 4px 24px rgba(34,255,170,.4)',
+              width: '100%',
+              padding: '14px',
+              borderRadius: 14,
+              background: t.surface,
+              border: `1px solid ${t.border}`,
+              color: t.txtDim,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
             }}
           >
-            <Home size={18} strokeWidth={2} />
-            Back to Hunts
-            <ArrowRight size={18} strokeWidth={2.5} />
-          </motion.button>
-        </motion.div>
+            <Home size={16} />
+            Return Home
+          </button>
+
+          <button
+            onClick={() => router.push('/explore')}
+            style={{
+              width: '100%',
+              padding: '14px',
+              borderRadius: 14,
+              background: `${t.ai}14`,
+              border: `1px solid ${t.ai}30`,
+              color: t.aiLight,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+            }}
+          >
+            Explore Opportunities
+            <ArrowRight size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
