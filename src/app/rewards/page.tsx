@@ -18,7 +18,7 @@ import Chip from '@mui/material/Chip';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Divider from '@mui/material/Divider';
-import Grid from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import BottomNav from '@/components/BottomNav';
 import { loadState } from '@/lib/store';
 import type { CompletedHunt, VerificationRecord, Hunt } from '@/lib/types';
@@ -152,7 +152,7 @@ export default function RewardsPage() {
         {/* ─── Profile card ─── */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <Box sx={{ my: 2, p: '18px', borderRadius: '20px', background: 'linear-gradient(135deg, rgba(34,255,170,.06) 0%, rgba(109,93,253,.06) 100%)', border: `1px solid rgba(34,255,170,.15)` }}>
-            <Stack direction="row" alignItems="center" spacing={1.75}>
+            <Stack direction="row" spacing={1.75} sx={{ alignItems: 'center' }}>
               <Avatar
                 sx={{
                   width: 52, height: 52, borderRadius: '50%',
@@ -164,7 +164,7 @@ export default function RewardsPage() {
               </Avatar>
               <Box sx={{ flex: 1 }}>
                 <Typography sx={{ fontSize: 16, fontWeight: 800 }}>{displayName ?? 'Hunter'}</Typography>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: '4px' }}>
+                <Stack direction="row" spacing={1} sx={{ mt: '4px', alignItems: 'center' }}>
                   <Chip
                     label={currentTier.name}
                     size="small"
@@ -242,7 +242,7 @@ export default function RewardsPage() {
         <Grid container spacing={1.25} sx={{ mb: 2.5 }}>
           <Grid size={{ xs: 6 }}>
             <Card sx={{ p: '14px 16px', borderRadius: '16px', background: t.card, border: `1px solid ${LINE}` }}>
-              <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                 <Box sx={{ width: 36, height: 36, borderRadius: '12px', background: 'rgba(255,184,77,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Flame size={18} style={{ color: t.warning }} />
                 </Box>
@@ -255,7 +255,7 @@ export default function RewardsPage() {
           </Grid>
           <Grid size={{ xs: 6 }}>
             <Card sx={{ p: '14px 16px', borderRadius: '16px', background: t.card, border: `1px solid ${LINE}` }}>
-              <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                 <Box sx={{ width: 36, height: 36, borderRadius: '12px', background: 'rgba(34,255,170,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <CheckCircle2 size={18} style={{ color: t.accent }} />
                 </Box>
@@ -272,7 +272,7 @@ export default function RewardsPage() {
         {nextTier && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <Box sx={{ mb: 2.5, p: 2, borderRadius: '18px', background: t.surface, border: `1px solid ${LINE}` }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.25 }}>
+              <Stack direction="row" sx={{ mb: 1.25, alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography sx={{ fontSize: 11, color: t.txtFaint, fontWeight: 600 }}>Next tier</Typography>
                   <Typography sx={{ mt: '2px', fontSize: 14, fontWeight: 700, color: nextTier.color }}>{nextTier.name}</Typography>
@@ -303,7 +303,7 @@ export default function RewardsPage() {
 
         {/* ─── Badges earned ─── */}
         <Box sx={{ mb: 2.5 }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+          <Stack direction="row" sx={{ mb: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1, color: 'text.primary' }}>
               <Award size={16} style={{ color: t.accent }} /> Badges
               <Typography component="span" sx={{ fontSize: 12, color: t.txtFaint, fontWeight: 500 }}>({earnedBadges.length}/{BADGE_CATALOG.length})</Typography>
@@ -356,7 +356,7 @@ export default function RewardsPage() {
             <Card sx={{ borderRadius: '16px', background: t.card, border: `1px solid ${LINE}`, overflow: 'hidden' }}>
               {pendingRewards.map(({ hunt, record }, i) => (
                 <Box key={hunt.id}>
-                  <Stack direction="row" alignItems="center" spacing={1.5} sx={{ p: '12px 14px' }}>
+                  <Stack direction="row" spacing={1.5} sx={{ p: '12px 14px', alignItems: 'center' }}>
                     <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(255,184,77,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Clock size={15} style={{ color: t.warning }} />
                     </Box>
@@ -387,7 +387,7 @@ export default function RewardsPage() {
             <Card sx={{ borderRadius: '16px', background: t.card, border: `1px solid ${LINE}`, overflow: 'hidden' }}>
               {[...completedHunts].reverse().slice(0, 5).map((h, i, arr) => (
                 <Box key={`${h.huntId}-${i}`}>
-                  <Stack direction="row" alignItems="center" spacing={1.5} sx={{ p: '12px 14px' }}>
+                  <Stack direction="row" spacing={1.5} sx={{ p: '12px 14px', alignItems: 'center' }}>
                     <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(34,255,170,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <CheckCircle2 size={16} style={{ color: t.accent }} />
                     </Box>
@@ -415,12 +415,12 @@ export default function RewardsPage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
           <Stack
             direction="row"
-            alignItems="center"
             spacing={1.75}
             sx={{
               mb: 2, p: '20px', borderRadius: '20px',
               background: 'linear-gradient(135deg, rgba(34,255,170,.06), rgba(109,93,253,.06))',
               border: '1px solid rgba(34,255,170,.15)',
+              alignItems: 'center',
             }}
           >
             <Box sx={{ width: 48, height: 48, borderRadius: '14px', background: 'linear-gradient(135deg,rgba(34,255,170,1),rgba(109,93,253,1))', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

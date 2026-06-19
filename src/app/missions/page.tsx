@@ -330,7 +330,7 @@ function MissionRow({ hunt, tab, progress, verif, saved, onRemoveSaved, index }:
 
       <div style={{ padding: '14px 16px 0' }}>
         {/* badges row */}
-        <Stack direction="row" alignItems="center" spacing={0.625} sx={{ mb: 1.25, flexWrap: 'wrap' }}>
+        <Stack direction="row" spacing={0.625} sx={{ mb: 1.25, flexWrap: 'wrap', alignItems: 'center' }}>
           {mtype && (
             <Chip
               label={<><span style={{ fontSize: 10 }}>{mtype.emoji}</span> {mtype.label}</>}
@@ -368,7 +368,7 @@ function MissionRow({ hunt, tab, progress, verif, saved, onRemoveSaved, index }:
         </Stack>
 
         {/* title + org */}
-        <Stack direction="row" alignItems="flex-start" spacing={1.5} sx={{ mb: 1 }}>
+        <Stack direction="row" spacing={1.5} sx={{ mb: 1, alignItems: 'flex-start' }}>
           <Box sx={{ width: 42, height: 42, borderRadius: '13px', flexShrink: 0, background: `${cat.color}12`, border: `1px solid ${cat.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
             {cat.emoji}
           </Box>
@@ -376,7 +376,7 @@ function MissionRow({ hunt, tab, progress, verif, saved, onRemoveSaved, index }:
             <Typography sx={{ mb: '3px', fontSize: 15, fontWeight: 800, color: t.txt, lineHeight: 1.25, letterSpacing: '-.01em' }}>
               {hunt.title}
             </Typography>
-            <Stack direction="row" alignItems="center" spacing={0.625}>
+            <Stack direction="row" spacing={0.625} sx={{ alignItems: 'center' }}>
               <Typography sx={{ fontSize: 11, color: t.txtFaint, fontWeight: 500 }}>{hunt.tenantName ?? 'X-Hunt Community'}</Typography>
               {hunt.isVerified && <ShieldCheck size={10} strokeWidth={2.5} style={{ color: t.accent }} />}
             </Stack>
@@ -389,17 +389,17 @@ function MissionRow({ hunt, tab, progress, verif, saved, onRemoveSaved, index }:
         </Typography>
 
         {/* econometrics row */}
-        <Stack direction="row" alignItems="center" spacing={1.25} sx={{ pt: 1.25, borderTop: '1px solid rgba(255,255,255,.06)', mb: 1.5 }}>
-          <Stack direction="row" alignItems="center" spacing={0.5}>
+        <Stack direction="row" spacing={1.25} sx={{ pt: 1.25, borderTop: '1px solid rgba(255,255,255,.06)', mb: 1.5, alignItems: 'center' }}>
+          <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
             <DollarSign size={12} strokeWidth={2} style={{ color: t.accent }} />
             <Typography sx={{ fontSize: 13.5, fontWeight: 900, color: t.accent, letterSpacing: '-.02em' }}>${cash}</Typography>
           </Stack>
           <Box sx={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
-          <Stack direction="row" alignItems="center" spacing={0.5}>
+          <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
             <Star size={11} strokeWidth={2} style={{ color: t.ai }} />
             <Typography sx={{ fontSize: 12, fontWeight: 700, color: t.ai }}>+{xp} XP</Typography>
           </Stack>
-          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ ml: 'auto' }}>
+          <Stack direction="row" spacing={0.5} sx={{ ml: 'auto', alignItems: 'center' }}>
             <Clock size={11} strokeWidth={2} style={{ color: t.txtFaint }} />
             <Typography sx={{ fontSize: 11, color: t.txtDim }}>{hunt.estimated_time}</Typography>
           </Stack>
@@ -408,7 +408,7 @@ function MissionRow({ hunt, tab, progress, verif, saved, onRemoveSaved, index }:
         {/* active progress bar */}
         {tab === 'Active' && stepsTotal > 0 && (
           <Box sx={{ mb: 1.5 }}>
-            <Stack direction="row" justifyContent="space-between" sx={{ mb: '6px' }}>
+            <Stack direction="row" sx={{ mb: '6px', justifyContent: 'space-between' }}>
               <Typography sx={{ fontSize: 10.5, color: t.txtDim, fontWeight: 600 }}>Progress</Typography>
               <Typography sx={{ fontSize: 10.5, color: t.accent, fontWeight: 700 }}>
                 Step {(progress?.currentStepIndex ?? 0) + 1} of {stepsTotal}
@@ -427,11 +427,11 @@ function MissionRow({ hunt, tab, progress, verif, saved, onRemoveSaved, index }:
 
         {/* completed: participants badge */}
         {tab === 'Completed' && (
-          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1.5, padding: '8px 12px', borderRadius: '12px', background: `${t.accent}08`, border: `1px solid ${t.accent}18` }}>
+          <Stack direction="row" spacing={0.75} sx={{ mb: 1.5, padding: '8px 12px', borderRadius: '12px', background: `${t.accent}08`, border: `1px solid ${t.accent}18`, alignItems: 'center' }}>
             <Trophy size={13} strokeWidth={2} style={{ color: t.accent }} />
             <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: t.accent }}>Mission Complete</Typography>
             {hunt.applicationCount != null && (
-              <Stack direction="row" alignItems="center" spacing={0.375} sx={{ ml: 'auto' }}>
+              <Stack direction="row" spacing={0.375} sx={{ ml: 'auto', alignItems: 'center' }}>
                 <Users size={10} strokeWidth={2} style={{ color: t.txtFaint }} />
                 <Typography sx={{ fontSize: 10, color: t.txtFaint }}>{hunt.applicationCount} participants</Typography>
               </Stack>
@@ -641,7 +641,7 @@ export default function MyMissionsPage() {
           animate={{ opacity: 1, y: 0 }}
           style={{ padding: '56px 20px 0' }}
         >
-          <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: '6px' }}>
+          <Stack direction="row" sx={{ mb: '6px', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <Box>
               <Typography sx={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: t.txtFaint, mb: '4px' }}>
                 Participation
@@ -651,8 +651,8 @@ export default function MyMissionsPage() {
               </Typography>
             </Box>
             {/* summary chips */}
-            <Stack alignItems="flex-end" spacing={0.625} sx={{ pt: '4px' }}>
-              <Stack direction="row" alignItems="center" spacing={0.75}>
+            <Stack spacing={0.625} sx={{ pt: '4px', alignItems: 'flex-end' }}>
+              <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
                 <Chip
                   icon={<Play size={10} strokeWidth={2.5} style={{ color: t.accent }} />}
                   label={`${activeHunts.length} active`}
@@ -728,7 +728,7 @@ export default function MyMissionsPage() {
                   key={tb}
                   value={tb}
                   label={
-                    <Stack direction="row" alignItems="center" spacing={0.625}>
+                    <Stack direction="row" spacing={0.625} sx={{ alignItems: 'center' }}>
                       <span>{tb}</span>
                       {count > 0 && (
                         <Chip

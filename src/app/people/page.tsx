@@ -63,7 +63,7 @@ function PersonCard({ person, onFollowChange }: {
       animate={{ opacity: 1, y: 0 }}
     >
       <Card sx={{ bgcolor: t.card, border: '1px solid', borderColor: 'divider', borderRadius: '16px', p: 2, mb: 1 }}>
-        <Stack direction="row" alignItems="flex-start" spacing={1.5}>
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
           <Avatar
             src={person.avatar_url ?? undefined}
             sx={{
@@ -80,7 +80,7 @@ function PersonCard({ person, onFollowChange }: {
           </Avatar>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 0.25, flexWrap: 'wrap' }}>
+            <Stack direction="row" spacing={0.75} sx={{ mb: 0.25, flexWrap: 'wrap', alignItems: 'center' }}>
               <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>{person.display_name}</Typography>
               <Typography variant="caption" color="text.secondary">{handle}</Typography>
             </Stack>
@@ -95,21 +95,21 @@ function PersonCard({ person, onFollowChange }: {
               </Typography>
             )}
 
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Stack direction="row" alignItems="center" spacing={0.375}>
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+              <Stack direction="row" spacing={0.375} sx={{ alignItems: 'center' }}>
                 <Users size={11} style={{ color: t.txtFaint }} />
                 <Typography variant="caption" color="text.secondary">
                   <Box component="b" sx={{ color: t.txtDim }}>{person.followers_count}</Box> followers
                 </Typography>
               </Stack>
-              <Stack direction="row" alignItems="center" spacing={0.375}>
+              <Stack direction="row" spacing={0.375} sx={{ alignItems: 'center' }}>
                 <Zap size={11} style={{ color: t.ai }} />
                 <Typography variant="caption" color="text.secondary">
                   <Box component="b" sx={{ color: t.txtDim }}>{person.xp_balance.toLocaleString()}</Box> XP
                 </Typography>
               </Stack>
               {person.missions_completed > 0 && (
-                <Stack direction="row" alignItems="center" spacing={0.375}>
+                <Stack direction="row" spacing={0.375} sx={{ alignItems: 'center' }}>
                   <Trophy size={11} style={{ color: t.warning }} />
                   <Typography variant="caption" color="text.secondary">
                     <Box component="b" sx={{ color: t.txtDim }}>{person.missions_completed}</Box>
@@ -204,7 +204,7 @@ export default function PeoplePage() {
         borderBottom: `1px solid rgba(255,255,255,.07)`,
       }}>
         <Box sx={{ maxWidth: 600, margin: '0 auto', padding: '12px 16px 0' }}>
-          <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 1.5 }}>
+          <Stack direction="row" spacing={1.25} sx={{ mb: 1.5, alignItems: 'center' }}>
             <IconButton
               onClick={() => router.back()}
               sx={{ color: t.txtDim, p: 0.5 }}
@@ -222,23 +222,25 @@ export default function PeoplePage() {
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               placeholder="Search by name…"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search size={15} style={{ color: t.txtFaint }} />
-                  </InputAdornment>
-                ),
-                endAdornment: searchInput ? (
-                  <InputAdornment position="end">
-                    <IconButton
-                      size="small"
-                      onClick={() => { setSearchInput(''); setQuery(''); }}
-                      sx={{ color: t.txtFaint, p: 0 }}
-                    >
-                      <X size={14} />
-                    </IconButton>
-                  </InputAdornment>
-                ) : null,
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search size={15} style={{ color: t.txtFaint }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchInput ? (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => { setSearchInput(''); setQuery(''); }}
+                        sx={{ color: t.txtFaint, p: 0 }}
+                      >
+                        <X size={14} />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : null,
+                },
               }}
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -281,7 +283,7 @@ export default function PeoplePage() {
                 {[0,1,2,3,4].map(i => (
                   <Stack key={i} direction="row" spacing={1.5} sx={{ padding: '14px 16px' }}>
                     <Box sx={{ width: 46, height: 46, borderRadius: '50%', background: t.panel, flexShrink: 0 }} />
-                    <Stack flex={1} spacing={1}>
+                    <Stack spacing={1} sx={{ flex: 1 }}>
                       <Box sx={{ height: 14, width: '45%', borderRadius: '6px', background: t.panel }} />
                       <Box sx={{ height: 11, width: '70%', borderRadius: '6px', background: t.surface }} />
                       <Box sx={{ height: 10, width: '55%', borderRadius: '6px', background: t.surface }} />
@@ -292,7 +294,7 @@ export default function PeoplePage() {
             </motion.div>
           ) : people.length === 0 ? (
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <Stack alignItems="center" sx={{ padding: '60px 24px', textAlign: 'center' }}>
+              <Stack sx={{ padding: '60px 24px', textAlign: 'center', alignItems: 'center' }}>
                 <Box sx={{ width: 56, height: 56, borderRadius: '50%', background: `${t.accent}0D`, border: `1px solid ${t.accent}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
                   <Users size={24} strokeWidth={1.5} style={{ color: t.accent }} />
                 </Box>

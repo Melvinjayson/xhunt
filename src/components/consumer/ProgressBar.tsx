@@ -21,7 +21,7 @@ export default function ProgressBar({ value, color, height = 6, label, showPerce
   return (
     <Box style={style}>
       {(label || showPercent) && (
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+        <Stack direction="row" sx={{ mb: 0.5, justifyContent: 'space-between', alignItems: 'center' }}>
           {label && <Typography variant="caption" color="text.secondary">{label}</Typography>}
           {showPercent && <Typography variant="caption" sx={{ color: barColor, fontWeight: 700 }}>{Math.round(clampedValue)}%</Typography>}
         </Stack>

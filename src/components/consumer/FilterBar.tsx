@@ -83,7 +83,7 @@ export default function FilterBar({
 
       {/* Sort row */}
       {(sortOptions || onFilterSheet) && (
-        <Stack direction="row" alignItems="center" spacing={1}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           {sortOptions && (
             <Box sx={{
               display: 'flex',

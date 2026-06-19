@@ -22,15 +22,17 @@ export default function BottomSheet({ isOpen, onClose, title, children, maxHeigh
       anchor="bottom"
       open={isOpen}
       onClose={onClose}
-      PaperProps={{
-        sx: {
-          borderRadius: '24px 24px 0 0',
-          maxHeight,
-          bgcolor: t.surface,
-          borderTop: '1px solid',
-          borderTopColor: 'divider',
-          boxShadow: '0 -8px 40px rgba(0,0,0,0.6)',
-          overflowY: 'auto',
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: '24px 24px 0 0',
+            maxHeight,
+            bgcolor: t.surface,
+            borderTop: '1px solid',
+            borderTopColor: 'divider',
+            boxShadow: '0 -8px 40px rgba(0,0,0,0.6)',
+            overflowY: 'auto',
+          },
         },
       }}
     >
@@ -43,9 +45,7 @@ export default function BottomSheet({ isOpen, onClose, title, children, maxHeigh
       {title && (
         <Stack
           direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ px: 2.5, pb: 2 }}
+          sx={{ px: 2.5, pb: 2, alignItems: 'center', justifyContent: 'space-between' }}
         >
           <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', fontSize: 16 }}>
             {title}

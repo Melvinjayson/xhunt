@@ -85,8 +85,8 @@ export default function MissionCard({
 
       <Box sx={{ p: compact ? '12px 14px' : '16px 18px' }}>
         {/* Header row: org + save */}
-        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: 1.25 }}>
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, flex: 1 }}>
+        <Stack direction="row" sx={{ mb: 1.25, alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <Stack direction="row" spacing={1} sx={{ minWidth: 0, flex: 1, alignItems: 'center' }}>
             {/* Org avatar */}
             <Avatar
               src={hunt.tenantLogo ?? undefined}
@@ -122,7 +122,7 @@ export default function MissionCard({
               </Typography>
             </Box>
           </Stack>
-          <Stack direction="row" alignItems="center" spacing={1}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             {matchScore != null && <MatchRing score={matchScore} size={36} strokeWidth={3} />}
             <IconButton
               size="small"
@@ -178,7 +178,7 @@ export default function MissionCard({
 
         {/* Tags */}
         {!compact && hunt.tags?.length > 0 && (
-          <Stack direction="row" flexWrap="wrap" gap={0.625} sx={{ mb: 1.5 }}>
+          <Stack direction="row" sx={{ mb: 1.5, flexWrap: 'wrap', gap: 0.625 }}>
             {hunt.tags.slice(0, 3).map((tag) => (
               <Chip
                 key={tag}
@@ -204,27 +204,27 @@ export default function MissionCard({
         )}
 
         {/* Reward + meta row */}
-        <Stack direction="row" alignItems="center" flexWrap="wrap" gap={1}>
+        <Stack direction="row" sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
           {/* Cash reward */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: `${t.accent}14`, borderRadius: '8px', px: 1.25, py: 0.5 }}>
             <Typography sx={{ fontSize: 13, fontWeight: 800, color: t.accent }}>${cash}</Typography>
           </Box>
 
           {/* XP */}
-          <Stack direction="row" alignItems="center" spacing={0.375}>
+          <Stack direction="row" spacing={0.375} sx={{ alignItems: 'center' }}>
             <Zap size={11} strokeWidth={2} style={{ color: t.ai }} />
             <Typography sx={{ fontSize: 11, fontWeight: 700, color: t.ai }}>{xp} XP</Typography>
           </Stack>
 
           {/* Time */}
-          <Stack direction="row" alignItems="center" spacing={0.375}>
+          <Stack direction="row" spacing={0.375} sx={{ alignItems: 'center' }}>
             <Clock size={11} strokeWidth={1.8} style={{ color: t.txtFaint }} />
             <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{hunt.estimated_time}</Typography>
           </Stack>
 
           {/* Distance */}
           {distanceKm != null && (
-            <Stack direction="row" alignItems="center" spacing={0.375}>
+            <Stack direction="row" spacing={0.375} sx={{ alignItems: 'center' }}>
               <MapPin size={11} strokeWidth={1.8} style={{ color: t.txtFaint }} />
               <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
                 {distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)}km`}
@@ -234,7 +234,7 @@ export default function MissionCard({
         </Stack>
 
         {/* Bottom row: badges */}
-        <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.75} sx={{ mt: 1.25 }}>
+        <Stack direction="row" sx={{ mt: 1.25, alignItems: 'center', flexWrap: 'wrap', gap: 0.75 }}>
           {/* Difficulty */}
           <Chip
             label={diff.label}

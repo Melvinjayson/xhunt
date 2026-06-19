@@ -18,9 +18,9 @@ interface SectionHeaderProps {
 export default function SectionHeader({ title, count, seeAllHref, onSeeAll, subtitle, style }: SectionHeaderProps) {
   const hasSeeAll = seeAllHref || onSeeAll;
   return (
-    <Stack direction="row" alignItems="flex-start" justifyContent="space-between" style={style} sx={{ mb: 1.75 }}>
+    <Stack direction="row" style={style} sx={{ mb: 1.75, alignItems: 'flex-start', justifyContent: 'space-between' }}>
       <Box>
-        <Stack direction="row" alignItems="center" spacing={1}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', fontSize: 16 }}>
             {title}
           </Typography>

@@ -180,7 +180,7 @@ export default function ActiveMissionPage() {
 
       {/* Header */}
       <Box sx={{ position: 'sticky', top: 0, zIndex: 30, background: `${t.bg}F5`, backdropFilter: 'blur(16px)', padding: '12px 20px', borderBottom: `1px solid ${t.border}` }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+        <Stack direction="row" sx={{ mb: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
           <Button
             startIcon={<ArrowLeft size={16} strokeWidth={2} />}
             onClick={() => router.push(`/hunt/${huntId}`)}
@@ -251,7 +251,7 @@ export default function ActiveMissionPage() {
             {(hunt.requiredSkills ?? []).length > 0 && (
               <Box sx={{ mb: 2.5 }}>
                 <Typography sx={{ mb: 1.25, fontSize: 12, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Required Skills</Typography>
-                <Stack direction="row" flexWrap="wrap" spacing={0.75}>
+                <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap' }}>
                   {hunt.requiredSkills!.map(s => (
                     <Chip key={s} label={s} size="small" sx={{ background: `${t.ai}14`, color: t.ai, border: `1px solid ${t.ai}26`, fontWeight: 600, borderRadius: '100px' }} />
                   ))}
@@ -336,14 +336,15 @@ export default function ActiveMissionPage() {
               <Typography sx={{ mb: 1.25, fontSize: 12, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Your checklist</Typography>
               <Stack spacing={1}>
                 {checklistItems.map((item, i) => (
-                  <Stack
+                  <Box
                     key={i}
                     component="button"
-                    direction="row"
-                    alignItems="center"
-                    spacing={1.25}
                     onClick={() => toggleCheck(i)}
                     sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: '10px',
                       padding: '10px 14px',
                       borderRadius: '12px',
                       background: checkedItems.has(i) ? `${t.accent}10` : t.card,
@@ -357,7 +358,7 @@ export default function ActiveMissionPage() {
                       ? <CheckSquare size={16} strokeWidth={2} style={{ color: t.accent, flexShrink: 0 }} />
                       : <Square size={16} strokeWidth={1.5} style={{ color: t.txtFaint, flexShrink: 0 }} />}
                     <Typography component="span" sx={{ fontSize: 13, color: checkedItems.has(i) ? t.txt : t.txtDim, fontWeight: checkedItems.has(i) ? 600 : 400, textDecoration: checkedItems.has(i) ? 'line-through' : 'none' }}>{item}</Typography>
-                  </Stack>
+                  </Box>
                 ))}
               </Stack>
               <Typography sx={{ mt: 1, fontSize: 11, color: t.txtFaint }}>Mark items complete as you go — your progress saves automatically.</Typography>
@@ -365,7 +366,7 @@ export default function ActiveMissionPage() {
 
             {/* Tips card */}
             <Surface variant="inset" padding="14px 16px" style={{ marginBottom: 20 }}>
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.25 }}>
+              <Stack direction="row" spacing={1} sx={{ mb: 1.25, alignItems: 'center' }}>
                 <Lightbulb size={14} style={{ color: t.warning, flexShrink: 0 }} />
                 <Typography sx={{ fontSize: 12, fontWeight: 700, color: t.warning, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tips for this step</Typography>
               </Stack>
@@ -439,7 +440,7 @@ export default function ActiveMissionPage() {
             {/* Proof type selector */}
             <Box sx={{ mb: 2.5 }}>
               <Typography sx={{ mb: 1.25, fontSize: 12, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Proof Type</Typography>
-              <Stack direction="row" flexWrap="wrap" spacing={1}>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                 {PROOF_TYPES.map(({ id, label, icon: Icon }) => (
                   <Chip
                     key={id}
@@ -476,12 +477,12 @@ export default function ActiveMissionPage() {
               <Surface variant="inset" padding="32px 20px" style={{ textAlign: 'center', border: `2px dashed ${selectedFile ? t.accent : t.border}`, background: selectedFile ? `${t.accent}06` : undefined }}>
                 <Upload size={28} strokeWidth={1.5} style={{ color: selectedFile ? t.accent : t.txtFaint, marginBottom: 10 }} />
                 {selectedFile ? (
-                  <Stack alignItems="center" spacing={0.5}>
+                  <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
                     <Typography sx={{ fontSize: 14, fontWeight: 600, color: t.accent }}>{selectedFile.name}</Typography>
                     <Typography sx={{ fontSize: 12, color: t.txtFaint }}>Tap to change file</Typography>
                   </Stack>
                 ) : (
-                  <Stack alignItems="center" spacing={0.5}>
+                  <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
                     <Typography sx={{ fontSize: 14, fontWeight: 600, color: t.txt }}>Upload {proofType}</Typography>
                     <Typography sx={{ fontSize: 12, color: t.txtFaint }}>Tap to choose a file</Typography>
                   </Stack>
@@ -545,7 +546,7 @@ export default function ActiveMissionPage() {
               <Typography sx={{ mb: 1.75, fontSize: 12, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Verification Pipeline</Typography>
               <Stack spacing={1.25}>
                 {['Submitted', 'AI Reviewing', 'Manual Review', 'Approved'].map((s, i) => (
-                  <Stack key={s} direction="row" alignItems="center" spacing={1.25}>
+                  <Stack key={s} direction="row" spacing={1.25} sx={{ alignItems: 'center' }}>
                     <Box sx={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? `${t.accent}26` : 'rgba(255,255,255,0.05)', border: `1.5px solid ${i === 0 ? t.accent : t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {i === 0 ? <Check size={12} strokeWidth={2.5} style={{ color: t.accent }} /> : <Typography sx={{ fontSize: 11, color: t.txtFaint }}>{i + 1}</Typography>}
                     </Box>

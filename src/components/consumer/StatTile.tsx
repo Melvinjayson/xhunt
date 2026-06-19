@@ -30,7 +30,7 @@ export default function StatTile({
 }: StatTileProps) {
   const cardContent = (
     <CardContent sx={{ p: '16px 18px !important' }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+      <Stack direction="row" sx={{ mb: 1, alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography
           variant="caption"
           sx={{ fontWeight: 600, color: 'text.secondary', letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: 11 }}

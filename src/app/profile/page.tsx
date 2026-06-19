@@ -17,7 +17,7 @@ import IconButton from '@mui/material/IconButton';
 import Avatar from '@mui/material/Avatar';
 import LinearProgress from '@mui/material/LinearProgress';
 import Chip from '@mui/material/Chip';
-import Grid from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import { loadState, clearState, loadProfile } from '@/lib/store';
 import { useAuth } from '@/lib/auth/context';
 import type { CompletedHunt, ImpactProfile } from '@/lib/types';
@@ -244,11 +244,11 @@ export default function ProfilePage() {
           }}
         >
           {/* Title bar */}
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
+          <Stack direction="row" sx={{ mb: 2.5, alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="h6" sx={{ fontWeight: 800, color: t.txt, letterSpacing: '-0.02em' }}>
               Impact Portfolio
             </Typography>
-            <Stack direction="row" alignItems="center" spacing={1}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               {loading && <Loader2 size={14} color={t.txtFaint} style={{ animation: 'spin 1s linear infinite' }} />}
               <IconButton
                 onClick={copyLink}
@@ -282,7 +282,7 @@ export default function ProfilePage() {
           </Stack>
 
           {/* Avatar + name */}
-          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2.5 }}>
+          <Stack direction="row" spacing={2} sx={{ mb: 2.5, alignItems: 'center' }}>
             <Box sx={{ position: 'relative', flexShrink: 0 }}>
               <Avatar
                 sx={{
@@ -309,7 +309,7 @@ export default function ProfilePage() {
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ mb: '6px', fontSize: 20, fontWeight: 800, color: t.txt, letterSpacing: '-0.02em' }}>{name}</Typography>
-              <Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap">
+              <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
                 <Tag label={tierLabel} color={tierColor} />
                 {impactProfile?.archetype && (
                   <Tag label={impactProfile.archetype} color={aColor} />
@@ -371,7 +371,7 @@ export default function ProfilePage() {
           {/* ── Skills Intelligence ── */}
           {skills.length > 0 && (
             <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 22 }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+              <Stack direction="row" sx={{ mb: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt }}>Skills</Typography>
                 <Chip
                   label="AI Inferred"
@@ -389,8 +389,8 @@ export default function ProfilePage() {
                     const cfg = LEVEL_CFG[s.level] ?? LEVEL_CFG.Beginner;
                     return (
                       <motion.div key={s.name} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}>
-                        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: '6px' }}>
-                          <Stack direction="row" alignItems="center" spacing={1}>
+                        <Stack direction="row" sx={{ mb: '6px', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                             <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: t.txtDim }}>{s.name}</Typography>
                             <Chip
                               label={s.level}
@@ -422,16 +422,16 @@ export default function ProfilePage() {
           {/* ── Impact Areas ── */}
           {categories.length > 0 && (
             <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} style={{ marginBottom: 22 }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+              <Stack direction="row" sx={{ mb: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt }}>Impact Areas</Typography>
                 <Globe size={13} color={t.txtFaint} />
               </Stack>
-              <Stack direction="row" flexWrap="wrap" spacing={1}>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                 {categories.map((cat) => (
                   <Chip
                     key={cat.catId}
                     label={
-                      <Stack direction="row" alignItems="center" spacing={0.75}>
+                      <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
                         <span style={{ fontSize: 13 }}>{cat.emoji}</span>
                         <span style={{ fontSize: 12, fontWeight: 600, color: cat.color }}>{cat.label}</span>
                         <Chip
@@ -459,7 +459,7 @@ export default function ProfilePage() {
           {/* ── Impact DNA ── */}
           {impactProfile && (
             <section style={{ marginBottom: 22 }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+              <Stack direction="row" sx={{ mb: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt }}>Impact DNA</Typography>
                 <Chip
                   label="AI Profile"
@@ -475,12 +475,12 @@ export default function ProfilePage() {
               {/* Archetype card */}
               <Stack
                 direction="row"
-                alignItems="center"
                 spacing={1.75}
                 sx={{
                   borderRadius: '20px', padding: '14px 16px', mb: 1.25,
                   background: `linear-gradient(135deg, ${aColor}08, ${t.ai}06)`,
                   border: `1px solid ${aColor}18`,
+                  alignItems: 'center',
                 }}
               >
                 <Box
@@ -495,7 +495,7 @@ export default function ProfilePage() {
                 <Box sx={{ flex: 1 }}>
                   <Typography sx={{ fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Archetype</Typography>
                   <Typography sx={{ fontSize: 18, fontWeight: 900, color: aColor, letterSpacing: '-0.02em', mb: '3px' }}>{impactProfile.archetype}</Typography>
-                  <Stack direction="row" alignItems="center" spacing={0.625}>
+                  <Stack direction="row" spacing={0.625} sx={{ alignItems: 'center' }}>
                     <Typography sx={{ fontSize: 10, color: t.txtFaint }}>Impact Score</Typography>
                     <Typography sx={{ fontSize: 13, fontWeight: 800, color: aColor }}>{impactProfile.impactScore}</Typography>
                     <Typography sx={{ fontSize: 10, color: t.txtFaint }}>/ 100</Typography>
@@ -511,7 +511,7 @@ export default function ProfilePage() {
                     <Stack spacing={1.25}>
                       {impactProfile.strengths.slice(0, 4).map((s) => (
                         <Box key={s.name}>
-                          <Stack direction="row" justifyContent="space-between" sx={{ mb: '5px' }}>
+                          <Stack direction="row" sx={{ mb: '5px', justifyContent: 'space-between' }}>
                             <Typography sx={{ fontSize: 11, color: t.txtDim, fontWeight: 600 }}>{s.name}</Typography>
                             <Typography sx={{ fontSize: 11, color: aColor, fontWeight: 800 }}>{s.score}%</Typography>
                           </Stack>
@@ -530,7 +530,7 @@ export default function ProfilePage() {
                     <Surface variant="inset">
                       <Box sx={{ p: '12px 14px' }}>
                         <Typography sx={{ mb: 1, fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Causes</Typography>
-                        <Stack direction="row" flexWrap="wrap" spacing={0.5}>
+                        <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
                           {impactProfile.causes.map((c) => (
                             <Tag key={c} label={c} color={t.accent} />
                           ))}
@@ -543,7 +543,7 @@ export default function ProfilePage() {
                   <Surface variant="inset">
                     <Box sx={{ p: '12px 14px' }}>
                       <Typography sx={{ mb: 1, fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Availability</Typography>
-                      <Stack direction="row" alignItems="center" spacing={0.75}>
+                      <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
                         <Sparkles size={11} color={t.accent} />
                         <Typography sx={{ fontSize: 11, color: t.txt, fontWeight: 600 }}>{impactProfile.availability}</Typography>
                       </Stack>
@@ -559,7 +559,7 @@ export default function ProfilePage() {
           {interests.length > 0 && (
             <section style={{ marginBottom: 22 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt, mb: 1.5 }}>Interests</Typography>
-              <Stack direction="row" flexWrap="wrap" spacing={1}>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                 {interests.map((id) => (
                   <Chip
                     key={id}
@@ -583,11 +583,11 @@ export default function ProfilePage() {
             >
               <Stack
                 direction="row"
-                alignItems="center"
                 spacing={1.75}
                 sx={{
                   borderRadius: '20px', padding: '16px 18px',
                   background: `${t.warning}08`, border: `1px solid ${t.warning}20`,
+                  alignItems: 'center',
                 }}
               >
                 <Box
@@ -615,12 +615,12 @@ export default function ProfilePage() {
             >
               <Stack
                 direction="row"
-                alignItems="center"
                 spacing={1.5}
                 sx={{
                   borderRadius: '20px', padding: '14px 16px',
                   background: subStatus.isTrialActive ? `${t.ai}08` : subStatus.tier === 'pro' ? `${t.accent}06` : t.card,
                   border: `1px solid ${subStatus.isTrialActive ? `${t.ai}28` : subStatus.tier === 'pro' ? `${t.accent}20` : t.border}`,
+                  alignItems: 'center',
                 }}
               >
                 <Box
@@ -730,7 +730,7 @@ export default function ProfilePage() {
 
           {/* ── Mission Timeline ── */}
           <section>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.75 }}>
+            <Stack direction="row" sx={{ mb: 1.75, alignItems: 'center', justifyContent: 'space-between' }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt }}>
                 Mission History {completedHunts.length > 0 && `(${completedHunts.length})`}
               </Typography>
@@ -803,11 +803,11 @@ export default function ProfilePage() {
                         <Box sx={{ p: '13px 15px' }}>
                           <Typography sx={{ mb: '3px', fontSize: 13.5, fontWeight: 600, color: t.txt, lineHeight: 1.3 }}>{c.huntTitle}</Typography>
                           <Typography sx={{ mb: 1, fontSize: 11.5, fontWeight: 600, color: t.accent }}>{c.reward.split('+')[0].trim()}</Typography>
-                          <Stack direction="row" alignItems="center" justifyContent="space-between">
+                          <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                             <Typography sx={{ fontSize: 10.5, color: t.txtFaint }}>
                               {new Date(c.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </Typography>
-                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                            <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
                               <CheckCircle size={11} color={t.accent} />
                               <Typography sx={{ fontSize: 10, fontWeight: 700, color: t.accent }}>Completed</Typography>
                             </Stack>

@@ -92,7 +92,7 @@ export default function HuntDetailPage() {
 
   if (!hunt) return (
     <Box className="consumer-app" sx={{ background: t.bg }}>
-      <Stack sx={{ padding: '40px 20px' }} alignItems="center" spacing={2}>
+      <Stack spacing={2} sx={{ padding: '40px 20px', alignItems: 'center' }}>
         <Typography sx={{ color: t.txtFaint }}>Mission not found.</Typography>
         <Button variant="contained" color="primary" onClick={() => router.push('/explore')}>Browse Missions</Button>
       </Stack>
@@ -111,7 +111,7 @@ export default function HuntDetailPage() {
   const stepProgress = progress ? Math.round((progress.completedSteps.length / Math.max(hunt.steps.length, 1)) * 100) : 0;
 
   const RewardPills = () => (
-    <Stack direction="row" flexWrap="wrap" spacing={1} sx={{ mb: 2 }}>
+    <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
       <Chip
         label={<><span style={{ fontSize: 18, fontWeight: 900, color: t.accent }}>${cash}</span><span style={{ fontSize: 11, color: t.txtDim, marginLeft: 4 }}>reward</span></>}
         sx={{ background: `${t.accent}18`, border: `1px solid ${t.accent}30`, borderRadius: '12px', height: 36, '& .MuiChip-label': { px: 2 } }}
@@ -136,7 +136,7 @@ export default function HuntDetailPage() {
   );
 
   const MetaBadges = () => (
-    <Stack direction="row" flexWrap="wrap" spacing={0.75} sx={{ mb: 2 }}>
+    <Stack direction="row" spacing={0.75} sx={{ mb: 2, flexWrap: 'wrap' }}>
       <Chip size="small" label={diff.label} sx={{ background: diff.bg, color: diff.color, fontWeight: 700, fontSize: 11, borderRadius: '100px' }} />
       {typeMeta && <Chip size="small" label={`${typeMeta.emoji} ${typeMeta.label}`} sx={{ background: `${typeMeta.color}14`, color: typeMeta.color, fontWeight: 600, fontSize: 11, borderRadius: '100px' }} />}
       {hunt.locationType && (
@@ -196,9 +196,7 @@ export default function HuntDetailPage() {
         {/* Top bar */}
         <Stack
           direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ padding: '16px 20px', position: 'sticky', top: 0, zIndex: 30, background: `${t.bg}F0`, backdropFilter: 'blur(16px)' }}
+          sx={{ padding: '16px 20px', position: 'sticky', top: 0, zIndex: 30, background: `${t.bg}F0`, backdropFilter: 'blur(16px)', alignItems: 'center', justifyContent: 'space-between' }}
         >
           <Button
             startIcon={<ArrowLeft size={18} strokeWidth={2} />}
@@ -235,11 +233,11 @@ export default function HuntDetailPage() {
           </Typography>
 
           {/* Org row */}
-          <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 2.5 }}>
+          <Stack direction="row" spacing={1.25} sx={{ mb: 2.5, alignItems: 'center' }}>
             <Box sx={{ width: 36, height: 36, borderRadius: '10px', background: `${category.color}18`, border: `1px solid ${category.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
               {hunt.tenantLogo ? <img src={hunt.tenantLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} /> : category.emoji}
             </Box>
-            <Stack direction="row" alignItems="center" spacing={0.5}>
+            <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
               <Typography sx={{ fontSize: 13, fontWeight: 600, color: t.txtDim }}>
                 {hunt.tenantName ?? 'Organization'}
               </Typography>
@@ -318,7 +316,7 @@ export default function HuntDetailPage() {
                 <Surface variant="inset" padding="16px">
                   <Stack spacing={1.25}>
                     {['Written response or explanation', 'Photo or video proof', 'GPS location check-in (if local)', 'Source citations or references'].map((req, i) => (
-                      <Stack key={i} direction="row" alignItems="center" spacing={1.25}>
+                      <Stack key={i} direction="row" spacing={1.25} sx={{ alignItems: 'center' }}>
                         <Box sx={{ width: 20, height: 20, borderRadius: '6px', border: `1.5px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <Typography sx={{ fontSize: 10, color: t.txtFaint }}>{i + 1}</Typography>
                         </Box>
@@ -349,7 +347,7 @@ export default function HuntDetailPage() {
                 <Box component="section" sx={{ mb: 3 }}>
                   <SectionHeader title="About the Organization" />
                   <Surface variant="inset" padding="16px">
-                    <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 1.25 }}>
+                    <Stack direction="row" spacing={1.25} sx={{ mb: 1.25, alignItems: 'center' }}>
                       <Box sx={{ width: 36, height: 36, borderRadius: '10px', background: `${category.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{category.emoji}</Box>
                       <Box>
                         <Typography sx={{ fontSize: 14, fontWeight: 700, color: t.txt }}>{hunt.tenantName ?? 'Organization'}</Typography>

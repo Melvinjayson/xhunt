@@ -146,12 +146,12 @@ function HeroSection({
       }}
     >
       {/* Status icon */}
-      <Stack alignItems="center" sx={{ mb: 2 }}>
+      <Stack sx={{ mb: 2, alignItems: 'center' }}>
         {heroIcon}
       </Stack>
 
       {/* Status pill */}
-      <Stack alignItems="center" sx={{ mb: 1.5 }}>
+      <Stack sx={{ mb: 1.5, alignItems: 'center' }}>
         <StatusPill status={status} size="md" />
       </Stack>
 
@@ -179,7 +179,7 @@ function HeroSection({
 
       {/* Reward pills — only show if not rejected */}
       {!isRejected && (
-        <Stack direction="row" justifyContent="center" flexWrap="wrap" spacing={1.25}>
+        <Stack direction="row" spacing={1.25} sx={{ justifyContent: 'center', flexWrap: 'wrap' }}>
           {cash > 0 && (
             <Chip
               icon={<DollarSign size={14} />}
@@ -262,7 +262,7 @@ function VerificationTimeline({
             return (
               <Step key={stage.id} completed={isCompleted}>
                 <StepLabel
-                  StepIconComponent={() => (
+                  slots={{ stepIcon: () => (
                     <Box
                       className={isCurrent && !isTerminalStage ? 'breathe' : undefined}
                       sx={{
@@ -288,9 +288,9 @@ function VerificationTimeline({
                         ? React.createElement(CheckCircle2, { size: 16 })
                         : React.createElement(stage.icon, { size: 16, color: stageColor })}
                     </Box>
-                  )}
+                  ) }}
                 >
-                  <Stack direction="row" alignItems="center" spacing={1}>
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                     <Typography
                       variant="body2"
                       sx={{
@@ -444,7 +444,7 @@ function EstimatedTiming({ status }: { status: VerificationStatus }) {
 
   return (
     <Surface variant="inset" style={{ margin: '0 16px 16px' }}>
-      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ padding: '14px 16px' }}>
+      <Stack direction="row" spacing={1.5} sx={{ padding: '14px 16px', alignItems: 'center' }}>
         <Box
           sx={{
             width: 36,
@@ -489,9 +489,7 @@ function RecommendedMissions({
     <Box sx={{ margin: '0 0 24px' }}>
       <Stack
         direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ padding: '0 16px 12px' }}
+        sx={{ padding: '0 16px 12px', alignItems: 'center', justifyContent: 'space-between' }}
       >
         <Typography variant="h6" sx={{ fontSize: 15, fontWeight: 700, color: t.txt }}>
           More Opportunities
@@ -539,10 +537,8 @@ export default function CompletePage() {
       <Box className="consumer-app">
         <Box className="consumer-app-inner">
           <Stack
-            alignItems="center"
-            justifyContent="center"
             spacing={1.5}
-            sx={{ minHeight: '60vh', color: t.txtDim }}
+            sx={{ minHeight: '60vh', color: t.txtDim, alignItems: 'center', justifyContent: 'center' }}
           >
             <Sparkles size={32} color={t.txtFaint} />
             <Typography sx={{ fontSize: 14 }}>Mission not found</Typography>
@@ -602,7 +598,7 @@ export default function CompletePage() {
         {!isTerminal && (
           <Surface variant="inset" style={{ margin: '0 16px 16px' }}>
             <Box sx={{ padding: '16px 18px' }}>
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.25 }}>
+              <Stack direction="row" spacing={1} sx={{ mb: 1.25, alignItems: 'center' }}>
                 <User2 size={16} color={t.ai} />
                 <Typography sx={{ fontSize: 13, fontWeight: 600, color: t.txt }}>What happens next?</Typography>
               </Stack>

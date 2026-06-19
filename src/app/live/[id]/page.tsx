@@ -237,7 +237,7 @@ export default function LiveSessionPage() {
         borderBottom: `1px solid ${T.line}`,
         padding: '12px 16px',
       }}>
-        <Stack direction="row" alignItems="center" spacing={1.5}>
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
           <IconButton onClick={() => router.back()} sx={{ color: T.muted, p: 0.5 }}>
             <ArrowLeft size={20} />
           </IconButton>
@@ -250,7 +250,7 @@ export default function LiveSessionPage() {
             </Typography>
           </Box>
           {/* Status badge */}
-          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexShrink: 0 }}>
+          <Stack direction="row" spacing={0.75} sx={{ flexShrink: 0, alignItems: 'center' }}>
             {isLive && (
               <Chip
                 label="● LIVE"
@@ -287,8 +287,8 @@ export default function LiveSessionPage() {
       {/* Content */}
       <Stack spacing={2} sx={{ flex: 1, padding: '20px 16px' }}>
         {/* Viewer count + mission */}
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ color: T.muted, fontSize: 13 }}>
+        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+          <Stack direction="row" spacing={0.75} sx={{ color: T.muted, fontSize: 13, alignItems: 'center' }}>
             <Eye size={15} />
             <Typography sx={{ color: T.muted, fontSize: 13 }}>{session.viewer_count.toLocaleString()} watching</Typography>
           </Stack>
@@ -300,7 +300,7 @@ export default function LiveSessionPage() {
         {/* Progress bar */}
         {session.total_steps > 1 && (
           <Box>
-            <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
+            <Stack direction="row" sx={{ mb: 0.75, justifyContent: 'space-between' }}>
               <Typography sx={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
                 Step {session.current_step_index + 1} of {session.total_steps}
               </Typography>

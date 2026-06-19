@@ -16,6 +16,11 @@ import {
   Upload,
   Play,
   Gift,
+  Wallet,
+  Timer,
+  MapPin,
+  Users,
+  ArrowRight,
 } from 'lucide-react';
 
 import Box from '@mui/material/Box';
@@ -24,7 +29,7 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Badge from '@mui/material/Badge';
 import Chip from '@mui/material/Chip';
-import Grid from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 
 import { useAuth } from '@/lib/auth/context';
 import { loadState, loadProfile } from '@/lib/store';
@@ -359,50 +364,73 @@ export default function HomePage() {
 
         <div style={{ padding: '0 16px' }}>
 
-          {/* 2. Participation Overview */}
-          <section style={{ marginTop: 24 }}>
-            <SectionHeader title="Your Participation" />
-            <Grid container spacing={1.5} sx={{ mt: 1.5 }}>
-              <Grid size={{ xs: 6, lg: 3 }}>
-                <StatTile label="Active Missions" value={inProgressHunts.length} icon={Zap} accent={t.accent} href="/missions" />
+          {/* 2. Participation Wallet — Revolut-style hero */}
+          <section style={{ marginTop: 16 }}>
+            <Box
+              onClick={() => router.push('/rewards')}
+              sx={{
+                borderRadius: '20px',
+                background: `linear-gradient(135deg, ${t.ai}28 0%, ${t.accent}12 100%)`,
+                border: `1px solid ${t.ai}35`,
+                p: 2.5,
+                cursor: 'pointer',
+                transition: 'opacity 0.15s',
+                '&:hover': { opacity: 0.9 },
+              }}
+            >
+              {/* wallet icon + label */}
+              <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center' }}>
+                <Wallet size={16} color={t.aiLight} />
+                <Typography variant="caption" sx={{ fontWeight: 600, color: t.aiLight, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: 11 }}>
+                  Participation Wallet
+                </Typography>
+              </Stack>
+
+              {/* main balance */}
+              <Typography sx={{ fontSize: 38, fontWeight: 800, color: 'text.primary', letterSpacing: '-1px', lineHeight: 1 }}>
+                ${rewardsBalance.toFixed(2)}
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
+                earned · {completedHunts.length} mission{completedHunts.length !== 1 ? 's' : ''} completed
+              </Typography>
+
+              {/* 4 wallet stats */}
+              <Grid container spacing={1} sx={{ mt: 2.5 }}>
+                {[
+                  { label: 'Available', value: `$${Math.max(0, rewardsBalance - rewardsBalance * 0.3).toFixed(0)}`, color: t.accent },
+                  { label: 'Pending', value: `$${(rewardsBalance * 0.3).toFixed(0)}`, color: t.warning },
+                  { label: 'Score', value: Math.round(reputationScore), color: t.aiLight },
+                  { label: 'Streak', value: `${streak}d`, color: t.info },
+                ].map(({ label, value, color }) => (
+                  <Grid key={label} size={{ xs: 3 }}>
+                    <Box sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: '12px', p: '10px 8px', textAlign: 'center' }}>
+                      <Typography sx={{ fontSize: 17, fontWeight: 800, color, lineHeight: 1 }}>{value}</Typography>
+                      <Typography variant="caption" sx={{ fontSize: 10, color: 'text.disabled', mt: 0.5, display: 'block' }}>{label}</Typography>
+                    </Box>
+                  </Grid>
+                ))}
               </Grid>
-              <Grid size={{ xs: 6, lg: 3 }}>
-                <StatTile label="Pending Verification" value={pendingVerificationCount} icon={Clock} accent={t.warning} href="/missions" />
-              </Grid>
-              <Grid size={{ xs: 6, lg: 3 }}>
-                <StatTile label="Rewards Available" value={`$${rewardsBalance.toFixed(0)}`} icon={Star} accent={t.ai} href="/rewards" />
-              </Grid>
-              <Grid size={{ xs: 6, lg: 3 }}>
-                <StatTile label="Reputation Score" value={Math.round(reputationScore)} icon={TrendingUp} accent={t.info} href="/profile" />
-              </Grid>
-            </Grid>
+            </Box>
           </section>
 
-          {/* 3. Continue Participation */}
-          <section style={{ marginTop: 32 }}>
-            <SectionHeader
-              title="Continue Participation"
-              count={inProgressHunts.length > 0 ? inProgressHunts.length : undefined}
-              seeAllHref="/missions"
-            />
-            <Stack spacing={1.5} sx={{ mt: 1.5 }}>
-              {!huntsResolved ? (
-                <SkeletonCards count={2} />
-              ) : inProgressHunts.length === 0 ? (
-                <EmptyState
-                  icon={Zap}
-                  title="No missions in progress"
-                  description="Start a mission to track your progress here."
-                  action={{ label: 'Find Missions', href: '/explore' }}
-                  compact
-                />
-              ) : (
-                inProgressHunts.slice(0, 3).map(({ hunt, progress }) => {
-                  const vStatus = verificationStatus[hunt.id];
+          {/* 3. Quick Actions — right after wallet */}
+          <section style={{ marginTop: 20 }}>
+            <QuickActionGrid actions={quickActions} columns={4} />
+          </section>
+
+          {/* 4. Active Missions — compact continuation strip */}
+          {(huntsResolved && inProgressHunts.length > 0) && (
+            <section style={{ marginTop: 28 }}>
+              <SectionHeader
+                title="Continue"
+                count={inProgressHunts.length}
+                seeAllHref="/missions"
+              />
+              <Stack spacing={1} sx={{ mt: 1.25 }}>
+                {inProgressHunts.slice(0, 3).map(({ hunt, progress }) => {
                   const stepsDone = progress.completedSteps.length;
                   const stepsTotal = hunt.steps.length;
-                  const nextStep = hunt.steps[progress.currentStepIndex];
-
+                  const pct = stepsTotal > 0 ? (stepsDone / stepsTotal) * 100 : 0;
                   return (
                     <Surface
                       key={hunt.id}
@@ -411,226 +439,163 @@ export default function HomePage() {
                       hover
                       onClick={() => router.push(`/active/${hunt.id}`)}
                     >
-                      <Box sx={{ p: 2 }}>
-                        {/* title + CTA */}
-                        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
+                      <Box sx={{ p: '12px 14px' }}>
+                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                          {/* progress ring placeholder */}
+                          <Box sx={{ width: 36, height: 36, borderRadius: '50%', border: `3px solid ${t.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative' }}>
+                            <svg width="36" height="36" style={{ position: 'absolute', top: -3, left: -3, transform: 'rotate(-90deg)' }}>
+                              <circle cx="18" cy="18" r="15" fill="none" stroke={t.accent} strokeWidth="3"
+                                strokeDasharray={`${2 * Math.PI * 15}`}
+                                strokeDashoffset={`${2 * Math.PI * 15 * (1 - pct / 100)}`}
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                            <Typography sx={{ fontSize: 9, fontWeight: 800, color: 'primary.main', zIndex: 1 }}>
+                              {Math.round(pct)}%
+                            </Typography>
+                          </Box>
                           <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }} noWrap>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13 }} noWrap>
                               {hunt.title}
                             </Typography>
-                            {nextStep && (
-                              <Typography variant="caption" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', mt: 0.5 }}>
-                                Next: {nextStep.instruction}
-                              </Typography>
-                            )}
+                            <Typography variant="caption" color="text.disabled">
+                              Step {stepsDone}/{stepsTotal} · {hunt.reward}
+                            </Typography>
                           </Box>
-                          <Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: 'primary.main', flexShrink: 0 }}>
-                            <Typography variant="caption" sx={{ fontWeight: 600, color: 'primary.main' }}>Continue</Typography>
-                            <ChevronRight size={14} color={t.accent} />
-                          </Stack>
-                        </Stack>
-
-                        {/* step progress */}
-                        <Box sx={{ mt: 1.5 }}>
-                          <ProgressBar
-                            value={stepsTotal > 0 ? (stepsDone / stepsTotal) * 100 : 0}
-                            color={t.accent}
-                            height={4}
-                            label={`Step ${stepsDone} of ${stepsTotal}`}
-                          />
-                        </Box>
-
-                        {/* meta row */}
-                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mt: 1.25 }}>
-                          {hunt.deadline && (
-                            <Stack direction="row" alignItems="center" spacing={0.5}>
-                              <Clock size={12} color={t.txtFaint} />
-                              <Typography variant="caption" color="text.disabled">
-                                {new Date(hunt.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                              </Typography>
-                            </Stack>
-                          )}
-                          <Typography variant="caption" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                            {hunt.reward}
-                          </Typography>
-                          {vStatus && (
-                            <Chip label={vStatus.status.replace(/_/g, ' ')} size="small" sx={{ ml: 'auto !important', height: 18, fontSize: 9, fontWeight: 700, color: t.warning, bgcolor: `${t.warning}14`, textTransform: 'capitalize' }} />
-                          )}
+                          <ArrowRight size={14} color={t.accent} />
                         </Stack>
                       </Box>
                     </Surface>
                   );
-                })
-              )}
-            </Stack>
-          </section>
+                })}
+              </Stack>
+            </section>
+          )}
 
-          {/* 4. Recommended Opportunities */}
-          <section style={{ marginTop: 32 }}>
+          {/* 5. Opportunity Feed — Revolut-style cards */}
+          <section style={{ marginTop: 28 }}>
             <SectionHeader
-              title="Recommended for You"
-              count={recommendations.length > 0 ? recommendations.length : undefined}
+              title={inProgressHunts.length === 0 ? 'Get Started' : 'Opportunities For You'}
               seeAllHref="/explore"
             />
-            <Stack spacing={1.5} sx={{ mt: 1.5 }}>
+            <Stack spacing={1.25} sx={{ mt: 1.25 }}>
               {loadingRecs ? (
                 <SkeletonCards count={3} />
               ) : recommendations.length === 0 ? (
                 <EmptyState
                   icon={Compass}
-                  title="No recommendations yet"
-                  description="Complete your profile or explore manually to get tailored suggestions."
+                  title="No opportunities yet"
+                  description="Explore missions to find opportunities matching your interests."
                   action={{ label: 'Explore All', href: '/explore' }}
                   compact
                 />
               ) : (
                 recommendations.map((hunt) => (
-                  <MissionCard
+                  <Surface
                     key={hunt.id}
-                    hunt={hunt}
-                    matchScore={hunt.matchScore}
-                    missionStatus="active"
-                  />
+                    variant="card"
+                    padding={0}
+                    hover
+                    onClick={() => router.push(`/hunt/${hunt.id}`)}
+                  >
+                    <Box sx={{ p: '14px 16px' }}>
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          {/* earn amount — prominent, like Revolut card */}
+                          <Typography sx={{ fontSize: 20, fontWeight: 800, color: 'primary.main', lineHeight: 1, mb: 0.5 }}>
+                            {hunt.reward}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.75 }} noWrap>
+                            {hunt.title}
+                          </Typography>
+                          <Stack direction="row" spacing={1.5} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+                            {hunt.estimated_time && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Timer size={11} color={t.txtFaint} />
+                                <Typography variant="caption" color="text.disabled">{hunt.estimated_time}</Typography>
+                              </Box>
+                            )}
+                            {hunt.location && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <MapPin size={11} color={t.txtFaint} />
+                                <Typography variant="caption" color="text.disabled" noWrap sx={{ maxWidth: 120 }}>{hunt.location}</Typography>
+                              </Box>
+                            )}
+                          </Stack>
+                        </Box>
+                        <Box sx={{ flexShrink: 0 }}>
+                          <Chip
+                            label={hunt.category ?? hunt.missionType ?? 'Mission'}
+                            size="small"
+                            sx={{
+                              height: 22, fontSize: 10, fontWeight: 700,
+                              bgcolor: `${t.accent}14`, color: 'primary.main',
+                              border: `1px solid ${t.accent}25`,
+                            }}
+                          />
+                        </Box>
+                      </Stack>
+                    </Box>
+                  </Surface>
                 ))
               )}
             </Stack>
           </section>
 
-          {/* 5. Rewards Snapshot */}
-          <section style={{ marginTop: 32 }}>
-            <SectionHeader title="Rewards" seeAllHref="/rewards" />
-            <Surface variant="card" style={{ marginTop: 12 }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
-                {/* earned balance */}
-                <Box>
-                  <Typography variant="caption" color="text.secondary">Earned balance</Typography>
-                  <Typography sx={{ fontSize: 28, fontWeight: 700, color: 'primary.main', letterSpacing: '-0.5px', lineHeight: 1.2, mt: 0.5 }}>
-                    ${rewardsBalance.toFixed(2)}
+          {/* 6. Reputation + Streak — compact side-by-side */}
+          <section style={{ marginTop: 28 }}>
+            <SectionHeader title="Your Standing" seeAllHref="/profile" />
+            <Grid container spacing={1.5} sx={{ mt: 1.25 }}>
+              {/* Streak */}
+              <Grid size={{ xs: 6 }}>
+                <Box sx={{ bgcolor: `${t.warning}10`, border: `1px solid ${t.warning}25`, borderRadius: '16px', p: 2, textAlign: 'center' }}>
+                  <Flame size={22} color={t.warning} />
+                  <Typography sx={{ fontSize: 28, fontWeight: 800, color: t.warning, lineHeight: 1.1, mt: 0.5 }}>{streak}</Typography>
+                  <Typography variant="caption" color="text.secondary">Day Streak</Typography>
+                </Box>
+              </Grid>
+              {/* Trust Score */}
+              <Grid size={{ xs: 6 }}>
+                <Box sx={{ bgcolor: `${t.ai}10`, border: `1px solid ${t.ai}25`, borderRadius: '16px', p: 2, textAlign: 'center' }}>
+                  <TrendingUp size={22} color={t.aiLight} />
+                  <Typography sx={{ fontSize: 28, fontWeight: 800, color: t.aiLight, lineHeight: 1.1, mt: 0.5 }}>
+                    {Math.round(reputationScore)}
                   </Typography>
-                  <Typography variant="caption" color="text.disabled">
-                    from {completedHunts.length} completed mission{completedHunts.length !== 1 ? 's' : ''}
+                  <Typography variant="caption" color="text.secondary">
+                    {loadingTrust ? 'Loading…' : (trust ? 'Trust Score' : 'Rep Score')}
                   </Typography>
                 </Box>
+              </Grid>
+            </Grid>
 
-                {/* streak badge */}
-                <Stack alignItems="center" spacing={0.5} sx={{ p: '12px 16px', borderRadius: '14px', bgcolor: `${t.warning}18`, border: `1px solid ${t.warning}30`, flexShrink: 0 }}>
-                  <Flame size={24} color={t.warning} />
-                  <Typography sx={{ fontSize: 22, fontWeight: 700, color: t.warning, lineHeight: 1 }}>{streak}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>day streak</Typography>
+            {/* Dimension bars (compact) */}
+            {trust && (
+              <Surface variant="card" style={{ marginTop: 12 }}>
+                <Stack spacing={1.25}>
+                  <ProgressBar value={trust.reliability} color={t.accent} label="Reliability" showPercent />
+                  <ProgressBar value={trust.skill} color={t.ai} label="Skill" showPercent />
+                  <ProgressBar value={trust.impact} color={t.info} label="Impact" showPercent />
                 </Stack>
-              </Stack>
-            </Surface>
+              </Surface>
+            )}
           </section>
 
-          {/* 6. Reputation Snapshot */}
-          <section style={{ marginTop: 32 }}>
-            <SectionHeader title="Reputation" seeAllHref="/profile" />
-            <Surface variant="card" style={{ marginTop: 12 }}>
-              {loadingTrust ? (
-                <div
-                  style={{
-                    height: 100,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <PulsingDot />
-                </div>
-              ) : trust === null && !profile ? (
-                <EmptyState
-                  emoji="📊"
-                  title="Reputation building"
-                  description="Complete missions to establish your trust score."
-                  compact
-                />
-              ) : (
-                <>
-                  {/* composite score header */}
-                  <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2.5 }}>
-                    <Box sx={{ width: 52, height: 52, borderRadius: '50%', bgcolor: `${t.ai}20`, border: `2px solid ${t.ai}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Typography sx={{ fontSize: 16, fontWeight: 700, color: 'secondary.main' }}>
-                        {Math.round(reputationScore)}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>Trust Score</Typography>
-                      <Typography variant="caption" color="text.secondary">{profile?.archetype ?? 'Participant'}</Typography>
-                    </Box>
-                  </Stack>
-
-                  {/* dimension bars */}
-                  <Stack spacing={1.25}>
-                    {trust ? (
-                      <>
-                        <ProgressBar value={trust.reliability} color={t.accent} label="Reliability" showPercent />
-                        <ProgressBar value={trust.skill} color={t.ai} label="Skill" showPercent />
-                        <ProgressBar value={trust.impact} color={t.info} label="Impact" showPercent />
-                      </>
-                    ) : (
-                      profile?.strengths.slice(0, 3).map((s) => (
-                        <ProgressBar
-                          key={s.name}
-                          value={s.score}
-                          color={t.ai}
-                          label={s.name}
-                          showPercent
-                        />
-                      ))
-                    )}
-                  </Stack>
-                </>
-              )}
-            </Surface>
-          </section>
-
-          {/* 7. Recent Achievements */}
-          <section style={{ marginTop: 32 }}>
-            <SectionHeader
-              title="Achievements"
-              count={earnedBadges.length > 0 ? earnedBadges.length : undefined}
-            />
-            {earnedBadges.length === 0 ? (
-              <div style={{ marginTop: 12 }}>
-                <EmptyState
-                  icon={Award}
-                  title="No badges yet"
-                  description="Complete missions and maintain streaks to earn your first badge."
-                  compact
-                />
-              </div>
-            ) : (
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 1.5, mt: 1.5 }}>
+          {/* 7. Achievements */}
+          {earnedBadges.length > 0 && (
+            <section style={{ marginTop: 28, marginBottom: 16 }}>
+              <SectionHeader title="Achievements" count={earnedBadges.length} />
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: 1.25, mt: 1.25 }}>
                 {earnedBadges.map((badge) => (
-                  <Surface key={badge.id} variant="card" padding={14} style={{ textAlign: 'center' }}>
-                    <Typography sx={{ fontSize: 28, lineHeight: 1 }}>{badge.emoji}</Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.3, display: 'block', mt: 1 }}>
-                      {badge.label}
-                    </Typography>
-                    <Typography variant="caption" sx={{ fontSize: 11, color: 'text.secondary', lineHeight: 1.3, display: 'block', mt: 0.5 }}>
-                      {badge.description}
-                    </Typography>
-                  </Surface>
-                ))}
-                {badges.filter((b) => !b.earned).map((badge) => (
-                  <Surface key={badge.id} variant="card" padding={14} style={{ textAlign: 'center', opacity: 0.35 }}>
-                    <Typography sx={{ fontSize: 28, lineHeight: 1, filter: 'grayscale(1)' }}>{badge.emoji}</Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.3, display: 'block', mt: 1 }}>
+                  <Surface key={badge.id} variant="card" padding={12} style={{ textAlign: 'center' }}>
+                    <Typography sx={{ fontSize: 26, lineHeight: 1 }}>{badge.emoji}</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.3, display: 'block', mt: 0.75, fontSize: 11 }}>
                       {badge.label}
                     </Typography>
                   </Surface>
                 ))}
               </Box>
-            )}
-          </section>
-
-          {/* 8. Quick Actions */}
-          <section style={{ marginTop: 32, marginBottom: 16 }}>
-            <SectionHeader title="Quick Actions" />
-            <div style={{ marginTop: 12 }}>
-              <QuickActionGrid actions={quickActions} columns={4} />
-            </div>
-          </section>
+            </section>
+          )}
 
         </div>
 
@@ -641,6 +606,7 @@ export default function HomePage() {
           trust={trust}
           quickActions={quickActions}
           inProgressCount={inProgressHunts.length}
+          rewardsBalance={rewardsBalance}
         />
       </div>
 
@@ -658,6 +624,7 @@ interface DesktopRailProps {
   trust: TrustData | null;
   quickActions: QuickAction[];
   inProgressCount: number;
+  rewardsBalance: number;
 }
 
 function DesktopRail({
@@ -666,6 +633,7 @@ function DesktopRail({
   trust,
   quickActions,
   inProgressCount,
+  rewardsBalance,
 }: DesktopRailProps) {
   return (
     <>
@@ -687,8 +655,20 @@ function DesktopRail({
           padding: '0 16px 32px',
         }}
       >
+        {/* mini wallet */}
+        <Box sx={{ bgcolor: `${t.ai}14`, border: `1px solid ${t.ai}25`, borderRadius: '16px', p: 2, mb: 1.75 }}>
+          <Stack direction="row" spacing={1} sx={{ mb: 1, alignItems: 'center' }}>
+            <Wallet size={14} color={t.aiLight} />
+            <Typography variant="caption" sx={{ fontWeight: 700, color: t.aiLight, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Wallet</Typography>
+          </Stack>
+          <Typography sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', lineHeight: 1 }}>
+            ${rewardsBalance.toFixed(2)}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11, display: 'block', mt: 0.5 }}>earned balance</Typography>
+        </Box>
+
         {/* streak */}
-        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ bgcolor: `${t.warning}18`, border: `1px solid ${t.warning}30`, borderRadius: '16px', p: 2, mb: 1.75 }}>
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', bgcolor: `${t.warning}18`, border: `1px solid ${t.warning}30`, borderRadius: '16px', p: 2, mb: 1.75 }}>
           <Flame size={20} color={t.warning} />
           <Box>
             <Typography sx={{ fontSize: 20, fontWeight: 700, color: t.warning, lineHeight: 1 }}>{streak}</Typography>
@@ -698,7 +678,7 @@ function DesktopRail({
 
         {/* reputation compact */}
         <Box sx={{ bgcolor: t.card, borderRadius: '16px', p: 2, mb: 1.75, border: '1px solid', borderColor: 'divider' }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+          <Stack direction="row" sx={{ mb: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>Reputation</Typography>
             <Typography sx={{ fontSize: 16, fontWeight: 700, color: 'secondary.main' }}>{Math.round(reputationScore)}</Typography>
           </Stack>
@@ -712,31 +692,13 @@ function DesktopRail({
         </Box>
 
         {/* active missions count */}
-        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ bgcolor: t.card, borderRadius: '16px', p: 2, mb: 1.75, border: '1px solid', borderColor: 'divider' }}>
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', bgcolor: t.card, borderRadius: '16px', p: 2, mb: 1.75, border: '1px solid', borderColor: 'divider' }}>
           <CheckCircle2 size={18} color={t.accent} />
           <Box>
             <Typography sx={{ fontSize: 20, fontWeight: 700, color: 'text.primary', lineHeight: 1 }}>{inProgressCount}</Typography>
             <Typography variant="caption" color="text.secondary">active missions</Typography>
           </Box>
         </Stack>
-
-        {/* quick actions */}
-        <Box sx={{ bgcolor: t.card, borderRadius: '16px', p: 2, border: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 1.25 }}>Quick Actions</Typography>
-          <Stack spacing={0.75}>
-            {quickActions.map((action) => (
-              <Box
-                key={action.label}
-                component="a"
-                href={action.href}
-                sx={{ display: 'flex', alignItems: 'center', gap: 1.25, p: '8px 10px', borderRadius: '10px', bgcolor: 'background.paper', textDecoration: 'none', color: 'text.primary', '&:hover': { bgcolor: t.panel } }}
-              >
-                <action.icon size={15} color={action.color ?? t.accent} />
-                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>{action.label}</Typography>
-              </Box>
-            ))}
-          </Stack>
-        </Box>
       </aside>
     </>
   );
