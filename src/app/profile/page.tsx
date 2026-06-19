@@ -312,7 +312,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Stats row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+          <div className="grid grid-cols-2 sm:grid-cols-4" style={{ gap: 8 }}>
             {[
               { label: 'MMS',      value: mms,                   color: t.accent,  Icon: TrendingUp },
               { label: 'Missions', value: completedHunts.length, color: t.accent,  Icon: Trophy     },
@@ -334,10 +334,13 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div style={{ padding: '20px' }}>
+        <div className="lg:flex lg:gap-8 lg:items-start" style={{ padding: '20px' }}>
+
+          {/* Left column */}
+          <div className="lg:flex-1 lg:min-w-0">
 
           {/* ── Participation Passport Metrics ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 20 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 10, marginBottom: 20 }}>
             {[
               { label: 'Completion Rate', value: `${completionRate}%`,   color: t.accent  },
               { label: 'Verification',    value: `${verificationRate}%`, color: t.ai      },
@@ -505,7 +508,7 @@ export default function ProfilePage() {
               )}
 
               {/* Causes + Availability */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 10 }}>
                 {impactProfile.causes.length > 0 && (
                   <Surface variant="inset">
                     <div style={{ padding: '12px 14px' }}>
@@ -685,6 +688,12 @@ export default function ProfilePage() {
             </div>
           </Surface>
 
+          </div>{/* end left column */}
+
+          {/* Right column — mission timeline (stacks below on mobile, sidebar on desktop) */}
+          <div className="lg:w-80 lg:flex-shrink-0" style={{ marginTop: 0 }}>
+          <div className="lg:sticky" style={{ top: 80 }}>
+
           {/* ── Mission Timeline ── */}
           <section>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -780,7 +789,9 @@ export default function ProfilePage() {
           <p style={{ textAlign: 'center', fontSize: 11, marginTop: 32, color: t.txtFaint }}>
             X-Hunt · AI-Powered Outcome Intelligence
           </p>
-        </div>
+          </div>{/* end sticky */}
+          </div>{/* end right column */}
+        </div>{/* end flex wrapper */}
       </div>
     </div>
   );

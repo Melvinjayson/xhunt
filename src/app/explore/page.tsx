@@ -65,7 +65,7 @@ function SectionRail({ title, missions, onSeeAll }: { title: string; missions: H
       <SectionHeader title={title} count={missions.length} onSeeAll={onSeeAll} />
       <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollbarWidth: 'none', padding: '2px 0 4px' }}>
         {missions.slice(0, 8).map((h) => (
-          <div key={h.id} style={{ width: 288, flexShrink: 0 }}>
+          <div key={h.id} style={{ width: 'min(288px, calc(85vw))', flexShrink: 0 }}>
             <MissionCard hunt={h} compact />
           </div>
         ))}
@@ -125,7 +125,7 @@ export default function ExplorePage() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Search missions, organizations, causes..."
-              style={{ width: '100%', height: 44, paddingLeft: 42, paddingRight: query ? 40 : 16, borderRadius: 14, border: `1px solid ${t.border}`, background: t.card, color: t.txt, fontSize: 14, fontFamily: 'var(--font-onest, system-ui)', outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', height: 48, paddingLeft: 42, paddingRight: query ? 40 : 16, borderRadius: 14, border: `1px solid ${t.border}`, background: t.card, color: t.txt, fontSize: 14, fontFamily: 'var(--font-onest, system-ui)', outline: 'none', boxSizing: 'border-box' }}
             />
             {query && (
               <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: t.txtFaint }}>

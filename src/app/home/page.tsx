@@ -14,8 +14,8 @@ import {
   ChevronRight,
   Compass,
   Upload,
-  Users,
-  ArrowLeftRight,
+  Play,
+  Gift,
 } from 'lucide-react';
 
 import { useAuth } from '@/lib/auth/context';
@@ -268,31 +268,31 @@ export default function HomePage() {
   const quickActions: QuickAction[] = [
     {
       icon: Compass,
-      label: 'Find Opportunities',
+      label: 'Find Mission',
       href: '/explore',
       color: t.accent,
-      description: 'Browse missions',
+      description: 'Discover new opportunities',
+    },
+    {
+      icon: Play,
+      label: 'Continue',
+      href: '/missions',
+      color: t.ai,
+      description: 'Resume your active missions',
     },
     {
       icon: Upload,
       label: 'Submit Proof',
-      href: '/missions',
-      color: t.ai,
-      description: 'Upload evidence',
-    },
-    {
-      icon: Users,
-      label: 'Community',
-      href: '/community',
-      color: t.info,
-      description: 'Connect & collab',
-    },
-    {
-      icon: ArrowLeftRight,
-      label: 'Barter',
-      href: '/barter',
+      href: '/missions?tab=active',
       color: t.warning,
-      description: 'Trade skills & time',
+      description: 'Upload proof for review',
+    },
+    {
+      icon: Gift,
+      label: 'My Rewards',
+      href: '/rewards',
+      color: t.info,
+      description: 'View earnings and badges',
     },
   ];
 
@@ -368,12 +368,8 @@ export default function HomePage() {
           <section style={{ marginTop: 24 }}>
             <SectionHeader title="Your Participation" />
             <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 12,
-                marginTop: 12,
-              }}
+              className="grid grid-cols-2 lg:grid-cols-4"
+              style={{ gap: 12, marginTop: 12 }}
             >
               <StatTile
                 label="Active Missions"

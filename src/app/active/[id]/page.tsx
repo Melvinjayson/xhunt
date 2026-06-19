@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Check, SkipForward, ChevronDown, ChevronUp, Upload, MapPin, QrCode, Camera, FileText, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Check, SkipForward, ChevronDown, ChevronUp, Upload, MapPin, QrCode, Camera, FileText, MessageSquare, Lightbulb, Square, CheckSquare } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import AIAssistant from '@/components/AIAssistant';
 import ProgressBar from '@/components/consumer/ProgressBar';
@@ -22,6 +22,17 @@ const STAGE_NUMS: Record<Stage, number> = { overview: 0, requirements: 1, execut
 const STEP_EMOJI: Record<string, string> = { action: '⚡', reflection: '💭', discovery: '🔍', research: '🔬', submission: '📤', collaboration: '🤝' };
 const STEP_COLOR: Record<string, string> = { action: t.warning, reflection: t.ai, discovery: t.accent, research: t.info, submission: t.accent, collaboration: t.aiLight };
 
+const STEP_TIPS: Record<string, string[]> = {
+  action:        ['Take a concrete action towards the mission goal', 'Document what you do with a photo or brief note', 'Reach out to someone who can help or verify'],
+  reflection:    ['Write down your thoughts as you go', 'Consider multiple perspectives on the topic', 'Connect this experience to your personal values'],
+  discovery:     ['Look for opportunities in your immediate environment', 'Ask questions and stay curious', 'Take photos or notes of what you find'],
+  research:      ['Use multiple sources to verify your findings', 'Note your sources for the submission', 'Look for recent, authoritative references'],
+  submission:    ['Review your work carefully before submitting', 'Include all required evidence', 'Be specific and clear in your written explanation'],
+  collaboration: ['Communicate clearly with your team', 'Document your specific contribution', 'Coordinate timing and next steps with collaborators'],
+};
+
+const DEFAULT_TIPS = ['Read and understand the objective fully', 'Take the required action', 'Document your progress or result'];
+
 const PROOF_TYPES = [
   { id: 'photo', label: 'Photo', icon: Camera },
   { id: 'video', label: 'Video', icon: Camera },
@@ -31,20 +42,29 @@ const PROOF_TYPES = [
   { id: 'qr', label: 'QR Scan', icon: QrCode },
 ];
 
+const DEFAULT_CHECKLIST = [
+  'Read and understand the step objective',
+  'Take the required action',
+  'Document your progress or result',
+];
+
 export default function ActiveMissionPage() {
   const params = useParams();
   const router = useRouter();
   const huntId = params?.id as string;
 
-  const [hunt, setHunt]         = useState<Hunt | null>(null);
-  const [progress, setProgress] = useState<HuntProgress>({ huntId, currentStepIndex: 0, completedSteps: [], startedAt: new Date().toISOString() });
-  const [stage, setStage]       = useState<Stage>('overview');
-  const [showSkip, setShowSkip] = useState(false);
+  const [hunt, setHunt]                 = useState<Hunt | null>(null);
+  const [progress, setProgress]         = useState<HuntProgress>({ huntId, currentStepIndex: 0, completedSteps: [], startedAt: new Date().toISOString() });
+  const [stage, setStage]               = useState<Stage>('overview');
+  const [showSkip, setShowSkip]         = useState(false);
   const [expandCriteria, setExpandCriteria] = useState(false);
-  const [proofType, setProofType] = useState<string>('photo');
-  const [proofText, setProofText] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted]   = useState(false);
+  const [proofType, setProofType]       = useState<string>('photo');
+  const [proofText, setProofText]       = useState('');
+  const [submitting, setSubmitting]     = useState(false);
+  const [submitted, setSubmitted]       = useState(false);
+  const [proofError, setProofError]     = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const state = loadState();
@@ -76,6 +96,7 @@ export default function ActiveMissionPage() {
       saveProgress({ completedSteps: newCompleted, currentStepIndex: nextIdx });
     }
     setExpandCriteria(false);
+    setCheckedItems(new Set());
   }
 
   function skipStep() {
@@ -88,22 +109,33 @@ export default function ActiveMissionPage() {
     }
     setShowSkip(false);
     setExpandCriteria(false);
+    setCheckedItems(new Set());
   }
 
   async function submitProof() {
     if (!hunt) return;
     setSubmitting(true);
+    setProofError('');
     try {
-      await fetch('/api/outcomes/validations', {
+      const res = await fetch('/api/outcomes/validations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mission_id: hunt.id,
           validation_type: 'self_reported',
-          evidence: [{ type: 'attestation', value: proofText || 'Mission completed.' }, { type: 'attestation', value: `Proof type: ${proofType}` }],
+          evidence: [
+            { type: 'attestation', value: proofText || 'Mission completed.' },
+            { type: 'attestation', value: `Proof type: ${proofType}` },
+            ...(selectedFile ? [{ type: 'file', value: selectedFile.name }] : []),
+          ],
         }),
       });
-    } catch {}
+      if (!res.ok) throw new Error(`Submission failed (${res.status})`);
+    } catch (err: unknown) {
+      setProofError(err instanceof Error ? err.message : 'Submission failed. Please try again.');
+      setSubmitting(false);
+      return;
+    }
     setVerificationStatus(huntId, 'submitted');
     const state = loadState();
     const completedHunt = { huntId, huntTitle: hunt.title, reward: `$${estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType)}`, completedAt: new Date().toISOString() };
@@ -114,7 +146,7 @@ export default function ActiveMissionPage() {
   }
 
   if (!hunt) return (
-    <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="consumer-app" style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="breathe" style={{ width: 40, height: 40, borderRadius: '50%', background: `${t.accent}26` }} />
     </div>
   );
@@ -125,8 +157,19 @@ export default function ActiveMissionPage() {
   const xp        = estimateXP(hunt.xpReward, hunt.difficulty, hunt.steps.length);
   const stepPct   = hunt.steps.length > 0 ? Math.round((progress.completedSteps.length / hunt.steps.length) * 100) : 0;
 
+  const stepTips = currentStep ? (STEP_TIPS[currentStep.type] ?? DEFAULT_TIPS) : DEFAULT_TIPS;
+  const checklistItems = DEFAULT_CHECKLIST;
+
+  function toggleCheck(i: number) {
+    setCheckedItems(prev => {
+      const s = new Set(prev);
+      s.has(i) ? s.delete(i) : s.add(i);
+      return s;
+    });
+  }
+
   return (
-    <div style={{ background: t.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="consumer-app" style={{ background: t.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
       <div style={{ position: 'sticky', top: 0, zIndex: 30, background: `${t.bg}F5`, backdropFilter: 'blur(16px)', padding: '12px 20px', borderBottom: `1px solid ${t.border}` }}>
@@ -134,14 +177,14 @@ export default function ActiveMissionPage() {
           <button onClick={() => router.push(`/hunt/${huntId}`)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: t.txtDim, fontSize: 13 }}>
             <ArrowLeft size={16} strokeWidth={2} /> Exit
           </button>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: t.txtFaint }}>Step {STAGE_NUMS[stage] + 1} of 5</p>
+          <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: t.txtFaint }}>Step {stageIdx + 1} of 5</p>
           <button onClick={() => { router.push('/missions'); }} style={{ fontSize: 12, color: t.txtFaint, background: 'none', border: 'none', cursor: 'pointer' }}>Save & exit</button>
         </div>
 
-        {/* Stage progress bar */}
+        {/* Stage progress bar — flex pills that compress on narrow screens */}
         <div style={{ display: 'flex', gap: 4 }}>
           {STAGES.map((s, i) => (
-            <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= stageIdx ? t.accent : 'rgba(255,255,255,0.1)', transition: 'background 0.3s' }} />
+            <div key={s} style={{ flex: 1, minWidth: 0, height: 3, borderRadius: 2, background: i <= stageIdx ? t.accent : 'rgba(255,255,255,0.1)', transition: 'background 0.3s' }} />
           ))}
         </div>
         <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 600, color: t.accent, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -225,7 +268,7 @@ export default function ActiveMissionPage() {
               <ProgressBar value={stepPct} color={t.accent} height={4} label={`Step ${progress.currentStepIndex + 1} of ${hunt.steps.length}`} showPercent />
             </div>
 
-            {/* Step type */}
+            {/* Step type badge */}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 100, background: `${STEP_COLOR[currentStep.type] || t.accent}18`, marginBottom: 16 }}>
               <span style={{ fontSize: 16 }}>{STEP_EMOJI[currentStep.type] ?? '📌'}</span>
               <span style={{ fontSize: 11, fontWeight: 700, color: STEP_COLOR[currentStep.type] || t.accent, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{currentStep.type}</span>
@@ -245,6 +288,39 @@ export default function ActiveMissionPage() {
                 <p style={{ margin: 0, fontSize: 13, color: t.txtDim, lineHeight: 1.6 }}>{currentStep.success_criteria}</p>
               </Surface>
             )}
+
+            {/* Checklist */}
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Your checklist</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {checklistItems.map((item, i) => (
+                  <button
+                    key={i}
+                    onClick={() => toggleCheck(i)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: checkedItems.has(i) ? `${t.accent}10` : t.card, border: `1px solid ${checkedItems.has(i) ? t.accent + '30' : t.border}`, cursor: 'pointer', textAlign: 'left' }}
+                  >
+                    {checkedItems.has(i)
+                      ? <CheckSquare size={16} strokeWidth={2} style={{ color: t.accent, flexShrink: 0 }} />
+                      : <Square size={16} strokeWidth={1.5} style={{ color: t.txtFaint, flexShrink: 0 }} />}
+                    <span style={{ fontSize: 13, color: checkedItems.has(i) ? t.txt : t.txtDim, fontWeight: checkedItems.has(i) ? 600 : 400, textDecoration: checkedItems.has(i) ? 'line-through' : 'none' }}>{item}</span>
+                  </button>
+                ))}
+              </div>
+              <p style={{ margin: '8px 0 0', fontSize: 11, color: t.txtFaint }}>Mark items complete as you go — your progress saves automatically.</p>
+            </div>
+
+            {/* Tips card */}
+            <Surface variant="inset" padding="14px 16px" style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <Lightbulb size={14} style={{ color: t.warning, flexShrink: 0 }} />
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: t.warning, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tips for this step</p>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {stepTips.slice(0, 3).map((tip, i) => (
+                  <p key={i} style={{ margin: 0, fontSize: 13, color: t.txtDim, lineHeight: 1.5, paddingLeft: 4 }}>· {tip}</p>
+                ))}
+              </div>
+            </Surface>
 
             {/* AI assist */}
             <div style={{ marginBottom: 20 }}>
@@ -295,12 +371,34 @@ export default function ActiveMissionPage() {
               </div>
             </div>
 
-            {/* Upload area */}
-            <Surface variant="inset" padding="32px 20px" style={{ textAlign: 'center', border: `2px dashed ${t.border}`, marginBottom: 16, cursor: 'pointer' }}>
-              <Upload size={28} strokeWidth={1.5} style={{ color: t.txtFaint, marginBottom: 10 }} />
-              <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: t.txt }}>Upload {proofType}</p>
-              <p style={{ margin: 0, fontSize: 12, color: t.txtFaint }}>or tap to capture</p>
-            </Surface>
+            {/* File upload */}
+            <input
+              type="file"
+              id="proof-upload"
+              multiple
+              accept="image/*,video/*,.pdf"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                setSelectedFile(file);
+              }}
+            />
+            <label htmlFor="proof-upload" style={{ display: 'block', marginBottom: 16, cursor: 'pointer' }}>
+              <Surface variant="inset" padding="32px 20px" style={{ textAlign: 'center', border: `2px dashed ${selectedFile ? t.accent : t.border}`, background: selectedFile ? `${t.accent}06` : undefined }}>
+                <Upload size={28} strokeWidth={1.5} style={{ color: selectedFile ? t.accent : t.txtFaint, marginBottom: 10 }} />
+                {selectedFile ? (
+                  <>
+                    <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: t.accent }}>{selectedFile.name}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: t.txtFaint }}>Tap to change file</p>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: t.txt }}>Upload {proofType}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: t.txtFaint }}>Tap to choose a file</p>
+                  </>
+                )}
+              </Surface>
+            </label>
 
             {/* Text proof */}
             <div style={{ marginBottom: 20 }}>
@@ -313,6 +411,13 @@ export default function ActiveMissionPage() {
                 style={{ width: '100%', borderRadius: 14, border: `1px solid ${t.border}`, background: t.card, color: t.txt, padding: '12px 14px', fontSize: 13, lineHeight: 1.6, resize: 'vertical', fontFamily: 'var(--font-onest, system-ui)', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
+
+            {/* Error message */}
+            {proofError && (
+              <p style={{ color: t.error, fontSize: 13, marginBottom: 16, padding: '10px 14px', background: `${t.error}10`, borderRadius: 10, border: `1px solid ${t.error}20`, lineHeight: 1.5 }}>
+                {proofError}
+              </p>
+            )}
 
             <button onClick={submitProof} disabled={submitting} style={{ width: '100%', height: 52, borderRadius: 16, background: submitting ? `${t.accent}60` : t.accent, color: t.bg, fontSize: 15, fontWeight: 800, cursor: submitting ? 'default' : 'pointer', border: 'none', boxShadow: `0 4px 20px ${t.accent}40` }}>
               {submitting ? 'Submitting…' : 'Submit Proof'}
@@ -357,8 +462,8 @@ export default function ActiveMissionPage() {
 
       </div>
 
-      {/* Bottom CTA (for non-review stages) */}
-      {stage !== 'review' && stage !== 'execution' && (
+      {/* Bottom CTA (overview + requirements stages only — execution has inline actions, proof has its own submit) */}
+      {(stage === 'overview' || stage === 'requirements') && (
         <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '12px 20px', background: `${t.bg}F5`, backdropFilter: 'blur(16px)', borderTop: `1px solid ${t.border}`, zIndex: 40 }}>
           <button
             onClick={() => {
@@ -367,7 +472,7 @@ export default function ActiveMissionPage() {
             }}
             style={{ width: '100%', height: 52, borderRadius: 16, background: t.accent, color: t.bg, fontSize: 15, fontWeight: 800, cursor: 'pointer', border: 'none', boxShadow: `0 4px 20px ${t.accent}40` }}
           >
-            {stage === 'overview' ? 'Continue to Requirements →' : stage === 'requirements' ? 'Start Mission →' : stage === 'proof' ? 'Review →' : 'Continue →'}
+            {stage === 'overview' ? 'Continue to Requirements →' : 'Start Mission →'}
           </button>
         </div>
       )}
