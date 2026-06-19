@@ -18,6 +18,14 @@ import {
   Gift,
 } from 'lucide-react';
 
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Badge from '@mui/material/Badge';
+import Chip from '@mui/material/Chip';
+import Grid from '@mui/material/Grid2';
+
 import { useAuth } from '@/lib/auth/context';
 import { loadState, loadProfile } from '@/lib/store';
 import { createClient } from '@/lib/supabase/client';
@@ -327,38 +335,25 @@ export default function HomePage() {
           sticky
           borderBottom
           action={
-            <button
-              aria-label="Notifications"
-              onClick={() => router.push('/notifications')}
-              style={{
-                background: 'transparent',
-                border: `1px solid ${t.border}`,
-                borderRadius: 12,
-                padding: 8,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: t.txtDim,
-                position: 'relative',
-              }}
+            <Badge
+              variant="dot"
+              color="error"
+              invisible={pendingVerificationCount === 0}
+              overlap="circular"
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-              <Bell size={20} />
-              {pendingVerificationCount > 0 && (
-                <span
-                  aria-hidden
-                  style={{
-                    position: 'absolute',
-                    top: 4,
-                    right: 4,
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: t.error,
-                  }}
-                />
-              )}
-            </button>
+              <IconButton
+                aria-label="Notifications"
+                onClick={() => router.push('/notifications')}
+                sx={{
+                  border: '1px solid', borderColor: 'divider',
+                  borderRadius: '12px', color: 'text.secondary',
+                  width: 38, height: 38,
+                }}
+              >
+                <Bell size={20} />
+              </IconButton>
+            </Badge>
           }
         />
 
@@ -367,39 +362,20 @@ export default function HomePage() {
           {/* 2. Participation Overview */}
           <section style={{ marginTop: 24 }}>
             <SectionHeader title="Your Participation" />
-            <div
-              className="grid grid-cols-2 lg:grid-cols-4"
-              style={{ gap: 12, marginTop: 12 }}
-            >
-              <StatTile
-                label="Active Missions"
-                value={inProgressHunts.length}
-                icon={Zap}
-                accent={t.accent}
-                href="/missions"
-              />
-              <StatTile
-                label="Pending Verification"
-                value={pendingVerificationCount}
-                icon={Clock}
-                accent={t.warning}
-                href="/missions"
-              />
-              <StatTile
-                label="Rewards Available"
-                value={`$${rewardsBalance.toFixed(0)}`}
-                icon={Star}
-                accent={t.ai}
-                href="/rewards"
-              />
-              <StatTile
-                label="Reputation Score"
-                value={Math.round(reputationScore)}
-                icon={TrendingUp}
-                accent={t.info}
-                href="/profile"
-              />
-            </div>
+            <Grid container spacing={1.5} sx={{ mt: 1.5 }}>
+              <Grid size={{ xs: 6, lg: 3 }}>
+                <StatTile label="Active Missions" value={inProgressHunts.length} icon={Zap} accent={t.accent} href="/missions" />
+              </Grid>
+              <Grid size={{ xs: 6, lg: 3 }}>
+                <StatTile label="Pending Verification" value={pendingVerificationCount} icon={Clock} accent={t.warning} href="/missions" />
+              </Grid>
+              <Grid size={{ xs: 6, lg: 3 }}>
+                <StatTile label="Rewards Available" value={`$${rewardsBalance.toFixed(0)}`} icon={Star} accent={t.ai} href="/rewards" />
+              </Grid>
+              <Grid size={{ xs: 6, lg: 3 }}>
+                <StatTile label="Reputation Score" value={Math.round(reputationScore)} icon={TrendingUp} accent={t.info} href="/profile" />
+              </Grid>
+            </Grid>
           </section>
 
           {/* 3. Continue Participation */}
@@ -409,7 +385,7 @@ export default function HomePage() {
               count={inProgressHunts.length > 0 ? inProgressHunts.length : undefined}
               seeAllHref="/missions"
             />
-            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Stack spacing={1.5} sx={{ mt: 1.5 }}>
               {!huntsResolved ? (
                 <SkeletonCards count={2} />
               ) : inProgressHunts.length === 0 ? (
@@ -435,126 +411,58 @@ export default function HomePage() {
                       hover
                       onClick={() => router.push(`/active/${hunt.id}`)}
                     >
-                      <div style={{ padding: 16 }}>
+                      <Box sx={{ p: 2 }}>
                         {/* title + CTA */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            justifyContent: 'space-between',
-                            gap: 8,
-                          }}
-                        >
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p
-                              style={{
-                                margin: 0,
-                                fontWeight: 600,
-                                fontSize: 15,
-                                color: t.txt,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                              }}
-                            >
+                        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }} noWrap>
                               {hunt.title}
-                            </p>
+                            </Typography>
                             {nextStep && (
-                              <p
-                                style={{
-                                  margin: '4px 0 0',
-                                  fontSize: 13,
-                                  color: t.txtDim,
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden',
-                                }}
-                              >
+                              <Typography variant="caption" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', mt: 0.5 }}>
                                 Next: {nextStep.instruction}
-                              </p>
+                              </Typography>
                             )}
-                          </div>
-                          <span
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 2,
-                              color: t.accent,
-                              flexShrink: 0,
-                              fontSize: 13,
-                              fontWeight: 600,
-                            }}
-                          >
-                            Continue
-                            <ChevronRight size={14} />
-                          </span>
-                        </div>
+                          </Box>
+                          <Stack direction="row" alignItems="center" spacing={0.25} sx={{ color: 'primary.main', flexShrink: 0 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: 'primary.main' }}>Continue</Typography>
+                            <ChevronRight size={14} color={t.accent} />
+                          </Stack>
+                        </Stack>
 
                         {/* step progress */}
-                        <div style={{ marginTop: 12 }}>
+                        <Box sx={{ mt: 1.5 }}>
                           <ProgressBar
                             value={stepsTotal > 0 ? (stepsDone / stepsTotal) * 100 : 0}
                             color={t.accent}
                             height={4}
                             label={`Step ${stepsDone} of ${stepsTotal}`}
                           />
-                        </div>
+                        </Box>
 
                         {/* meta row */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 12,
-                            marginTop: 10,
-                          }}
-                        >
+                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mt: 1.25 }}>
                           {hunt.deadline && (
-                            <span
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 4,
-                                fontSize: 12,
-                                color: t.txtFaint,
-                              }}
-                            >
-                              <Clock size={12} />
-                              {new Date(hunt.deadline).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                              })}
-                            </span>
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <Clock size={12} color={t.txtFaint} />
+                              <Typography variant="caption" color="text.disabled">
+                                {new Date(hunt.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                              </Typography>
+                            </Stack>
                           )}
-                          <span
-                            style={{
-                              fontSize: 12,
-                              color: t.accent,
-                              fontWeight: 600,
-                            }}
-                          >
+                          <Typography variant="caption" sx={{ fontWeight: 600, color: 'primary.main' }}>
                             {hunt.reward}
-                          </span>
+                          </Typography>
                           {vStatus && (
-                            <span
-                              style={{
-                                fontSize: 11,
-                                color: t.warning,
-                                marginLeft: 'auto',
-                                textTransform: 'capitalize',
-                              }}
-                            >
-                              {vStatus.status.replace(/_/g, ' ')}
-                            </span>
+                            <Chip label={vStatus.status.replace(/_/g, ' ')} size="small" sx={{ ml: 'auto !important', height: 18, fontSize: 9, fontWeight: 700, color: t.warning, bgcolor: `${t.warning}14`, textTransform: 'capitalize' }} />
                           )}
-                        </div>
-                      </div>
+                        </Stack>
+                      </Box>
                     </Surface>
                   );
                 })
               )}
-            </div>
+            </Stack>
           </section>
 
           {/* 4. Recommended Opportunities */}
@@ -564,7 +472,7 @@ export default function HomePage() {
               count={recommendations.length > 0 ? recommendations.length : undefined}
               seeAllHref="/explore"
             />
-            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Stack spacing={1.5} sx={{ mt: 1.5 }}>
               {loadingRecs ? (
                 <SkeletonCards count={3} />
               ) : recommendations.length === 0 ? (
@@ -585,69 +493,32 @@ export default function HomePage() {
                   />
                 ))
               )}
-            </div>
+            </Stack>
           </section>
 
           {/* 5. Rewards Snapshot */}
           <section style={{ marginTop: 32 }}>
             <SectionHeader title="Rewards" seeAllHref="/rewards" />
             <Surface variant="card" style={{ marginTop: 12 }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 16,
-                }}
-              >
+              <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
                 {/* earned balance */}
-                <div>
-                  <p style={{ margin: 0, fontSize: 12, color: t.txtDim }}>Earned balance</p>
-                  <p
-                    style={{
-                      margin: '4px 0 0',
-                      fontSize: 28,
-                      fontWeight: 700,
-                      color: t.accent,
-                      letterSpacing: '-0.5px',
-                    }}
-                  >
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Earned balance</Typography>
+                  <Typography sx={{ fontSize: 28, fontWeight: 700, color: 'primary.main', letterSpacing: '-0.5px', lineHeight: 1.2, mt: 0.5 }}>
                     ${rewardsBalance.toFixed(2)}
-                  </p>
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: t.txtFaint }}>
-                    from {completedHunts.length} completed mission
-                    {completedHunts.length !== 1 ? 's' : ''}
-                  </p>
-                </div>
+                  </Typography>
+                  <Typography variant="caption" color="text.disabled">
+                    from {completedHunts.length} completed mission{completedHunts.length !== 1 ? 's' : ''}
+                  </Typography>
+                </Box>
 
                 {/* streak badge */}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '12px 16px',
-                    borderRadius: 14,
-                    background: `${t.warning}18`,
-                    border: `1px solid ${t.warning}30`,
-                    flexShrink: 0,
-                  }}
-                >
+                <Stack alignItems="center" spacing={0.5} sx={{ p: '12px 16px', borderRadius: '14px', bgcolor: `${t.warning}18`, border: `1px solid ${t.warning}30`, flexShrink: 0 }}>
                   <Flame size={24} color={t.warning} />
-                  <span
-                    style={{
-                      fontSize: 22,
-                      fontWeight: 700,
-                      color: t.warning,
-                      lineHeight: 1,
-                    }}
-                  >
-                    {streak}
-                  </span>
-                  <span style={{ fontSize: 11, color: t.txtDim }}>day streak</span>
-                </div>
-              </div>
+                  <Typography sx={{ fontSize: 22, fontWeight: 700, color: t.warning, lineHeight: 1 }}>{streak}</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>day streak</Typography>
+                </Stack>
+              </Stack>
             </Surface>
           </section>
 
@@ -676,43 +547,20 @@ export default function HomePage() {
               ) : (
                 <>
                   {/* composite score header */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 16,
-                      marginBottom: 20,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 52,
-                        height: 52,
-                        borderRadius: '50%',
-                        background: `${t.ai}20`,
-                        border: `2px solid ${t.ai}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <span style={{ fontSize: 16, fontWeight: 700, color: t.ai }}>
+                  <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2.5 }}>
+                    <Box sx={{ width: 52, height: 52, borderRadius: '50%', bgcolor: `${t.ai}20`, border: `2px solid ${t.ai}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Typography sx={{ fontSize: 16, fontWeight: 700, color: 'secondary.main' }}>
                         {Math.round(reputationScore)}
-                      </span>
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 600, color: t.txt, fontSize: 15 }}>
-                        Trust Score
-                      </p>
-                      <p style={{ margin: '2px 0 0', fontSize: 12, color: t.txtDim }}>
-                        {profile?.archetype ?? 'Participant'}
-                      </p>
-                    </div>
-                  </div>
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>Trust Score</Typography>
+                      <Typography variant="caption" color="text.secondary">{profile?.archetype ?? 'Participant'}</Typography>
+                    </Box>
+                  </Stack>
 
                   {/* dimension bars */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <Stack spacing={1.25}>
                     {trust ? (
                       <>
                         <ProgressBar value={trust.reliability} color={t.accent} label="Reliability" showPercent />
@@ -730,7 +578,7 @@ export default function HomePage() {
                         />
                       ))
                     )}
-                  </div>
+                  </Stack>
                 </>
               )}
             </Surface>
@@ -752,59 +600,27 @@ export default function HomePage() {
                 />
               </div>
             ) : (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
-                  gap: 12,
-                  marginTop: 12,
-                }}
-              >
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 1.5, mt: 1.5 }}>
                 {earnedBadges.map((badge) => (
                   <Surface key={badge.id} variant="card" padding={14} style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, lineHeight: 1 }}>{badge.emoji}</div>
-                    <p
-                      style={{
-                        margin: '8px 0 0',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: t.txt,
-                        lineHeight: 1.3,
-                      }}
-                    >
+                    <Typography sx={{ fontSize: 28, lineHeight: 1 }}>{badge.emoji}</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.3, display: 'block', mt: 1 }}>
                       {badge.label}
-                    </p>
-                    <p style={{ margin: '4px 0 0', fontSize: 11, color: t.txtDim, lineHeight: 1.3 }}>
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontSize: 11, color: 'text.secondary', lineHeight: 1.3, display: 'block', mt: 0.5 }}>
                       {badge.description}
-                    </p>
+                    </Typography>
                   </Surface>
                 ))}
-                {badges
-                  .filter((b) => !b.earned)
-                  .map((badge) => (
-                    <Surface
-                      key={badge.id}
-                      variant="card"
-                      padding={14}
-                      style={{ textAlign: 'center', opacity: 0.35 }}
-                    >
-                      <div style={{ fontSize: 28, lineHeight: 1, filter: 'grayscale(1)' }}>
-                        {badge.emoji}
-                      </div>
-                      <p
-                        style={{
-                          margin: '8px 0 0',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: t.txt,
-                          lineHeight: 1.3,
-                        }}
-                      >
-                        {badge.label}
-                      </p>
-                    </Surface>
-                  ))}
-              </div>
+                {badges.filter((b) => !b.earned).map((badge) => (
+                  <Surface key={badge.id} variant="card" padding={14} style={{ textAlign: 'center', opacity: 0.35 }}>
+                    <Typography sx={{ fontSize: 28, lineHeight: 1, filter: 'grayscale(1)' }}>{badge.emoji}</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.3, display: 'block', mt: 1 }}>
+                      {badge.label}
+                    </Typography>
+                  </Surface>
+                ))}
+              </Box>
             )}
           </section>
 
@@ -872,119 +688,55 @@ function DesktopRail({
         }}
       >
         {/* streak */}
-        <div
-          style={{
-            background: `${t.warning}18`,
-            border: `1px solid ${t.warning}30`,
-            borderRadius: 16,
-            padding: 16,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            marginBottom: 14,
-          }}
-        >
+        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ bgcolor: `${t.warning}18`, border: `1px solid ${t.warning}30`, borderRadius: '16px', p: 2, mb: 1.75 }}>
           <Flame size={20} color={t.warning} />
-          <div>
-            <p style={{ margin: 0, fontSize: 20, fontWeight: 700, color: t.warning }}>
-              {streak}
-            </p>
-            <p style={{ margin: 0, fontSize: 12, color: t.txtDim }}>day streak</p>
-          </div>
-        </div>
+          <Box>
+            <Typography sx={{ fontSize: 20, fontWeight: 700, color: t.warning, lineHeight: 1 }}>{streak}</Typography>
+            <Typography variant="caption" color="text.secondary">day streak</Typography>
+          </Box>
+        </Stack>
 
         {/* reputation compact */}
-        <div
-          style={{
-            background: t.card,
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 14,
-            border: `1px solid ${t.border}`,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 12,
-            }}
-          >
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: t.txt }}>
-              Reputation
-            </p>
-            <span style={{ fontSize: 16, fontWeight: 700, color: t.ai }}>
-              {Math.round(reputationScore)}
-            </span>
-          </div>
+        <Box sx={{ bgcolor: t.card, borderRadius: '16px', p: 2, mb: 1.75, border: '1px solid', borderColor: 'divider' }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>Reputation</Typography>
+            <Typography sx={{ fontSize: 16, fontWeight: 700, color: 'secondary.main' }}>{Math.round(reputationScore)}</Typography>
+          </Stack>
           {trust && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Stack spacing={1}>
               <ProgressBar value={trust.reliability} color={t.accent} label="Reliability" height={3} />
               <ProgressBar value={trust.skill} color={t.ai} label="Skill" height={3} />
               <ProgressBar value={trust.impact} color={t.info} label="Impact" height={3} />
-            </div>
+            </Stack>
           )}
-        </div>
+        </Box>
 
         {/* active missions count */}
-        <div
-          style={{
-            background: t.card,
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 14,
-            border: `1px solid ${t.border}`,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-          }}
-        >
+        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ bgcolor: t.card, borderRadius: '16px', p: 2, mb: 1.75, border: '1px solid', borderColor: 'divider' }}>
           <CheckCircle2 size={18} color={t.accent} />
-          <div>
-            <p style={{ margin: 0, fontSize: 20, fontWeight: 700, color: t.txt }}>
-              {inProgressCount}
-            </p>
-            <p style={{ margin: 0, fontSize: 12, color: t.txtDim }}>active missions</p>
-          </div>
-        </div>
+          <Box>
+            <Typography sx={{ fontSize: 20, fontWeight: 700, color: 'text.primary', lineHeight: 1 }}>{inProgressCount}</Typography>
+            <Typography variant="caption" color="text.secondary">active missions</Typography>
+          </Box>
+        </Stack>
 
         {/* quick actions */}
-        <div
-          style={{
-            background: t.card,
-            borderRadius: 16,
-            padding: 16,
-            border: `1px solid ${t.border}`,
-          }}
-        >
-          <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: t.txt }}>
-            Quick Actions
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <Box sx={{ bgcolor: t.card, borderRadius: '16px', p: 2, border: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 1.25 }}>Quick Actions</Typography>
+          <Stack spacing={0.75}>
             {quickActions.map((action) => (
-              <a
+              <Box
                 key={action.label}
+                component="a"
                 href={action.href}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '8px 10px',
-                  borderRadius: 10,
-                  background: t.surface,
-                  textDecoration: 'none',
-                  color: t.txt,
-                  fontSize: 13,
-                  fontWeight: 500,
-                }}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1.25, p: '8px 10px', borderRadius: '10px', bgcolor: 'background.paper', textDecoration: 'none', color: 'text.primary', '&:hover': { bgcolor: t.panel } }}
               >
                 <action.icon size={15} color={action.color ?? t.accent} />
-                {action.label}
-              </a>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.primary' }}>{action.label}</Typography>
+              </Box>
             ))}
-          </div>
-        </div>
+          </Stack>
+        </Box>
       </aside>
     </>
   );

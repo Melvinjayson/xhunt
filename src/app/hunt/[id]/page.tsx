@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Clock, Bookmark, BookmarkCheck, Shield, Zap, ChevronDown, ChevronUp, MapPin, Users } from 'lucide-react';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Chip from '@mui/material/Chip';
 import BottomNav from '@/components/BottomNav';
 import MissionCard from '@/components/consumer/MissionCard';
 import SectionHeader from '@/components/consumer/SectionHeader';
@@ -76,22 +82,22 @@ export default function HuntDetailPage() {
   const isCompleted = !!progress?.completedAt || !!vStatus;
 
   if (loading) return (
-    <div className="consumer-app" style={{ background: t.bg }}>
-      <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {[1,2,3].map(i => <div key={i} style={{ height: 80, borderRadius: 16, background: t.card }} className="breathe" />)}
-      </div>
+    <Box className="consumer-app" sx={{ background: t.bg }}>
+      <Stack sx={{ padding: '20px' }} spacing={2}>
+        {[1,2,3].map(i => <Box key={i} sx={{ height: 80, borderRadius: 2, background: t.card }} className="breathe" />)}
+      </Stack>
       <BottomNav />
-    </div>
+    </Box>
   );
 
   if (!hunt) return (
-    <div className="consumer-app" style={{ background: t.bg }}>
-      <div style={{ padding: 40, textAlign: 'center' }}>
-        <p style={{ color: t.txtFaint }}>Mission not found.</p>
-        <button onClick={() => router.push('/explore')} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, background: t.accent, color: t.bg, border: 'none', cursor: 'pointer', fontWeight: 700 }}>Browse Missions</button>
-      </div>
+    <Box className="consumer-app" sx={{ background: t.bg }}>
+      <Stack sx={{ padding: '40px 20px' }} alignItems="center" spacing={2}>
+        <Typography sx={{ color: t.txtFaint }}>Mission not found.</Typography>
+        <Button variant="contained" color="primary" onClick={() => router.push('/explore')}>Browse Missions</Button>
+      </Stack>
       <BottomNav />
-    </div>
+    </Box>
   );
 
   const cash     = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
@@ -104,234 +110,295 @@ export default function HuntDetailPage() {
   const demand   = demandLabel(hunt.applicationCount);
   const stepProgress = progress ? Math.round((progress.completedSteps.length / Math.max(hunt.steps.length, 1)) * 100) : 0;
 
-  /* Shared reward pills and meta badges (rendered in both mobile inline + desktop sidebar) */
   const RewardPills = () => (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${t.accent}18`, border: `1px solid ${t.accent}30`, borderRadius: 12, padding: '8px 16px' }}>
-        <span style={{ fontSize: 18, fontWeight: 900, color: t.accent }}>${cash}</span>
-        <span style={{ fontSize: 11, color: t.txtDim }}>reward</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${t.ai}18`, border: `1px solid ${t.ai}30`, borderRadius: 12, padding: '8px 14px' }}>
-        <Zap size={14} strokeWidth={2} style={{ color: t.ai }} />
-        <span style={{ fontSize: 14, fontWeight: 700, color: t.ai }}>{xp} XP</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: '8px 14px' }}>
-        <Clock size={13} strokeWidth={1.8} style={{ color: t.txtFaint }} />
-        <span style={{ fontSize: 13, color: t.txtDim }}>{hunt.estimated_time}</span>
-      </div>
-      {dl && <div style={{ display: 'flex', alignItems: 'center', background: `${dl.color}14`, borderRadius: 12, padding: '8px 14px' }}><span style={{ fontSize: 13, fontWeight: 700, color: dl.color }}>{dl.label}</span></div>}
-    </div>
+    <Stack direction="row" flexWrap="wrap" spacing={1} sx={{ mb: 2 }}>
+      <Chip
+        label={<><span style={{ fontSize: 18, fontWeight: 900, color: t.accent }}>${cash}</span><span style={{ fontSize: 11, color: t.txtDim, marginLeft: 4 }}>reward</span></>}
+        sx={{ background: `${t.accent}18`, border: `1px solid ${t.accent}30`, borderRadius: '12px', height: 36, '& .MuiChip-label': { px: 2 } }}
+      />
+      <Chip
+        icon={<Zap size={14} strokeWidth={2} style={{ color: t.ai }} />}
+        label={`${xp} XP`}
+        sx={{ background: `${t.ai}18`, border: `1px solid ${t.ai}30`, borderRadius: '12px', color: t.ai, fontWeight: 700, fontSize: 14, height: 36 }}
+      />
+      <Chip
+        icon={<Clock size={13} strokeWidth={1.8} style={{ color: t.txtFaint }} />}
+        label={hunt.estimated_time}
+        sx={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: '12px', color: t.txtDim, fontSize: 13, height: 36 }}
+      />
+      {dl && (
+        <Chip
+          label={dl.label}
+          sx={{ background: `${dl.color}14`, borderRadius: '12px', color: dl.color, fontWeight: 700, fontSize: 13, height: 36 }}
+        />
+      )}
+    </Stack>
   );
 
   const MetaBadges = () => (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-      <span style={{ fontSize: 11, fontWeight: 700, color: diff.color, background: diff.bg, padding: '4px 10px', borderRadius: 100 }}>{diff.label}</span>
-      {typeMeta && <span style={{ fontSize: 11, fontWeight: 600, color: typeMeta.color, background: `${typeMeta.color}14`, padding: '4px 10px', borderRadius: 100 }}>{typeMeta.emoji} {typeMeta.label}</span>}
-      {hunt.locationType && <span style={{ fontSize: 11, fontWeight: 600, color: t.txtDim, background: t.card, padding: '4px 10px', borderRadius: 100, border: `1px solid ${t.border}` }}><MapPin size={9} strokeWidth={2} style={{ display: 'inline', marginRight: 3 }} />{hunt.locationType}</span>}
-      {sl && <span style={{ fontSize: 11, fontWeight: 600, color: sl.color }}>{sl.label}</span>}
-      {demand && <span style={{ fontSize: 11, fontWeight: 600, color: t.warning }}>{demand}</span>}
-    </div>
+    <Stack direction="row" flexWrap="wrap" spacing={0.75} sx={{ mb: 2 }}>
+      <Chip size="small" label={diff.label} sx={{ background: diff.bg, color: diff.color, fontWeight: 700, fontSize: 11, borderRadius: '100px' }} />
+      {typeMeta && <Chip size="small" label={`${typeMeta.emoji} ${typeMeta.label}`} sx={{ background: `${typeMeta.color}14`, color: typeMeta.color, fontWeight: 600, fontSize: 11, borderRadius: '100px' }} />}
+      {hunt.locationType && (
+        <Chip
+          size="small"
+          icon={<MapPin size={9} strokeWidth={2} />}
+          label={hunt.locationType}
+          sx={{ background: t.card, border: `1px solid ${t.border}`, color: t.txtDim, fontWeight: 600, fontSize: 11, borderRadius: '100px' }}
+        />
+      )}
+      {sl && <Chip size="small" label={sl.label} sx={{ color: sl.color, fontWeight: 600, fontSize: 11, background: 'transparent' }} />}
+      {demand && <Chip size="small" label={demand} sx={{ color: t.warning, fontWeight: 600, fontSize: 11, background: 'transparent' }} />}
+    </Stack>
   );
 
   const CtaButtons = ({ compact }: { compact?: boolean }) => (
-    <div style={{ display: 'flex', gap: 10 }}>
+    <Stack direction="row" spacing={1.25}>
       {isCompleted ? (
-        <button onClick={() => router.push(`/complete/${huntId}`)} style={{ flex: 1, height: compact ? 44 : 50, borderRadius: 16, background: `${t.accent}18`, border: `1px solid ${t.accent}40`, color: t.accent, fontSize: compact ? 13 : 15, fontWeight: 700, cursor: 'pointer' }}>
+        <Button
+          variant="outlined"
+          fullWidth
+          onClick={() => router.push(`/complete/${huntId}`)}
+          sx={{ height: compact ? 44 : 50, borderRadius: 2, borderColor: `${t.accent}40`, color: t.accent, fontSize: compact ? 13 : 15, fontWeight: 700, '&:hover': { borderColor: t.accent, background: `${t.accent}18` } }}
+        >
           View Verification Status
-        </button>
+        </Button>
       ) : (
-        <button onClick={() => router.push(`/active/${huntId}`)} style={{ flex: 1, height: compact ? 44 : 50, borderRadius: 16, background: t.accent, color: t.bg, fontSize: compact ? 13 : 15, fontWeight: 800, cursor: 'pointer', border: 'none', boxShadow: `0 4px 20px ${t.accent}40` }}>
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          onClick={() => router.push(`/active/${huntId}`)}
+          sx={{ height: compact ? 44 : 50, borderRadius: 2, fontSize: compact ? 13 : 15, fontWeight: 800, boxShadow: `0 4px 20px ${t.accent}40` }}
+        >
           {isStarted ? 'Continue Mission' : 'Start Mission'}
-        </button>
+        </Button>
       )}
-      <button onClick={handleSave} style={{ width: compact ? 44 : 50, height: compact ? 44 : 50, borderRadius: 16, background: saved ? `${t.accent}18` : t.card, border: `1px solid ${saved ? t.accent : t.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: saved ? t.accent : t.txtFaint }}>
+      <IconButton
+        onClick={handleSave}
+        sx={{
+          width: compact ? 44 : 50, height: compact ? 44 : 50, borderRadius: 2,
+          background: saved ? `${t.accent}18` : t.card,
+          border: `1px solid ${saved ? t.accent : t.border}`,
+          color: saved ? t.accent : t.txtFaint,
+          flexShrink: 0,
+        }}
+      >
         {saved ? <BookmarkCheck size={compact ? 18 : 20} strokeWidth={2} /> : <Bookmark size={compact ? 18 : 20} strokeWidth={1.8} />}
-      </button>
-    </div>
+      </IconButton>
+    </Stack>
   );
 
   return (
-    <div className="consumer-app" style={{ background: t.bg, minHeight: '100vh' }}>
-      <div className="consumer-app-inner">
+    <Box className="consumer-app" sx={{ background: t.bg, minHeight: '100vh' }}>
+      <Box className="consumer-app-inner">
 
         {/* Top bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', position: 'sticky', top: 0, zIndex: 30, background: `${t.bg}F0`, backdropFilter: 'blur(16px)' }}>
-          <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: t.txtDim, fontSize: 14, fontWeight: 600, padding: 0 }}>
-            <ArrowLeft size={18} strokeWidth={2} /> Back
-          </button>
-          <button onClick={handleSave} style={{ display: 'flex', alignItems: 'center', gap: 6, background: saved ? `${t.accent}18` : t.card, border: `1px solid ${saved ? t.accent : t.border}`, borderRadius: 12, padding: '8px 14px', cursor: 'pointer', color: saved ? t.accent : t.txtDim, fontSize: 13, fontWeight: 600 }}>
-            {saved ? <BookmarkCheck size={15} strokeWidth={2} /> : <Bookmark size={15} strokeWidth={1.8} />}
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ padding: '16px 20px', position: 'sticky', top: 0, zIndex: 30, background: `${t.bg}F0`, backdropFilter: 'blur(16px)' }}
+        >
+          <Button
+            startIcon={<ArrowLeft size={18} strokeWidth={2} />}
+            onClick={() => router.back()}
+            sx={{ background: 'none', border: 'none', color: t.txtDim, fontSize: 14, fontWeight: 600, p: 0, minWidth: 0 }}
+          >
+            Back
+          </Button>
+          <Button
+            startIcon={saved ? <BookmarkCheck size={15} strokeWidth={2} /> : <Bookmark size={15} strokeWidth={1.8} />}
+            onClick={handleSave}
+            sx={{
+              background: saved ? `${t.accent}18` : t.card,
+              border: `1px solid ${saved ? t.accent : t.border}`,
+              borderRadius: '12px',
+              color: saved ? t.accent : t.txtDim,
+              fontSize: 13,
+              fontWeight: 600,
+              px: 1.75,
+            }}
+          >
             {saved ? 'Saved' : 'Save'}
-          </button>
-        </div>
+          </Button>
+        </Stack>
 
-        <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%', boxSizing: 'border-box', padding: '0 20px 100px' }}>
+        <Box sx={{ maxWidth: 1100, margin: '0 auto', width: '100%', boxSizing: 'border-box', padding: '0 20px 100px' }}>
 
           {/* Category accent bar */}
-          <div style={{ height: 3, borderRadius: 2, background: `linear-gradient(90deg, ${category.color}, ${category.color}44)`, marginBottom: 16 }} />
+          <Box sx={{ height: 3, borderRadius: '2px', background: `linear-gradient(90deg, ${category.color}, ${category.color}44)`, mb: 2 }} />
 
-          {/* Title — prominent, first */}
-          <h1 style={{ margin: '0 0 14px', fontSize: 'clamp(20px, 4vw, 26px)', fontWeight: 900, color: t.txt, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{hunt.title}</h1>
+          {/* Title */}
+          <Typography variant="h5" sx={{ mb: 1.75, fontSize: 'clamp(20px, 4vw, 26px)', fontWeight: 900, color: t.txt, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            {hunt.title}
+          </Typography>
 
           {/* Org row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: `${category.color}18`, border: `1px solid ${category.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+          <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 2.5 }}>
+            <Box sx={{ width: 36, height: 36, borderRadius: '10px', background: `${category.color}18`, border: `1px solid ${category.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
               {hunt.tenantLogo ? <img src={hunt.tenantLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} /> : category.emoji}
-            </div>
-            <div>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: t.txtDim, display: 'flex', alignItems: 'center', gap: 4 }}>
+            </Box>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: t.txtDim }}>
                 {hunt.tenantName ?? 'Organization'}
-                {hunt.isVerified && <Shield size={11} strokeWidth={2} style={{ color: t.info }} />}
-              </p>
-            </div>
-          </div>
+              </Typography>
+              {hunt.isVerified && <Shield size={11} strokeWidth={2} style={{ color: t.info }} />}
+            </Stack>
+          </Stack>
 
           {/* Mobile: reward pills + meta inline */}
-          <div className="lg:hidden">
+          <Box className="lg:hidden">
             <RewardPills />
             <MetaBadges />
-          </div>
+          </Box>
 
           {/* Progress bar if started */}
           {isStarted && (
             <Surface variant="inset" padding="12px 16px" style={{ marginBottom: 20 }}>
-              <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: t.accent }}>In Progress</p>
+              <Typography sx={{ mb: 1, fontSize: 12, fontWeight: 600, color: t.accent }}>In Progress</Typography>
               <ProgressBar value={stepProgress} label={`Step ${(progress?.completedSteps.length ?? 0) + 1} of ${hunt.steps.length}`} showPercent color={t.accent} />
             </Surface>
           )}
 
           {/* Desktop two-column body */}
-          <div className="lg:flex lg:gap-8 lg:items-start">
+          <Box sx={{ display: { xs: 'block', lg: 'flex' }, gap: 4, alignItems: 'flex-start' }}>
 
             {/* Left: main content */}
-            <div className="lg:flex-1 lg:min-w-0">
+            <Box sx={{ flex: 1, minWidth: 0 }}>
 
               {/* Overview */}
-              <section style={{ marginBottom: 24 }}>
+              <Box component="section" sx={{ mb: 3 }}>
                 <SectionHeader title="Mission Overview" />
                 <Surface variant="inset" padding="16px">
-                  <p style={{ margin: 0, fontSize: 14, color: t.txtDim, lineHeight: 1.7 }}>{hunt.story_context}</p>
+                  <Typography sx={{ fontSize: 14, color: t.txtDim, lineHeight: 1.7 }}>{hunt.story_context}</Typography>
                 </Surface>
-              </section>
+              </Box>
 
               {/* Steps */}
               {hunt.steps?.length > 0 && (
-                <section style={{ marginBottom: 24 }}>
+                <Box component="section" sx={{ mb: 3 }}>
                   <SectionHeader title="Participation Steps" count={hunt.steps.length} />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <Stack spacing={1}>
                     {hunt.steps.map((step, idx) => {
                       const exp = expandedSteps.has(idx);
                       const STEP_EMOJI: Record<string, string> = { action: '⚡', reflection: '💭', discovery: '🔍', research: '🔬', submission: '📤', collaboration: '🤝' };
                       return (
                         <Surface key={step.id} variant="card" padding="0" style={{ overflow: 'hidden' }}>
-                          <button onClick={() => toggleStep(idx)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                            <div style={{ width: 32, height: 32, borderRadius: 10, background: `${t.accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{STEP_EMOJI[step.type] ?? '📌'}</div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Step {idx + 1} · {step.type}</p>
-                              <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 600, color: t.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: exp ? 'normal' : 'nowrap' }}>{step.instruction}</p>
-                            </div>
+                          <Box
+                            component="button"
+                            onClick={() => toggleStep(idx)}
+                            sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: 1.5, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                          >
+                            <Box sx={{ width: 32, height: 32, borderRadius: '10px', background: `${t.accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{STEP_EMOJI[step.type] ?? '📌'}</Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography sx={{ fontSize: 10, fontWeight: 600, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Step {idx + 1} · {step.type}</Typography>
+                              <Typography sx={{ fontSize: 13, fontWeight: 600, color: t.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: exp ? 'normal' : 'nowrap' }}>{step.instruction}</Typography>
+                            </Box>
                             {exp ? <ChevronUp size={16} style={{ color: t.txtFaint, flexShrink: 0 }} /> : <ChevronDown size={16} style={{ color: t.txtFaint, flexShrink: 0 }} />}
-                          </button>
+                          </Box>
                           {exp && (
-                            <div style={{ padding: '0 16px 14px 60px' }}>
-                              <p style={{ margin: '0 0 8px', fontSize: 13, color: t.txtDim, lineHeight: 1.6 }}>{step.instruction}</p>
-                              <p style={{ margin: 0, fontSize: 12, color: t.txtFaint }}><strong style={{ color: t.accent }}>Success: </strong>{step.success_criteria}</p>
-                            </div>
+                            <Box sx={{ padding: '0 16px 14px 60px' }}>
+                              <Typography sx={{ mb: 1, fontSize: 13, color: t.txtDim, lineHeight: 1.6 }}>{step.instruction}</Typography>
+                              <Typography sx={{ fontSize: 12, color: t.txtFaint }}>
+                                <Box component="strong" sx={{ color: t.accent }}>Success: </Box>{step.success_criteria}
+                              </Typography>
+                            </Box>
                           )}
                         </Surface>
                       );
                     })}
-                  </div>
-                </section>
+                  </Stack>
+                </Box>
               )}
 
               {/* Verification Requirements */}
-              <section style={{ marginBottom: 24 }}>
+              <Box component="section" sx={{ mb: 3 }}>
                 <SectionHeader title="Verification Requirements" />
                 <Surface variant="inset" padding="16px">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <Stack spacing={1.25}>
                     {['Written response or explanation', 'Photo or video proof', 'GPS location check-in (if local)', 'Source citations or references'].map((req, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 20, height: 20, borderRadius: 6, border: `1.5px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <span style={{ fontSize: 10, color: t.txtFaint }}>{i + 1}</span>
-                        </div>
-                        <p style={{ margin: 0, fontSize: 13, color: t.txtDim }}>{req}</p>
-                      </div>
+                      <Stack key={i} direction="row" alignItems="center" spacing={1.25}>
+                        <Box sx={{ width: 20, height: 20, borderRadius: '6px', border: `1.5px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Typography sx={{ fontSize: 10, color: t.txtFaint }}>{i + 1}</Typography>
+                        </Box>
+                        <Typography sx={{ fontSize: 13, color: t.txtDim }}>{req}</Typography>
+                      </Stack>
                     ))}
-                  </div>
+                  </Stack>
                 </Surface>
-              </section>
+              </Box>
 
               {/* Reputation Impact */}
-              <section style={{ marginBottom: 24 }}>
+              <Box component="section" sx={{ mb: 3 }}>
                 <SectionHeader title="Reputation Impact" />
-                <div style={{ display: 'flex', gap: 10 }}>
+                <Stack direction="row" spacing={1.25}>
                   <Surface variant="inset" padding="14px 16px" style={{ flex: 1 }}>
-                    <p style={{ margin: '0 0 4px', fontSize: 11, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>XP Reward</p>
-                    <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: t.ai }}>+{xp}</p>
+                    <Typography sx={{ mb: 0.5, fontSize: 11, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>XP Reward</Typography>
+                    <Typography sx={{ fontSize: 20, fontWeight: 800, color: t.ai }}>+{xp}</Typography>
                   </Surface>
                   <Surface variant="inset" padding="14px 16px" style={{ flex: 1 }}>
-                    <p style={{ margin: '0 0 4px', fontSize: 11, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Trust Score</p>
-                    <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: t.accent }}>+{hunt.difficulty === 'hard' ? '15' : hunt.difficulty === 'medium' ? '8' : '3'}</p>
+                    <Typography sx={{ mb: 0.5, fontSize: 11, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Trust Score</Typography>
+                    <Typography sx={{ fontSize: 20, fontWeight: 800, color: t.accent }}>+{hunt.difficulty === 'hard' ? '15' : hunt.difficulty === 'medium' ? '8' : '3'}</Typography>
                   </Surface>
-                </div>
-              </section>
+                </Stack>
+              </Box>
 
               {/* Org info */}
               {(hunt.tenantName || hunt.organizationAbout) && (
-                <section style={{ marginBottom: 24 }}>
+                <Box component="section" sx={{ mb: 3 }}>
                   <SectionHeader title="About the Organization" />
                   <Surface variant="inset" padding="16px">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, background: `${category.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{category.emoji}</div>
-                      <div>
-                        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: t.txt }}>{hunt.tenantName ?? 'Organization'}</p>
-                        {hunt.organizationType && <p style={{ margin: '2px 0 0', fontSize: 11, color: t.txtFaint, textTransform: 'capitalize' }}>{hunt.organizationType.replace('-', ' ')}</p>}
-                      </div>
-                    </div>
-                    {hunt.organizationAbout && <p style={{ margin: 0, fontSize: 13, color: t.txtDim, lineHeight: 1.6 }}>{hunt.organizationAbout}</p>}
+                    <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 1.25 }}>
+                      <Box sx={{ width: 36, height: 36, borderRadius: '10px', background: `${category.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{category.emoji}</Box>
+                      <Box>
+                        <Typography sx={{ fontSize: 14, fontWeight: 700, color: t.txt }}>{hunt.tenantName ?? 'Organization'}</Typography>
+                        {hunt.organizationType && <Typography sx={{ fontSize: 11, color: t.txtFaint, textTransform: 'capitalize' }}>{hunt.organizationType.replace('-', ' ')}</Typography>}
+                      </Box>
+                    </Stack>
+                    {hunt.organizationAbout && <Typography sx={{ fontSize: 13, color: t.txtDim, lineHeight: 1.6 }}>{hunt.organizationAbout}</Typography>}
                   </Surface>
-                </section>
+                </Box>
               )}
 
               {/* Similar missions */}
               {similar.length > 0 && (
-                <section style={{ marginBottom: 24 }}>
+                <Box component="section" sx={{ mb: 3 }}>
                   <SectionHeader title="Similar Missions" />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <Stack spacing={1.5}>
                     {similar.map(h => <MissionCard key={h.id} hunt={h} compact />)}
-                  </div>
-                </section>
+                  </Stack>
+                </Box>
               )}
-            </div>
+            </Box>
 
             {/* Right: sticky sidebar (desktop only) */}
-            <div className="hidden lg:block" style={{ width: 300, flexShrink: 0 }}>
-              <div style={{ position: 'sticky', top: 80 }}>
+            <Box className="hidden lg:block" sx={{ width: 300, flexShrink: 0 }}>
+              <Box sx={{ position: 'sticky', top: 80 }}>
                 <Surface variant="card" style={{ marginBottom: 12 }}>
-                  <div style={{ padding: '16px 16px 12px' }}>
+                  <Box sx={{ padding: '16px 16px 12px' }}>
                     <RewardPills />
                     <MetaBadges />
                     <CtaButtons compact />
-                  </div>
+                  </Box>
                 </Surface>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
 
       {/* Mobile sticky bottom CTA */}
-      <div className="lg:hidden" style={{
+      <Box className="lg:hidden" sx={{
         position: 'fixed', bottom: 'calc(72px + max(env(safe-area-inset-bottom, 0px), 8px))', left: 0, right: 0,
         padding: '12px 20px', background: `${t.bg}F5`, backdropFilter: 'blur(16px)',
         borderTop: `1px solid ${t.border}`, zIndex: 40,
       }}>
         <CtaButtons />
-      </div>
+      </Box>
 
       <CopilotFab context={{ huntTitle: hunt.title, huntStory: hunt.story_context }} />
       <BottomNav />
-    </div>
+    </Box>
   );
 }

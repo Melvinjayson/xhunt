@@ -5,6 +5,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, UserPlus, UserCheck, Users, Zap, Trophy, X, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Card from '@mui/material/Card';
+import Avatar from '@mui/material/Avatar';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
 import BottomNav from '@/components/BottomNav';
 import { t } from '@/theme/colors';
 
@@ -22,27 +33,6 @@ interface Person {
 
 const TABS = ['Discover', 'Following', 'Followers'] as const;
 type Tab = typeof TABS[number];
-
-function initials(name: string) {
-  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-}
-
-function Avatar({ name, url, size = 48 }: { name: string; url: string | null; size?: number }) {
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%', flexShrink: 0,
-      background: url ? undefined : 'linear-gradient(135deg,rgba(34,255,170,.2),rgba(109,93,253,.2))',
-      border: '1.5px solid rgba(255,255,255,.1)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.34, fontWeight: 700, color: t.accent, overflow: 'hidden',
-    }}>
-      {url
-        ? <img src={url} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        : initials(name)
-      }
-    </div>
-  );
-}
 
 function PersonCard({ person, onFollowChange }: {
   person: Person;
@@ -71,64 +61,91 @@ function PersonCard({ person, onFollowChange }: {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="liquid-glass"
-      style={{
-        display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px',
-        borderBottom: `1px solid rgba(255,255,255,.07)`, borderRadius: 16, marginBottom: 8,
-      }}
     >
-      <Avatar name={person.display_name} url={person.avatar_url} size={46} />
+      <Card sx={{ bgcolor: t.card, border: '1px solid', borderColor: 'divider', borderRadius: '16px', p: 2, mb: 1 }}>
+        <Stack direction="row" alignItems="flex-start" spacing={1.5}>
+          <Avatar
+            src={person.avatar_url ?? undefined}
+            sx={{
+              width: 44,
+              height: 44,
+              bgcolor: `${t.ai}20`,
+              color: 'secondary.main',
+              fontWeight: 800,
+              border: '1.5px solid rgba(255,255,255,.1)',
+              flexShrink: 0,
+            }}
+          >
+            {!person.avatar_url && person.display_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
+          </Avatar>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: t.txt }}>{person.display_name}</span>
-          <span style={{ fontSize: 12, color: t.txtFaint }}>{handle}</span>
-        </div>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 0.25, flexWrap: 'wrap' }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>{person.display_name}</Typography>
+              <Typography variant="caption" color="text.secondary">{handle}</Typography>
+            </Stack>
 
-        {person.bio && (
-          <p style={{ margin: '0 0 8px', fontSize: 12.5, color: t.txtDim, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {person.bio}
-          </p>
-        )}
+            {person.bio && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mb: 1, lineHeight: 1.45, overflow: 'hidden', textOverflow: 'ellipsis', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+              >
+                {person.bio}
+              </Typography>
+            )}
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: t.txtFaint }}>
-            <Users size={11} />
-            <span><b style={{ color: t.txtDim }}>{person.followers_count}</b> followers</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: t.txtFaint }}>
-            <Zap size={11} style={{ color: t.ai }} />
-            <span><b style={{ color: t.txtDim }}>{person.xp_balance.toLocaleString()}</b> XP</span>
-          </div>
-          {person.missions_completed > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: t.txtFaint }}>
-              <Trophy size={11} style={{ color: t.warning }} />
-              <span><b style={{ color: t.txtDim }}>{person.missions_completed}</b></span>
-            </div>
-          )}
-        </div>
-      </div>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack direction="row" alignItems="center" spacing={0.375}>
+                <Users size={11} style={{ color: t.txtFaint }} />
+                <Typography variant="caption" color="text.secondary">
+                  <Box component="b" sx={{ color: t.txtDim }}>{person.followers_count}</Box> followers
+                </Typography>
+              </Stack>
+              <Stack direction="row" alignItems="center" spacing={0.375}>
+                <Zap size={11} style={{ color: t.ai }} />
+                <Typography variant="caption" color="text.secondary">
+                  <Box component="b" sx={{ color: t.txtDim }}>{person.xp_balance.toLocaleString()}</Box> XP
+                </Typography>
+              </Stack>
+              {person.missions_completed > 0 && (
+                <Stack direction="row" alignItems="center" spacing={0.375}>
+                  <Trophy size={11} style={{ color: t.warning }} />
+                  <Typography variant="caption" color="text.secondary">
+                    <Box component="b" sx={{ color: t.txtDim }}>{person.missions_completed}</Box>
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          </Box>
 
-      <motion.button
-        whileTap={{ scale: 0.93 }}
-        onClick={toggleFollow}
-        disabled={loading}
-        style={{
-          flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-          padding: '7px 14px', borderRadius: 20, fontSize: 12.5, fontWeight: 700,
-          cursor: loading ? 'default' : 'pointer',
-          border: person.is_following ? `1px solid rgba(255,255,255,.12)` : `1px solid ${t.accent}40`,
-          background: person.is_following ? 'rgba(255,255,255,.04)' : `${t.accent}14`,
-          color: person.is_following ? t.txtDim : t.accent,
-          transition: 'all .15s', fontFamily: 'inherit',
-          opacity: loading ? 0.6 : 1,
-        }}
-      >
-        {person.is_following
-          ? <><UserCheck size={13} /> Following</>
-          : <><UserPlus size={13} /> Follow</>
-        }
-      </motion.button>
+          <motion.div whileTap={{ scale: 0.93 }}>
+            <Button
+              size="small"
+              variant={person.is_following ? 'outlined' : 'contained'}
+              onClick={toggleFollow}
+              disabled={loading}
+              startIcon={person.is_following ? <UserCheck size={13} /> : <UserPlus size={13} />}
+              sx={{
+                borderRadius: '20px',
+                fontSize: 12,
+                px: 1.75,
+                py: 0.625,
+                flexShrink: 0,
+                textTransform: 'none',
+                fontWeight: 700,
+                opacity: loading ? 0.6 : 1,
+                ...(person.is_following
+                  ? { border: '1px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.04)', color: t.txtDim }
+                  : { border: `1px solid ${t.accent}40`, background: `${t.accent}14`, color: t.accent }
+                ),
+              }}
+            >
+              {person.is_following ? 'Following' : 'Follow'}
+            </Button>
+          </motion.div>
+        </Stack>
+      </Card>
     </motion.div>
   );
 }
@@ -178,118 +195,140 @@ export default function PeoplePage() {
   }
 
   return (
-    <main className="consumer-app" style={{ background: t.bg, minHeight: '100dvh', paddingBottom: '5.5rem' }}>
+    <Box component="main" className="consumer-app" sx={{ background: t.bg, minHeight: '100dvh', paddingBottom: '5.5rem' }}>
 
       {/* Header */}
-      <div style={{
+      <Box sx={{
         position: 'sticky', top: 0, zIndex: 40,
         background: 'rgba(5,8,22,.94)', backdropFilter: 'blur(20px)',
         borderBottom: `1px solid rgba(255,255,255,.07)`,
       }}>
-        <div style={{ maxWidth: 600, margin: '0 auto', padding: '12px 16px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <button
+        <Box sx={{ maxWidth: 600, margin: '0 auto', padding: '12px 16px 0' }}>
+          <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 1.5 }}>
+            <IconButton
               onClick={() => router.back()}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.txtDim, padding: 4 }}
+              sx={{ color: t.txtDim, p: 0.5 }}
             >
               <ArrowLeft size={20} />
-            </button>
-            <h1 style={{ fontSize: 20, fontWeight: 800, color: t.txt, margin: 0, flex: 1 }}>People</h1>
-          </div>
+            </IconButton>
+            <Typography variant="h5" sx={{ fontSize: 20, fontWeight: 800, color: t.txt, flex: 1 }}>People</Typography>
+          </Stack>
 
           {/* Search */}
-          <form onSubmit={handleSearch} style={{ marginBottom: 12 }}>
-            <div className="liquid-glass" style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              background: t.panel, border: `1px solid rgba(255,255,255,.12)`,
-              borderRadius: 12, padding: '10px 14px',
-            }}>
-              <Search size={15} style={{ color: t.txtFaint, flexShrink: 0 }} />
-              <input
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                placeholder="Search by name…"
-                style={{
-                  flex: 1, background: 'none', border: 'none', outline: 'none',
-                  color: t.txt, fontSize: 14, fontFamily: 'inherit',
-                }}
-              />
-              {searchInput && (
-                <button type="button" onClick={() => { setSearchInput(''); setQuery(''); }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.txtFaint, padding: 0 }}>
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          </form>
+          <Box component="form" onSubmit={handleSearch} sx={{ mb: 1.5 }}>
+            <TextField
+              fullWidth
+              size="small"
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              placeholder="Search by name…"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={15} style={{ color: t.txtFaint }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchInput ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={() => { setSearchInput(''); setQuery(''); }}
+                      sx={{ color: t.txtFaint, p: 0 }}
+                    >
+                      <X size={14} />
+                    </IconButton>
+                  </InputAdornment>
+                ) : null,
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '12px',
+                  background: t.panel,
+                  '& fieldset': { borderColor: 'rgba(255,255,255,.12)' },
+                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,.2)' },
+                  '&.Mui-focused fieldset': { borderColor: t.accent },
+                },
+                '& .MuiInputBase-input': { color: t.txt, fontSize: 14 },
+                '& .MuiInputBase-input::placeholder': { color: t.txtFaint, opacity: 1 },
+              }}
+            />
+          </Box>
 
           {/* Tabs */}
-          <div style={{ display: 'flex' }}>
+          <Tabs
+            value={tab}
+            onChange={(_, v: Tab) => setTab(v)}
+            sx={{
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, fontSize: 13.5, color: t.txtDim, minWidth: 0, flex: 1 },
+              '& .MuiTab-root.Mui-selected': { color: t.txt, fontWeight: 700 },
+              '& .MuiTabs-indicator': { backgroundColor: t.accent },
+            }}
+          >
             {TABS.map(tabItem => (
-              <button key={tabItem} onClick={() => setTab(tabItem)} style={{
-                flex: 1, padding: '8px 0 10px', background: 'none', border: 'none',
-                cursor: 'pointer', fontSize: 13.5, fontWeight: tab === tabItem ? 700 : 500,
-                color: tab === tabItem ? t.txt : t.txtDim,
-                borderBottom: `2px solid ${tab === tabItem ? t.accent : 'transparent'}`,
-                transition: 'all .15s', fontFamily: 'inherit',
-              }}>
-                {tabItem}
-              </button>
+              <Tab key={tabItem} label={tabItem} value={tabItem} />
             ))}
-          </div>
-        </div>
-      </div>
+          </Tabs>
+        </Box>
+      </Box>
 
-      <div style={{ maxWidth: 600, margin: '0 auto' }}>
+      <Box sx={{ maxWidth: 600, margin: '0 auto' }}>
         <AnimatePresence mode="wait">
           {loading ? (
-            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              style={{ padding: '40px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {[0,1,2,3,4].map(i => (
-                <div key={i} style={{ display: 'flex', gap: 12, padding: '14px 16px' }}>
-                  <div style={{ width: 46, height: 46, borderRadius: '50%', background: t.panel }} />
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ height: 14, width: '45%', borderRadius: 6, background: t.panel }} />
-                    <div style={{ height: 11, width: '70%', borderRadius: 6, background: t.surface }} />
-                    <div style={{ height: 10, width: '55%', borderRadius: 6, background: t.surface }} />
-                  </div>
-                </div>
-              ))}
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Stack spacing={1.75} sx={{ padding: '40px 16px' }}>
+                {[0,1,2,3,4].map(i => (
+                  <Stack key={i} direction="row" spacing={1.5} sx={{ padding: '14px 16px' }}>
+                    <Box sx={{ width: 46, height: 46, borderRadius: '50%', background: t.panel, flexShrink: 0 }} />
+                    <Stack flex={1} spacing={1}>
+                      <Box sx={{ height: 14, width: '45%', borderRadius: '6px', background: t.panel }} />
+                      <Box sx={{ height: 11, width: '70%', borderRadius: '6px', background: t.surface }} />
+                      <Box sx={{ height: 10, width: '55%', borderRadius: '6px', background: t.surface }} />
+                    </Stack>
+                  </Stack>
+                ))}
+              </Stack>
             </motion.div>
           ) : people.length === 0 ? (
-            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              style={{ padding: '60px 24px', textAlign: 'center' }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${t.accent}0D`, border: `1px solid ${t.accent}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <Users size={24} strokeWidth={1.5} style={{ color: t.accent }} />
-              </div>
-              <p style={{ fontSize: 16, fontWeight: 700, color: t.txt, margin: '0 0 6px' }}>
-                {query ? 'No results found' : tab === 'Following' ? 'Not following anyone yet' : tab === 'Followers' ? 'No followers yet' : 'No people yet'}
-              </p>
-              <p style={{ fontSize: 13, color: t.txtFaint, margin: '0 0 20px', lineHeight: 1.5 }}>
-                {query ? `Try a different search term.` : tab === 'Discover' ? 'Be the first to join the community.' : 'Start connecting with other hunters.'}
-              </p>
-              {tab !== 'Discover' && (
-                <button onClick={() => setTab('Discover')} style={{
-                  padding: '10px 22px', borderRadius: 12, background: t.accent, color: t.bg,
-                  fontWeight: 700, fontSize: 13.5, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                }}>
-                  Discover People
-                </button>
-              )}
+            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Stack alignItems="center" sx={{ padding: '60px 24px', textAlign: 'center' }}>
+                <Box sx={{ width: 56, height: 56, borderRadius: '50%', background: `${t.accent}0D`, border: `1px solid ${t.accent}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                  <Users size={24} strokeWidth={1.5} style={{ color: t.accent }} />
+                </Box>
+                <Typography sx={{ fontSize: 16, fontWeight: 700, color: t.txt, mb: 0.75 }}>
+                  {query ? 'No results found' : tab === 'Following' ? 'Not following anyone yet' : tab === 'Followers' ? 'No followers yet' : 'No people yet'}
+                </Typography>
+                <Typography sx={{ fontSize: 13, color: t.txtFaint, mb: 2.5, lineHeight: 1.5 }}>
+                  {query ? `Try a different search term.` : tab === 'Discover' ? 'Be the first to join the community.' : 'Start connecting with other hunters.'}
+                </Typography>
+                {tab !== 'Discover' && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => setTab('Discover')}
+                    sx={{ borderRadius: '12px', fontWeight: 700, fontSize: 13.5, textTransform: 'none' }}
+                  >
+                    Discover People
+                  </Button>
+                )}
+              </Stack>
             </motion.div>
           ) : (
             <motion.div key={tab + query} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {people.map((person, i) => (
-                <motion.div key={person.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <PersonCard person={person} onFollowChange={handleFollowChange} />
-                </motion.div>
-              ))}
+              <Box sx={{ padding: '8px 16px' }}>
+                {people.map((person, i) => (
+                  <motion.div key={person.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                    <PersonCard person={person} onFollowChange={handleFollowChange} />
+                  </motion.div>
+                ))}
+              </Box>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </Box>
 
       <BottomNav />
-    </main>
+    </Box>
   );
 }

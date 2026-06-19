@@ -1,12 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   CheckCircle2, Clock, Zap, DollarSign, Share2, Home,
   ChevronRight, AlertCircle, XCircle, RotateCcw, ArrowRight,
   Sparkles, Shield, Eye, User2,
 } from 'lucide-react';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Alert from '@mui/material/Alert';
+import Stepper from '@mui/material/Stepper';
+import Step from '@mui/material/Step';
+import StepLabel from '@mui/material/StepLabel';
+import StepContent from '@mui/material/StepContent';
 import { t } from '@/theme/colors';
 import { loadState, getVerificationStatus } from '@/lib/store';
 import { estimateCashReward, estimateXP } from '@/lib/missionCategories';
@@ -18,40 +28,50 @@ import type { Hunt, VerificationRecord, VerificationStatus } from '@/lib/types';
 // ── Verification pipeline ─────────────────────────────────────────────────
 
 interface PipelineStage {
+  id: string;
   key: VerificationStatus | 'terminal';
   label: string;
   description: string;
-  icon: React.ReactNode;
+  icon: React.ComponentType<{ size?: number; color?: string }>;
+  color: string;
   eta: string;
 }
 
 const PIPELINE: PipelineStage[] = [
   {
+    id: 'submitted',
     key: 'submitted',
     label: 'Submitted',
     description: 'Your proof of work has been received and queued.',
-    icon: <CheckCircle2 size={18} />,
+    icon: CheckCircle2,
+    color: t.accent,
     eta: 'Instant',
   },
   {
+    id: 'ai_reviewing',
     key: 'ai_reviewing',
     label: 'AI Review',
     description: 'Our AI agent is checking your submission against requirements.',
-    icon: <Sparkles size={18} />,
+    icon: Sparkles,
+    color: t.ai,
     eta: '5–15 min',
   },
   {
+    id: 'manual_review',
     key: 'manual_review',
     label: 'Human Review',
     description: 'A mission reviewer is evaluating your work.',
-    icon: <Eye size={18} />,
+    icon: Eye,
+    color: t.info,
     eta: '24–48 hrs',
   },
   {
+    id: 'terminal',
     key: 'terminal',
     label: 'Decision',
     description: 'Your verification result is available.',
-    icon: <Shield size={18} />,
+    icon: Shield,
+    color: t.accent,
     eta: '',
   },
 ];
@@ -77,7 +97,6 @@ function HeroSection({
 }) {
   const cash = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
   const xp = estimateXP(hunt.xpReward, hunt.difficulty, hunt.steps?.length ?? 3);
-  const isTerminal = TERMINAL_STATUSES.includes(status);
   const isApproved = status === 'approved';
   const isRejected = status === 'rejected';
   const isNeedsInfo = status === 'needs_info';
@@ -96,9 +115,9 @@ function HeroSection({
   ) : isNeedsInfo ? (
     <AlertCircle size={48} color={t.warning} />
   ) : (
-    <div className="breathe" style={{ color: t.ai }}>
+    <Box className="breathe" sx={{ color: t.ai }}>
       <Sparkles size={48} />
-    </div>
+    </Box>
   );
 
   const heroTitle = isApproved
@@ -112,14 +131,14 @@ function HeroSection({
   const heroSubtitle = isApproved
     ? 'Your proof was accepted. Reward is being processed.'
     : isRejected
-    ? 'Your submission didn\'t meet requirements. See feedback below.'
+    ? "Your submission didn't meet requirements. See feedback below."
     : isNeedsInfo
     ? 'The reviewer needs additional information from you.'
-    : 'Your submission is being reviewed. We\'ll notify you when done.';
+    : "Your submission is being reviewed. We'll notify you when done.";
 
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         background: heroGlow,
         padding: '40px 24px 32px',
         textAlign: 'center',
@@ -127,96 +146,71 @@ function HeroSection({
       }}
     >
       {/* Status icon */}
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+      <Stack alignItems="center" sx={{ mb: 2 }}>
         {heroIcon}
-      </div>
+      </Stack>
 
       {/* Status pill */}
-      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+      <Stack alignItems="center" sx={{ mb: 1.5 }}>
         <StatusPill status={status} size="md" />
-      </div>
+      </Stack>
 
       {/* Title */}
-      <h1
-        style={{
-          fontSize: 22,
-          fontWeight: 700,
-          color: t.txt,
-          margin: '0 0 8px',
-          lineHeight: 1.2,
-        }}
-      >
+      <Typography variant="h5" sx={{ fontSize: 22, fontWeight: 700, color: t.txt, mb: 1, lineHeight: 1.2 }}>
         {heroTitle}
-      </h1>
-      <p style={{ fontSize: 13, color: t.txtDim, margin: '0 0 24px', lineHeight: 1.5 }}>
+      </Typography>
+      <Typography sx={{ fontSize: 13, color: t.txtDim, mb: 3, lineHeight: 1.5 }}>
         {heroSubtitle}
-      </p>
+      </Typography>
 
       {/* Mission name */}
-      <p
-        style={{
+      <Typography
+        sx={{
           fontSize: 12,
           color: heroColor,
           fontWeight: 600,
-          margin: '0 0 20px',
+          mb: 2.5,
           letterSpacing: '0.04em',
           textTransform: 'uppercase',
         }}
       >
         {hunt.tenantName ?? 'Mission'} · {hunt.title}
-      </p>
+      </Typography>
 
       {/* Reward pills — only show if not rejected */}
       {!isRejected && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 10,
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-          }}
-        >
+        <Stack direction="row" justifyContent="center" flexWrap="wrap" spacing={1.25}>
           {cash > 0 && (
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '8px 14px',
-                borderRadius: 100,
+            <Chip
+              icon={<DollarSign size={14} />}
+              label={isApproved ? `$${cash} USD` : `$${cash} Pending`}
+              sx={{
                 background: isApproved ? `${t.accent}18` : `${t.txtFaint}18`,
                 border: `1px solid ${isApproved ? `${t.accent}30` : t.border}`,
                 color: isApproved ? t.accent : t.txtDim,
-                fontSize: 13,
                 fontWeight: 700,
+                fontSize: 13,
+                borderRadius: '100px',
               }}
-            >
-              <DollarSign size={14} />
-              {isApproved ? `$${cash} USD` : `$${cash} Pending`}
-            </div>
+            />
           )}
           {xp > 0 && (
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '8px 14px',
-                borderRadius: 100,
+            <Chip
+              icon={<Zap size={14} />}
+              label={isApproved ? `+${xp} XP` : `${xp} XP Pending`}
+              sx={{
                 background: isApproved ? `${t.ai}18` : `${t.txtFaint}18`,
                 border: `1px solid ${isApproved ? `${t.ai}30` : t.border}`,
                 color: isApproved ? t.aiLight : t.txtDim,
-                fontSize: 13,
                 fontWeight: 700,
+                fontSize: 13,
+                borderRadius: '100px',
               }}
-            >
-              <Zap size={14} />
-              {isApproved ? `+${xp} XP` : `${xp} XP Pending`}
-            </div>
+            />
           )}
-        </div>
+        </Stack>
       )}
-    </div>
+    </Box>
   );
 }
 
@@ -237,24 +231,20 @@ function VerificationTimeline({
 
   return (
     <Surface variant="card" style={{ margin: '0 16px 16px' }}>
-      <div style={{ padding: '20px 20px 8px' }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: t.txt, margin: '0 0 20px' }}>
+      <Box sx={{ padding: '20px 20px 8px' }}>
+        <Typography variant="h6" sx={{ fontSize: 15, fontWeight: 700, color: t.txt, mb: 2.5 }}>
           Verification Timeline
-        </h2>
+        </Typography>
 
-        <div style={{ position: 'relative' }}>
-          {/* Vertical track */}
-          <div
-            style={{
-              position: 'absolute',
-              left: 17,
-              top: 20,
-              bottom: 20,
-              width: 2,
-              background: t.border,
-            }}
-          />
-
+        <Stepper
+          orientation="vertical"
+          activeStep={activeIndex}
+          sx={{
+            '& .MuiStepLabel-label': { color: 'text.primary' },
+            '& .MuiStepConnector-line': { borderColor: 'divider' },
+            '& .MuiStepContent-root': { borderColor: 'divider' },
+          }}
+        >
           {PIPELINE.map((stage, i) => {
             const isCompleted = i < activeIndex;
             const isCurrent = i === activeIndex;
@@ -269,58 +259,41 @@ function VerificationTimeline({
                 : t.ai
               : t.txtFaint;
 
-            const bgColor = isCompleted
-              ? `${t.accent}20`
-              : isCurrent
-              ? isTerminalStage
-                ? `${terminalColor}20`
-                : `${t.ai}20`
-              : `${t.txtFaint}10`;
-
             return (
-              <div
-                key={stage.key}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 14,
-                  marginBottom: i < PIPELINE.length - 1 ? 24 : 8,
-                  position: 'relative',
-                  zIndex: 1,
-                }}
-              >
-                {/* Node */}
-                <div
-                  className={isCurrent && !isTerminalStage ? 'breathe' : undefined}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: '50%',
-                    background: bgColor,
-                    border: `2px solid ${stageColor}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: stageColor,
-                    flexShrink: 0,
-                  }}
+              <Step key={stage.id} completed={isCompleted}>
+                <StepLabel
+                  StepIconComponent={() => (
+                    <Box
+                      className={isCurrent && !isTerminalStage ? 'breathe' : undefined}
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: '50%',
+                        bgcolor: isCompleted
+                          ? `${t.accent}20`
+                          : isCurrent
+                          ? isTerminalStage
+                            ? `${terminalColor}20`
+                            : `${t.ai}20`
+                          : `${t.txtFaint}10`,
+                        border: `2px solid ${stageColor}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: stageColor,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {isCompleted
+                        ? React.createElement(CheckCircle2, { size: 16 })
+                        : React.createElement(stage.icon, { size: 16, color: stageColor })}
+                    </Box>
+                  )}
                 >
-                  {isCompleted ? <CheckCircle2 size={16} /> : stage.icon}
-                </div>
-
-                {/* Content */}
-                <div style={{ flex: 1, paddingTop: 4 }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      marginBottom: 3,
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 14,
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography
+                      variant="body2"
+                      sx={{
                         fontWeight: 600,
                         color: isPending ? t.txtFaint : t.txt,
                       }}
@@ -332,26 +305,17 @@ function VerificationTimeline({
                           ? 'Rejected'
                           : 'Needs More Info'
                         : stage.label}
-                    </span>
+                    </Typography>
                     {isCurrent && (
                       <StatusPill
-                        status={
-                          isTerminalStage
-                            ? (status as VerificationStatus)
-                            : status
-                        }
+                        status={isTerminalStage ? (status as VerificationStatus) : status}
                         size="sm"
                       />
                     )}
-                  </div>
-                  <p
-                    style={{
-                      fontSize: 12,
-                      color: isPending ? t.txtFaint : t.txtDim,
-                      margin: 0,
-                      lineHeight: 1.5,
-                    }}
-                  >
+                  </Stack>
+                </StepLabel>
+                <StepContent>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.5 }}>
                     {isTerminalStage && isTerminal
                       ? status === 'approved'
                         ? 'Congratulations! Your submission was accepted.'
@@ -359,52 +323,38 @@ function VerificationTimeline({
                         ? 'Your submission did not meet the requirements.'
                         : 'A reviewer needs additional information.'
                       : stage.description}
-                  </p>
+                  </Typography>
                   {!isPending && stage.eta && !isTerminalStage && (
-                    <div
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        marginTop: 5,
-                        padding: '2px 8px',
-                        borderRadius: 6,
-                        background: `${stageColor}10`,
-                        color: stageColor,
-                        fontSize: 11,
-                        fontWeight: 500,
-                      }}
-                    >
-                      <Clock size={10} />
-                      {stage.eta}
-                    </div>
+                    <Typography variant="caption" sx={{ color: stageColor, display: 'block', mt: 0.5 }}>
+                      ⏱ {stage.eta}
+                    </Typography>
                   )}
                   {i === 0 && record.submittedAt && (
-                    <p style={{ fontSize: 11, color: t.txtFaint, margin: '4px 0 0' }}>
+                    <Typography variant="caption" sx={{ color: t.txtFaint, display: 'block', mt: 0.5 }}>
                       {new Date(record.submittedAt).toLocaleString(undefined, {
                         month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
-                    </p>
+                    </Typography>
                   )}
                   {i === 3 && record.reviewedAt && (
-                    <p style={{ fontSize: 11, color: t.txtFaint, margin: '4px 0 0' }}>
+                    <Typography variant="caption" sx={{ color: t.txtFaint, display: 'block', mt: 0.5 }}>
                       {new Date(record.reviewedAt).toLocaleString(undefined, {
                         month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
-                    </p>
+                    </Typography>
                   )}
-                </div>
-              </div>
+                </StepContent>
+              </Step>
             );
           })}
-        </div>
-      </div>
+        </Stepper>
+      </Box>
     </Surface>
   );
 }
@@ -424,72 +374,63 @@ function ReviewerFeedback({
   if (!isRejected && !isNeedsInfo && !feedback) return null;
 
   const color = isRejected ? t.error : t.warning;
-  const Icon = isRejected ? XCircle : AlertCircle;
 
   return (
-    <Surface
-      variant="card"
-      style={{
-        margin: '0 16px 16px',
-        border: `1px solid ${color}30`,
-        background: `${color}08`,
-      }}
-    >
-      <div style={{ padding: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <Icon size={16} color={color} />
-          <span style={{ fontSize: 14, fontWeight: 700, color }}>
-            {isRejected ? 'Rejection Reason' : 'Reviewer Note'}
-          </span>
-        </div>
-        <p style={{ fontSize: 13, color: t.txtDim, margin: 0, lineHeight: 1.6 }}>
+    <Box sx={{ margin: '0 16px 16px' }}>
+      <Alert
+        severity={isRejected ? 'error' : 'warning'}
+        sx={{
+          borderRadius: 2,
+          bgcolor: `${color}08`,
+          color,
+          border: `1px solid ${color}30`,
+          '& .MuiAlert-icon': { color },
+        }}
+      >
+        <Typography sx={{ fontSize: 14, fontWeight: 700, color, mb: 1 }}>
+          {isRejected ? 'Rejection Reason' : 'Reviewer Note'}
+        </Typography>
+        <Typography sx={{ fontSize: 13, color: t.txtDim, lineHeight: 1.6 }}>
           {feedback}
-        </p>
+        </Typography>
         {isNeedsInfo && (
-          <button
+          <Button
             onClick={() => {}}
-            style={{
-              marginTop: 14,
-              padding: '10px 18px',
-              borderRadius: 10,
+            endIcon={<ArrowRight size={14} />}
+            sx={{
+              mt: 1.75,
               background: `${t.warning}20`,
               border: `1px solid ${t.warning}40`,
               color: t.warning,
               fontSize: 13,
               fontWeight: 600,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
+              borderRadius: '10px',
+              textTransform: 'none',
             }}
           >
-            Provide More Info <ArrowRight size={14} />
-          </button>
+            Provide More Info
+          </Button>
         )}
         {isRejected && (
-          <button
+          <Button
             onClick={() => {}}
-            style={{
-              marginTop: 14,
-              padding: '10px 18px',
-              borderRadius: 10,
+            startIcon={<RotateCcw size={14} />}
+            sx={{
+              mt: 1.75,
               background: `${t.ai}20`,
               border: `1px solid ${t.ai}40`,
               color: t.aiLight,
               fontSize: 13,
               fontWeight: 600,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
+              borderRadius: '10px',
+              textTransform: 'none',
             }}
           >
-            <RotateCcw size={14} />
             Resubmit
-          </button>
+          </Button>
         )}
-      </div>
-    </Surface>
+      </Alert>
+    </Box>
   );
 }
 
@@ -503,19 +444,12 @@ function EstimatedTiming({ status }: { status: VerificationStatus }) {
 
   return (
     <Surface variant="inset" style={{ margin: '0 16px 16px' }}>
-      <div
-        style={{
-          padding: '14px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-        }}
-      >
-        <div
-          style={{
+      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ padding: '14px 16px' }}>
+        <Box
+          sx={{
             width: 36,
             height: 36,
-            borderRadius: 10,
+            borderRadius: '10px',
             background: `${t.info}18`,
             display: 'flex',
             alignItems: 'center',
@@ -525,16 +459,16 @@ function EstimatedTiming({ status }: { status: VerificationStatus }) {
           }}
         >
           <Clock size={18} />
-        </div>
-        <div>
-          <p style={{ fontSize: 12, color: t.txtFaint, margin: '0 0 2px' }}>
+        </Box>
+        <Box>
+          <Typography sx={{ fontSize: 12, color: t.txtFaint, mb: 0.25 }}>
             Expected decision time
-          </p>
-          <p style={{ fontSize: 14, fontWeight: 700, color: t.txt, margin: 0 }}>
+          </Typography>
+          <Typography sx={{ fontSize: 14, fontWeight: 700, color: t.txt }}>
             {currentStage.eta}
-          </p>
-        </div>
-      </div>
+          </Typography>
+        </Box>
+      </Stack>
     </Surface>
   );
 }
@@ -552,38 +486,30 @@ function RecommendedMissions({
   if (picks.length === 0) return null;
 
   return (
-    <div style={{ margin: '0 0 24px' }}>
-      <div
-        style={{
-          padding: '0 16px 12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
+    <Box sx={{ margin: '0 0 24px' }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ padding: '0 16px 12px' }}
       >
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: t.txt, margin: 0 }}>
+        <Typography variant="h6" sx={{ fontSize: 15, fontWeight: 700, color: t.txt }}>
           More Opportunities
-        </h2>
-        <a
+        </Typography>
+        <Button
           href="/explore"
-          style={{
-            fontSize: 12,
-            color: t.accent,
-            textDecoration: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 3,
-          }}
+          endIcon={<ChevronRight size={14} />}
+          sx={{ fontSize: 12, color: t.accent, p: 0, minWidth: 0, textTransform: 'none' }}
         >
-          See all <ChevronRight size={14} />
-        </a>
-      </div>
-      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          See all
+        </Button>
+      </Stack>
+      <Stack spacing={1.5} sx={{ padding: '0 16px' }}>
         {picks.map((h) => (
           <MissionCard key={h.id} hunt={h} compact />
         ))}
-      </div>
-    </div>
+      </Stack>
+    </Box>
   );
 }
 
@@ -610,39 +536,34 @@ export default function CompletePage() {
 
   if (!hunt) {
     return (
-      <div className="consumer-app">
-        <div className="consumer-app-inner">
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '60vh',
-              gap: 12,
-              color: t.txtDim,
-            }}
+      <Box className="consumer-app">
+        <Box className="consumer-app-inner">
+          <Stack
+            alignItems="center"
+            justifyContent="center"
+            spacing={1.5}
+            sx={{ minHeight: '60vh', color: t.txtDim }}
           >
             <Sparkles size={32} color={t.txtFaint} />
-            <p style={{ fontSize: 14, margin: 0 }}>Mission not found</p>
-            <button
+            <Typography sx={{ fontSize: 14 }}>Mission not found</Typography>
+            <Button
+              variant="outlined"
               onClick={() => router.push('/missions')}
-              style={{
-                padding: '10px 20px',
-                borderRadius: 10,
+              sx={{
+                borderRadius: '10px',
                 background: `${t.accent}18`,
                 border: `1px solid ${t.accent}30`,
                 color: t.accent,
                 fontSize: 13,
                 fontWeight: 600,
-                cursor: 'pointer',
+                textTransform: 'none',
               }}
             >
               My Missions
-            </button>
-          </div>
-        </div>
-      </div>
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
     );
   }
 
@@ -661,12 +582,12 @@ export default function CompletePage() {
   }
 
   return (
-    <div className="consumer-app">
-      <div className="consumer-app-inner" style={{ paddingBottom: 100 }}>
+    <Box className="consumer-app">
+      <Box className="consumer-app-inner" sx={{ paddingBottom: '100px' }}>
         {/* Hero */}
         <HeroSection status={status} hunt={hunt} />
 
-        <div style={{ height: 20 }} />
+        <Box sx={{ height: 20 }} />
 
         {/* Estimated timing (only while pending) */}
         <EstimatedTiming status={status} />
@@ -680,17 +601,17 @@ export default function CompletePage() {
         {/* What happens next — show while in pipeline */}
         {!isTerminal && (
           <Surface variant="inset" style={{ margin: '0 16px 16px' }}>
-            <div style={{ padding: '16px 18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <Box sx={{ padding: '16px 18px' }}>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.25 }}>
                 <User2 size={16} color={t.ai} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: t.txt }}>What happens next?</span>
-              </div>
-              <ul style={{ margin: 0, padding: '0 0 0 16px', color: t.txtDim, fontSize: 12, lineHeight: 1.8 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: t.txt }}>What happens next?</Typography>
+              </Stack>
+              <Box component="ul" sx={{ margin: 0, padding: '0 0 0 16px', color: t.txtDim, fontSize: 12, lineHeight: 1.8 }}>
                 <li>You'll receive an in-app notification when your status changes.</li>
                 <li>If approved, your reward will be credited automatically.</li>
                 <li>If more info is needed, check back here for reviewer notes.</li>
-              </ul>
-            </div>
+              </Box>
+            </Box>
           </Surface>
         )}
 
@@ -698,81 +619,63 @@ export default function CompletePage() {
         <RecommendedMissions currentId={huntId} hunts={allHunts} />
 
         {/* Actions */}
-        <div
-          style={{
-            padding: '0 16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-          }}
-        >
-          <button
+        <Stack spacing={1.25} sx={{ padding: '0 16px' }}>
+          <Button
+            variant="outlined"
+            fullWidth
             onClick={handleShare}
-            style={{
-              width: '100%',
+            startIcon={<Share2 size={16} />}
+            sx={{
               padding: '14px',
-              borderRadius: 14,
+              borderRadius: '14px',
               background: `${t.accent}14`,
               border: `1px solid ${t.accent}30`,
               color: t.accent,
               fontSize: 14,
               fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
+              textTransform: 'none',
             }}
           >
-            <Share2 size={16} />
             {copied ? 'Copied!' : 'Share Submission'}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            fullWidth
             onClick={() => router.push('/home')}
-            style={{
-              width: '100%',
+            startIcon={<Home size={16} />}
+            sx={{
               padding: '14px',
-              borderRadius: 14,
+              borderRadius: '14px',
               background: t.surface,
               border: `1px solid ${t.border}`,
               color: t.txtDim,
               fontSize: 14,
               fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
+              textTransform: 'none',
             }}
           >
-            <Home size={16} />
             Return Home
-          </button>
+          </Button>
 
-          <button
+          <Button
+            fullWidth
             onClick={() => router.push('/explore')}
-            style={{
-              width: '100%',
+            endIcon={<ArrowRight size={16} />}
+            sx={{
               padding: '14px',
-              borderRadius: 14,
+              borderRadius: '14px',
               background: `${t.ai}14`,
               border: `1px solid ${t.ai}30`,
               color: t.aiLight,
               fontSize: 14,
               fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
+              textTransform: 'none',
             }}
           >
             Explore Opportunities
-            <ArrowRight size={16} />
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </Stack>
+      </Box>
+    </Box>
   );
 }

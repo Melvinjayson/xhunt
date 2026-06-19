@@ -9,8 +9,18 @@ import {
   Lock,
 } from 'lucide-react';
 import Link from 'next/link';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Chip from '@mui/material/Chip';
+import LinearProgress from '@mui/material/LinearProgress';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/context';
+import { t } from '@/theme/colors';
 
 const T = {
   bg:       '#050816',
@@ -154,129 +164,163 @@ export default function LiveSessionPage() {
     }
   }
 
+  const progress = session && session.total_steps > 0
+    ? ((session.current_step_index + 1) / session.total_steps) * 100
+    : 0;
+
   if (loading) {
     return (
-      <main style={{ background: T.bg, minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Box component="main" sx={{ background: T.bg, minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <motion.div
           animate={{ opacity: [0.4, 1, 0.4] }}
           transition={{ duration: 1.4, repeat: Infinity }}
           style={{ width: 12, height: 12, borderRadius: '50%', background: T.live }}
         />
-      </main>
+      </Box>
     );
   }
 
   if (notFound || !session) {
     return (
-      <main style={{ background: T.bg, minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-        <div style={{ fontSize: '2rem', marginBottom: 16 }}>📡</div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: T.txt, marginBottom: 8 }}>Session not found</div>
-        <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>This live session may have ended or doesn&apos;t exist.</p>
+      <Box component="main" sx={{ background: T.bg, minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+        <Typography sx={{ fontSize: '2rem', mb: 2 }}>📡</Typography>
+        <Typography sx={{ fontSize: 16, fontWeight: 700, color: T.txt, mb: 1 }}>Session not found</Typography>
+        <Typography sx={{ fontSize: 13, color: T.muted, mb: 2.5 }}>This live session may have ended or doesn&apos;t exist.</Typography>
         <Link href="/timeline" style={{ color: T.green, fontSize: 14, fontWeight: 600 }}>← Back to Timeline</Link>
-      </main>
+      </Box>
     );
   }
 
   // Locked screen for Pro-only sessions
   if (isLocked) {
     return (
-      <main style={{ background: T.bg, minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>🔒</div>
-        <div style={{ fontSize: 18, fontWeight: 700, color: T.txt, marginBottom: 8 }}>{session.title}</div>
-        <p style={{ fontSize: 14, color: T.muted, marginBottom: 24, lineHeight: 1.6 }}>
-          This is a Pro-only live session hosted by <span style={{ color: T.txt }}>{session.host.display_name}</span>.<br />
+      <Box component="main" sx={{ background: T.bg, minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+        <Typography sx={{ fontSize: '2.5rem', mb: 2 }}>🔒</Typography>
+        <Typography sx={{ fontSize: 18, fontWeight: 700, color: T.txt, mb: 1 }}>{session.title}</Typography>
+        <Typography sx={{ fontSize: 14, color: T.muted, mb: 3, lineHeight: 1.6 }}>
+          This is a Pro-only live session hosted by <Box component="span" sx={{ color: T.txt }}>{session.host.display_name}</Box>.<br />
           Upgrade to Pro to watch and participate.
-        </p>
-        <Link
+        </Typography>
+        <Button
+          component={Link}
           href="/upgrade"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '12px 24px', borderRadius: 14, textDecoration: 'none',
+          startIcon={<Lock size={16} />}
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 1,
+            padding: '12px 24px',
+            borderRadius: '14px',
+            textDecoration: 'none',
             background: 'linear-gradient(135deg,#22FFAA,#6D5DFD)',
-            color: '#050816', fontWeight: 700, fontSize: 15, marginBottom: 12,
+            color: '#050816',
+            fontWeight: 700,
+            fontSize: 15,
+            mb: 1.5,
+            textTransform: 'none',
           }}
         >
-          <Lock size={16} /> Upgrade to Pro
-        </Link>
+          Upgrade to Pro
+        </Button>
         <br />
         <Link href="/timeline" style={{ color: T.dim, fontSize: 13 }}>← Back to Timeline</Link>
-      </main>
+      </Box>
     );
   }
 
-  const progress = session.total_steps > 0
-    ? ((session.current_step_index + 1) / session.total_steps) * 100
-    : 0;
-
   return (
-    <main style={{ background: T.bg, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+    <Box component="main" sx={{ background: T.bg, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <div style={{
+      <Box sx={{
         position: 'sticky', top: 0, zIndex: 40,
         background: 'rgba(7,13,14,.92)', backdropFilter: 'blur(16px)',
         borderBottom: `1px solid ${T.line}`,
         padding: '12px 16px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 4, display: 'flex' }}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <IconButton onClick={() => router.back()} sx={{ color: T.muted, p: 0.5 }}>
             <ArrowLeft size={20} />
-          </button>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: T.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          </IconButton>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 700, color: T.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {session.title}
-            </div>
-            <div style={{ fontSize: 11, color: T.muted }}>
+            </Typography>
+            <Typography sx={{ fontSize: 11, color: T.muted }}>
               {session.host.display_name}
-            </div>
-          </div>
+            </Typography>
+          </Box>
           {/* Status badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexShrink: 0 }}>
             {isLive && (
-              <>
-                <motion.div
-                  animate={{ opacity: [1, 0.3, 1] }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
-                  style={{ width: 8, height: 8, borderRadius: '50%', background: T.live }}
-                />
-                <span style={{ fontSize: 11, fontWeight: 700, color: T.live, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Live</span>
-              </>
+              <Chip
+                label="● LIVE"
+                size="small"
+                sx={{
+                  bgcolor: `${T.live}18`,
+                  color: T.live,
+                  fontWeight: 800,
+                  fontSize: 11,
+                  border: `1px solid ${T.live}33`,
+                  animation: 'pulse 2s infinite',
+                  '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.6 } },
+                }}
+              />
             )}
-            {isEnded && <span style={{ fontSize: 11, fontWeight: 700, color: T.dim, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Ended</span>}
-            {session.status === 'scheduled' && <span style={{ fontSize: 11, fontWeight: 700, color: T.amber, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Scheduled</span>}
-          </div>
-        </div>
-      </div>
+            {isEnded && (
+              <Chip
+                label="ENDED"
+                size="small"
+                sx={{ bgcolor: 'transparent', color: T.dim, fontWeight: 700, fontSize: 11, border: `1px solid ${T.line}` }}
+              />
+            )}
+            {session.status === 'scheduled' && (
+              <Chip
+                label="SCHEDULED"
+                size="small"
+                sx={{ bgcolor: `${T.amber}18`, color: T.amber, fontWeight: 700, fontSize: 11, border: `1px solid ${T.amber}33` }}
+              />
+            )}
+          </Stack>
+        </Stack>
+      </Box>
 
       {/* Content */}
-      <div style={{ flex: 1, padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <Stack spacing={2} sx={{ flex: 1, padding: '20px 16px' }}>
         {/* Viewer count + mission */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: T.muted, fontSize: 13 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ color: T.muted, fontSize: 13 }}>
             <Eye size={15} />
-            <span>{session.viewer_count.toLocaleString()} watching</span>
-          </div>
+            <Typography sx={{ color: T.muted, fontSize: 13 }}>{session.viewer_count.toLocaleString()} watching</Typography>
+          </Stack>
           {session.mission && (
-            <span style={{ fontSize: 12, color: T.dim }}>🎯 {session.mission.title}</span>
+            <Typography sx={{ fontSize: 12, color: T.dim }}>🎯 {session.mission.title}</Typography>
           )}
-        </div>
+        </Stack>
 
         {/* Progress bar */}
         {session.total_steps > 1 && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
+          <Box>
+            <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
+              <Typography sx={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
                 Step {session.current_step_index + 1} of {session.total_steps}
-              </span>
-              <span style={{ fontSize: 12, color: T.dim }}>{Math.round(progress)}%</span>
-            </div>
-            <div style={{ height: 4, borderRadius: 4, background: T.elev }}>
-              <motion.div
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-                style={{ height: '100%', borderRadius: 4, background: isLive ? T.live : T.green }}
-              />
-            </div>
-          </div>
+              </Typography>
+              <Typography sx={{ fontSize: 12, color: T.dim }}>{Math.round(progress)}%</Typography>
+            </Stack>
+            <LinearProgress
+              variant="determinate"
+              value={progress}
+              sx={{
+                height: 4,
+                borderRadius: 4,
+                bgcolor: T.elev,
+                '& .MuiLinearProgress-bar': {
+                  borderRadius: 4,
+                  bgcolor: isLive ? T.live : T.green,
+                  transition: 'width 0.4s ease-out',
+                },
+              }}
+            />
+          </Box>
         )}
 
         {/* Current step card */}
@@ -288,130 +332,174 @@ export default function LiveSessionPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.3 }}
-              style={{
-                background: T.panel,
-                border: `1px solid ${T.line2}`,
-                borderRadius: 20,
-                padding: '20px',
-                flex: 1,
-              }}
+              style={{ flex: 1 }}
             >
-              {stepMeta && (
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  fontSize: 11, fontWeight: 700, color: stepMeta.color,
-                  background: `${stepMeta.color}18`, border: `1px solid ${stepMeta.color}30`,
-                  borderRadius: 8, padding: '4px 10px', marginBottom: 16, letterSpacing: '0.04em',
-                }}>
-                  {stepMeta.icon} {stepMeta.label.toUpperCase()}
-                </div>
-              )}
-              <p style={{ fontSize: 17, fontWeight: 600, color: T.txt, lineHeight: 1.55, marginBottom: 16 }}>
-                {currentStep.instruction}
-              </p>
-              {currentStep.success_criteria && (
-                <div style={{
-                  padding: '10px 14px', borderRadius: 12,
-                  background: T.elev, border: `1px solid ${T.line}`,
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: '0.04em', marginBottom: 4 }}>SUCCESS CRITERIA</div>
-                  <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, margin: 0 }}>{currentStep.success_criteria}</p>
-                </div>
-              )}
+              <Card sx={{ bgcolor: T.panel, border: `1px solid ${T.line2}`, borderRadius: '20px', flex: 1 }}>
+                <CardContent sx={{ padding: '20px !important' }}>
+                  {stepMeta && (
+                    <Chip
+                      label={stepMeta.label.toUpperCase()}
+                      size="small"
+                      icon={<Box sx={{ display: 'flex', alignItems: 'center', color: stepMeta.color }}>{stepMeta.icon}</Box>}
+                      sx={{
+                        bgcolor: `${stepMeta.color}18`,
+                        color: stepMeta.color,
+                        fontWeight: 700,
+                        fontSize: 11,
+                        border: `1px solid ${stepMeta.color}30`,
+                        borderRadius: '8px',
+                        mb: 2,
+                        letterSpacing: '0.04em',
+                      }}
+                    />
+                  )}
+                  <Typography sx={{ fontSize: 17, fontWeight: 600, color: T.txt, lineHeight: 1.55, mb: 2 }}>
+                    {currentStep.instruction}
+                  </Typography>
+                  {currentStep.success_criteria && (
+                    <Box sx={{ padding: '10px 14px', borderRadius: '12px', bgcolor: T.elev, border: `1px solid ${T.line}` }}>
+                      <Typography sx={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: '0.04em', mb: 0.5 }}>SUCCESS CRITERIA</Typography>
+                      <Typography sx={{ fontSize: 13, color: T.muted, lineHeight: 1.5 }}>{currentStep.success_criteria}</Typography>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
             </motion.div>
           ) : isEnded ? (
-            <div style={{ textAlign: 'center', padding: '2rem', background: T.panel, borderRadius: 20, border: `1px solid ${T.line}` }}>
-              <div style={{ fontSize: '2rem', marginBottom: 12 }}>🏁</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: T.txt, marginBottom: 8 }}>Session ended</div>
-              <p style={{ fontSize: 13, color: T.muted }}>
-                {session.host.display_name} has wrapped up this live session.
-              </p>
-            </div>
+            <Card sx={{ bgcolor: T.panel, border: `1px solid ${T.line}`, borderRadius: '20px', textAlign: 'center' }}>
+              <CardContent sx={{ padding: '2rem !important' }}>
+                <Typography sx={{ fontSize: '2rem', mb: 1.5 }}>🏁</Typography>
+                <Typography sx={{ fontSize: 16, fontWeight: 700, color: T.txt, mb: 1 }}>Session ended</Typography>
+                <Typography sx={{ fontSize: 13, color: T.muted }}>
+                  {session.host.display_name} has wrapped up this live session.
+                </Typography>
+              </CardContent>
+            </Card>
           ) : session.status === 'scheduled' ? (
-            <div style={{ textAlign: 'center', padding: '2rem', background: T.panel, borderRadius: 20, border: `1px solid ${T.line}` }}>
-              <div style={{ fontSize: '2rem', marginBottom: 12 }}>⏳</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: T.txt, marginBottom: 8 }}>Not started yet</div>
-              <p style={{ fontSize: 13, color: T.muted }}>
-                Stay here — the page updates automatically when the host starts.
-              </p>
-            </div>
+            <Card sx={{ bgcolor: T.panel, border: `1px solid ${T.line}`, borderRadius: '20px', textAlign: 'center' }}>
+              <CardContent sx={{ padding: '2rem !important' }}>
+                <Typography sx={{ fontSize: '2rem', mb: 1.5 }}>⏳</Typography>
+                <Typography sx={{ fontSize: 16, fontWeight: 700, color: T.txt, mb: 1 }}>Not started yet</Typography>
+                <Typography sx={{ fontSize: 13, color: T.muted }}>
+                  Stay here — the page updates automatically when the host starts.
+                </Typography>
+              </CardContent>
+            </Card>
           ) : null}
         </AnimatePresence>
 
         {/* Mission description (if set) */}
         {session.mission?.story_context && (
-          <div style={{
-            padding: '14px 16px', borderRadius: 16,
-            background: T.elev, border: `1px solid ${T.line}`,
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: '0.04em', marginBottom: 6 }}>ABOUT THIS MISSION</div>
-            <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.6, margin: 0 }}>
+          <Box sx={{ padding: '14px 16px', borderRadius: '16px', bgcolor: T.elev, border: `1px solid ${T.line}` }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: '0.04em', mb: 0.75 }}>ABOUT THIS MISSION</Typography>
+            <Typography sx={{ fontSize: 13, color: T.muted, lineHeight: 1.6 }}>
               {session.mission.story_context}
-            </p>
-          </div>
+            </Typography>
+          </Box>
         )}
-      </div>
+      </Stack>
 
       {/* Bottom actions */}
-      <div style={{
+      <Box sx={{
         padding: '16px 16px 32px',
         borderTop: `1px solid ${T.line}`,
         background: 'rgba(7,13,14,.95)', backdropFilter: 'blur(12px)',
       }}>
         {/* Host controls */}
         {isHost && isLive && (
-          <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-            <button
+          <Stack direction="row" spacing={1.25} sx={{ mb: 1.5 }}>
+            <Button
               onClick={handleNextStep}
               disabled={hostBusy || (session.current_step_index + 1 >= session.total_steps)}
-              style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                padding: '12px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                background: (hostBusy || session.current_step_index + 1 >= session.total_steps) ? T.elev : T.green,
+              endIcon={<ChevronRight size={16} />}
+              sx={{
+                flex: 1,
+                padding: '12px',
+                borderRadius: '12px',
+                border: 'none',
+                bgcolor: (hostBusy || session.current_step_index + 1 >= session.total_steps) ? T.elev : T.green,
                 color: (hostBusy || session.current_step_index + 1 >= session.total_steps) ? T.dim : '#050816',
-                fontWeight: 700, fontSize: 14,
+                fontWeight: 700,
+                fontSize: 14,
+                textTransform: 'none',
+                '&:hover': {
+                  bgcolor: (hostBusy || session.current_step_index + 1 >= session.total_steps) ? T.elev : T.green,
+                },
+                '&.Mui-disabled': { bgcolor: T.elev, color: T.dim },
               }}
             >
-              Next Step <ChevronRight size={16} />
-            </button>
-            <button
+              Next Step
+            </Button>
+            <Button
               onClick={handleEndSession}
               disabled={hostBusy}
-              style={{
-                padding: '12px 16px', borderRadius: 12, border: `1px solid ${T.red}`,
-                background: 'none', color: T.red, fontWeight: 600, fontSize: 14, cursor: 'pointer',
+              variant="outlined"
+              sx={{
+                padding: '12px 16px',
+                borderRadius: '12px',
+                border: `1px solid ${T.red}`,
+                color: T.red,
+                fontWeight: 600,
+                fontSize: 14,
+                textTransform: 'none',
+                '&:hover': { bgcolor: `${T.red}10`, border: `1px solid ${T.red}` },
               }}
             >
               End
-            </button>
-          </div>
+            </Button>
+          </Stack>
         )}
 
         {/* Viewer actions */}
         {!isHost && session.mission && !isEnded && (
-          <Link
-            href={`/missions`}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '14px', borderRadius: 14, textDecoration: 'none',
-              background: T.green, color: '#050816', fontWeight: 700, fontSize: 15, marginBottom: 10,
+          <Button
+            component={Link}
+            href="/missions"
+            startIcon={<Play size={16} fill="#050816" />}
+            fullWidth
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              padding: '14px',
+              borderRadius: '14px',
+              textDecoration: 'none',
+              bgcolor: T.green,
+              color: '#050816',
+              fontWeight: 700,
+              fontSize: 15,
+              mb: 1.25,
+              textTransform: 'none',
+              '&:hover': { bgcolor: T.green },
             }}
           >
-            <Play size={16} fill="#050816" /> Start This Mission
-          </Link>
+            Start This Mission
+          </Button>
         )}
 
-        <Link
+        <Button
+          component={Link}
           href="/timeline"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '11px', borderRadius: 14, textDecoration: 'none',
-            border: `1px solid ${T.line2}`, color: T.muted, fontWeight: 600, fontSize: 13,
+          fullWidth
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '11px',
+            borderRadius: '14px',
+            textDecoration: 'none',
+            border: `1px solid ${T.line2}`,
+            color: T.muted,
+            fontWeight: 600,
+            fontSize: 13,
+            textTransform: 'none',
+            '&:hover': { bgcolor: `rgba(255,255,255,0.04)`, border: `1px solid ${T.line2}` },
           }}
         >
           ← Back to Timeline
-        </Link>
-      </div>
-    </main>
+        </Button>
+      </Box>
+    </Box>
   );
 }

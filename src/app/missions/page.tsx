@@ -12,6 +12,13 @@ import {
   MailCheck, Bot, Search, Compass, Trophy, Star, DollarSign,
   ArrowRight, AlertCircle,
 } from 'lucide-react';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Chip from '@mui/material/Chip';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import IconButton from '@mui/material/IconButton';
 import BottomNav from '@/components/BottomNav';
 import { loadState, saveState } from '@/lib/store';
 import { fetchSupabaseMissions } from '@/lib/supabase/events';
@@ -101,15 +108,19 @@ const PILL_STYLES: Record<PillVariant, { label: string; color: string; Icon: Rea
 function StatusPill({ variant }: { variant: PillVariant }) {
   const { label, color, Icon } = PILL_STYLES[variant];
   return (
-    <div style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-      fontSize: 9.5, fontWeight: 700, color,
-      background: `${color}12`, border: `1px solid ${color}28`,
-      padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '.04em',
-    }}>
-      <Icon size={9} strokeWidth={2.5} />
-      {label}
-    </div>
+    <Chip
+      icon={<Icon size={9} strokeWidth={2.5} style={{ color }} />}
+      label={label}
+      size="small"
+      sx={{
+        fontSize: 9.5, fontWeight: 700, color,
+        background: `${color}12`, border: `1px solid ${color}28`,
+        borderRadius: '999px', height: 20,
+        textTransform: 'uppercase', letterSpacing: '.04em',
+        '& .MuiChip-icon': { color, ml: '6px' },
+        '& .MuiChip-label': { px: '8px' },
+      }}
+    />
   );
 }
 
@@ -182,8 +193,8 @@ function EmptyState({
       }}>
         <Icon size={24} strokeWidth={1.4} style={{ color: t.accent }} />
       </div>
-      <p style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, color: t.txt }}>{title}</p>
-      <p style={{ margin: '0 0 20px', fontSize: 13, color: t.txtDim, lineHeight: 1.5 }}>{subtitle}</p>
+      <Typography sx={{ mb: '6px', fontSize: 16, fontWeight: 800, color: t.txt }}>{title}</Typography>
+      <Typography sx={{ mb: '20px', fontSize: 13, color: t.txtDim, lineHeight: 1.5 }}>{subtitle}</Typography>
       {actionLabel && actionHref && (
         <Link href={actionHref} style={{
           display: 'inline-flex', alignItems: 'center', gap: 7,
@@ -319,95 +330,118 @@ function MissionRow({ hunt, tab, progress, verif, saved, onRemoveSaved, index }:
 
       <div style={{ padding: '14px 16px 0' }}>
         {/* badges row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 10, flexWrap: 'wrap' }}>
+        <Stack direction="row" alignItems="center" spacing={0.625} sx={{ mb: 1.25, flexWrap: 'wrap' }}>
           {mtype && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9.5, fontWeight: 700, color: mtype.color, background: `${mtype.color}10`, border: `1px solid ${mtype.color}20`, padding: '2px 8px', borderRadius: 999 }}>
-              <span style={{ fontSize: 10 }}>{mtype.emoji}</span> {mtype.label}
-            </div>
+            <Chip
+              label={<><span style={{ fontSize: 10 }}>{mtype.emoji}</span> {mtype.label}</>}
+              size="small"
+              sx={{
+                fontSize: 9.5, fontWeight: 700, color: mtype.color,
+                background: `${mtype.color}10`, border: `1px solid ${mtype.color}20`,
+                borderRadius: '999px', height: 20,
+                '& .MuiChip-label': { px: '8px' },
+              }}
+            />
           )}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9.5, fontWeight: 700, color: cat.color, background: `${cat.color}10`, border: `1px solid ${cat.color}20`, padding: '2px 8px', borderRadius: 999 }}>
-            <span style={{ fontSize: 10 }}>{cat.emoji}</span> {cat.label}
-          </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, background: `${diff.color}10`, border: `1px solid ${diff.color}20` }}>
-            <Zap size={9} strokeWidth={2.5} style={{ color: diff.color }} />
-            <span style={{ fontSize: 9.5, fontWeight: 700, color: diff.color }}>{diff.label}</span>
-          </div>
-        </div>
+          <Chip
+            label={<><span style={{ fontSize: 10 }}>{cat.emoji}</span> {cat.label}</>}
+            size="small"
+            sx={{
+              fontSize: 9.5, fontWeight: 700, color: cat.color,
+              background: `${cat.color}10`, border: `1px solid ${cat.color}20`,
+              borderRadius: '999px', height: 20,
+              '& .MuiChip-label': { px: '8px' },
+            }}
+          />
+          <Chip
+            icon={<Zap size={9} strokeWidth={2.5} style={{ color: diff.color }} />}
+            label={diff.label}
+            size="small"
+            sx={{
+              fontSize: 9.5, fontWeight: 700, color: diff.color,
+              background: `${diff.color}10`, border: `1px solid ${diff.color}20`,
+              borderRadius: '999px', height: 20,
+              '& .MuiChip-icon': { color: diff.color, ml: '6px' },
+              '& .MuiChip-label': { px: '8px' },
+            }}
+          />
+        </Stack>
 
         {/* title + org */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 8 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 13, flexShrink: 0, background: `${cat.color}12`, border: `1px solid ${cat.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
+        <Stack direction="row" alignItems="flex-start" spacing={1.5} sx={{ mb: 1 }}>
+          <Box sx={{ width: 42, height: 42, borderRadius: '13px', flexShrink: 0, background: `${cat.color}12`, border: `1px solid ${cat.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
             {cat.emoji}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{ margin: '0 0 3px', fontSize: 15, fontWeight: 800, color: t.txt, lineHeight: 1.25, letterSpacing: '-.01em' }}>
+          </Box>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ mb: '3px', fontSize: 15, fontWeight: 800, color: t.txt, lineHeight: 1.25, letterSpacing: '-.01em' }}>
               {hunt.title}
-            </h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ fontSize: 11, color: t.txtFaint, fontWeight: 500 }}>{hunt.tenantName ?? 'X-Hunt Community'}</span>
+            </Typography>
+            <Stack direction="row" alignItems="center" spacing={0.625}>
+              <Typography sx={{ fontSize: 11, color: t.txtFaint, fontWeight: 500 }}>{hunt.tenantName ?? 'X-Hunt Community'}</Typography>
               {hunt.isVerified && <ShieldCheck size={10} strokeWidth={2.5} style={{ color: t.accent }} />}
-            </div>
-          </div>
-        </div>
+            </Stack>
+          </Box>
+        </Stack>
 
         {/* description */}
-        <p style={{ margin: '0 0 10px', fontSize: 12.5, color: t.txtDim, lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <Typography sx={{ mb: 1.25, fontSize: 12.5, color: t.txtDim, lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {hunt.story_context}
-        </p>
+        </Typography>
 
         {/* econometrics row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,.06)', marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <Stack direction="row" alignItems="center" spacing={1.25} sx={{ pt: 1.25, borderTop: '1px solid rgba(255,255,255,.06)', mb: 1.5 }}>
+          <Stack direction="row" alignItems="center" spacing={0.5}>
             <DollarSign size={12} strokeWidth={2} style={{ color: t.accent }} />
-            <span style={{ fontSize: 13.5, fontWeight: 900, color: t.accent, letterSpacing: '-.02em' }}>${cash}</span>
-          </div>
-          <div style={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Typography sx={{ fontSize: 13.5, fontWeight: 900, color: t.accent, letterSpacing: '-.02em' }}>${cash}</Typography>
+          </Stack>
+          <Box sx={{ width: 3, height: 3, borderRadius: '50%', background: t.txtFaint }} />
+          <Stack direction="row" alignItems="center" spacing={0.5}>
             <Star size={11} strokeWidth={2} style={{ color: t.ai }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: t.ai }}>+{xp} XP</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: t.ai }}>+{xp} XP</Typography>
+          </Stack>
+          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ ml: 'auto' }}>
             <Clock size={11} strokeWidth={2} style={{ color: t.txtFaint }} />
-            <span style={{ fontSize: 11, color: t.txtDim }}>{hunt.estimated_time}</span>
-          </div>
-        </div>
+            <Typography sx={{ fontSize: 11, color: t.txtDim }}>{hunt.estimated_time}</Typography>
+          </Stack>
+        </Stack>
 
         {/* active progress bar */}
         {tab === 'Active' && stepsTotal > 0 && (
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 10.5, color: t.txtDim, fontWeight: 600 }}>Progress</span>
-              <span style={{ fontSize: 10.5, color: t.accent, fontWeight: 700 }}>
+          <Box sx={{ mb: 1.5 }}>
+            <Stack direction="row" justifyContent="space-between" sx={{ mb: '6px' }}>
+              <Typography sx={{ fontSize: 10.5, color: t.txtDim, fontWeight: 600 }}>Progress</Typography>
+              <Typography sx={{ fontSize: 10.5, color: t.accent, fontWeight: 700 }}>
                 Step {(progress?.currentStepIndex ?? 0) + 1} of {stepsTotal}
-              </span>
-            </div>
+              </Typography>
+            </Stack>
             <ProgressBar value={stepsDone} max={stepsTotal} color={t.accent} />
-          </div>
+          </Box>
         )}
 
         {/* pending review verification timeline */}
         {tab === 'Pending Review' && verif && (
-          <div style={{ marginBottom: 12 }}>
+          <Box sx={{ mb: 1.5 }}>
             <VerifTimeline status={verif.status} />
-          </div>
+          </Box>
         )}
 
         {/* completed: participants badge */}
         {tab === 'Completed' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, padding: '8px 12px', borderRadius: 12, background: `${t.accent}08`, border: `1px solid ${t.accent}18` }}>
+          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1.5, padding: '8px 12px', borderRadius: '12px', background: `${t.accent}08`, border: `1px solid ${t.accent}18` }}>
             <Trophy size={13} strokeWidth={2} style={{ color: t.accent }} />
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: t.accent }}>Mission Complete</span>
+            <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: t.accent }}>Mission Complete</Typography>
             {hunt.applicationCount != null && (
-              <span style={{ fontSize: 10, color: t.txtFaint, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3 }}>
-                <Users size={10} strokeWidth={2} /> {hunt.applicationCount} participants
-              </span>
+              <Stack direction="row" alignItems="center" spacing={0.375} sx={{ ml: 'auto' }}>
+                <Users size={10} strokeWidth={2} style={{ color: t.txtFaint }} />
+                <Typography sx={{ fontSize: 10, color: t.txtFaint }}>{hunt.applicationCount} participants</Typography>
+              </Stack>
             )}
-          </div>
+          </Stack>
         )}
       </div>
 
       {/* CTAs */}
-      <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>
+      <Stack direction="row" spacing={1} sx={{ px: 2, pb: 2 }}>
         <Link href={ctaHref} style={{
           flex: 1, height: 44, borderRadius: 14,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
@@ -419,39 +453,33 @@ function MissionRow({ hunt, tab, progress, verif, saved, onRemoveSaved, index }:
         </Link>
         {/* secondary action */}
         {tab === 'Approved' && (
-          <button style={{
-            width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          <IconButton sx={{
+            width: 44, height: 44, borderRadius: '14px', flexShrink: 0,
             background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.09)',
-            cursor: 'pointer',
           }}>
             <Share2 size={14} strokeWidth={2} style={{ color: t.txtDim }} />
-          </button>
+          </IconButton>
         )}
         {tab === 'Completed' && (
-          <button style={{
-            width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          <IconButton sx={{
+            width: 44, height: 44, borderRadius: '14px', flexShrink: 0,
             background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.09)',
-            cursor: 'pointer',
           }}>
             <Share2 size={14} strokeWidth={2} style={{ color: t.txtDim }} />
-          </button>
+          </IconButton>
         )}
         {tab === 'Saved' && (
-          <button
+          <IconButton
             onClick={() => onRemoveSaved?.(hunt.id)}
-            style={{
-              width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            sx={{
+              width: 44, height: 44, borderRadius: '14px', flexShrink: 0,
               background: `${t.error}0A`, border: `1px solid ${t.error}22`,
-              cursor: 'pointer',
             }}
           >
             <BookmarkX size={14} strokeWidth={2} style={{ color: t.error }} />
-          </button>
+          </IconButton>
         )}
-      </div>
+      </Stack>
     </motion.div>
   );
 }
@@ -613,37 +641,51 @@ export default function MyMissionsPage() {
           animate={{ opacity: 1, y: 0 }}
           style={{ padding: '56px 20px 0' }}
         >
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
-            <div>
-              <span style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: t.txtFaint, marginBottom: 4 }}>
+          <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: '6px' }}>
+            <Box>
+              <Typography sx={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: t.txtFaint, mb: '4px' }}>
                 Participation
-              </span>
-              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 900, letterSpacing: '-.03em', color: t.txt }}>
+              </Typography>
+              <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: '-.03em', color: t.txt }}>
                 My Missions
-              </h1>
-            </div>
+              </Typography>
+            </Box>
             {/* summary chips */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, paddingTop: 4 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 999, background: `${t.accent}0F`, border: `1px solid ${t.accent}22` }}>
-                  <Play size={10} strokeWidth={2.5} style={{ color: t.accent }} />
-                  <span style={{ fontSize: 11, fontWeight: 800, color: t.accent }}>{activeHunts.length} active</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 999, background: `${t.accent}0F`, border: `1px solid ${t.accent}22` }}>
-                  <Trophy size={10} strokeWidth={2.5} style={{ color: t.accent }} />
-                  <span style={{ fontSize: 11, fontWeight: 800, color: t.accent }}>{completedList.length} done</span>
-                </div>
-              </div>
-            </div>
-          </div>
+            <Stack alignItems="flex-end" spacing={0.625} sx={{ pt: '4px' }}>
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <Chip
+                  icon={<Play size={10} strokeWidth={2.5} style={{ color: t.accent }} />}
+                  label={`${activeHunts.length} active`}
+                  size="small"
+                  sx={{
+                    fontSize: 11, fontWeight: 800, color: t.accent,
+                    background: `${t.accent}0F`, border: `1px solid ${t.accent}22`,
+                    borderRadius: '999px', height: 22,
+                    '& .MuiChip-icon': { color: t.accent, ml: '6px' },
+                  }}
+                />
+                <Chip
+                  icon={<Trophy size={10} strokeWidth={2.5} style={{ color: t.accent }} />}
+                  label={`${completedList.length} done`}
+                  size="small"
+                  sx={{
+                    fontSize: 11, fontWeight: 800, color: t.accent,
+                    background: `${t.accent}0F`, border: `1px solid ${t.accent}22`,
+                    borderRadius: '999px', height: 22,
+                    '& .MuiChip-icon': { color: t.accent, ml: '6px' },
+                  }}
+                />
+              </Stack>
+            </Stack>
+          </Stack>
 
           {/* stats summary bar */}
-          <div
+          <Box
             className="liquid-glass"
-            style={{
+            sx={{
               background: t.card, border: `1px solid ${t.border}`, boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
-              borderRadius: 18, padding: '12px 16px', marginTop: 16, marginBottom: 4,
-              display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8,
+              borderRadius: '18px', p: '12px 16px', mt: 2, mb: '4px',
+              display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1,
             }}
           >
             {([
@@ -652,60 +694,65 @@ export default function MyMissionsPage() {
               { label: 'Approved',  val: approvedHunts.length, color: t.success },
               { label: 'Done',      val: completedList.length, color: t.accent  },
             ] as { label: string; val: number; color: string }[]).map(({ label, val, color }) => (
-              <div key={label} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color, letterSpacing: '-.02em', lineHeight: 1 }}>{val}</div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: t.txtFaint, marginTop: 3, textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</div>
-              </div>
+              <Box key={label} sx={{ textAlign: 'center' }}>
+                <Typography sx={{ fontSize: 18, fontWeight: 900, color, letterSpacing: '-.02em', lineHeight: 1 }}>{val}</Typography>
+                <Typography sx={{ fontSize: 9, fontWeight: 700, color: t.txtFaint, mt: '3px', textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</Typography>
+              </Box>
             ))}
-          </div>
+          </Box>
         </motion.div>
 
         {/* ── STICKY TAB BAR ── */}
-        <div style={{
+        <Box sx={{
           position: 'sticky', top: 0, zIndex: 40,
           background: `${t.bg}E8`, backdropFilter: 'blur(20px)',
-          padding: '12px 20px 0',
-          borderBottom: '1px solid rgba(255,255,255,.05)',
+          px: 2.5, pt: 1.5,
         }}>
-          <div style={{ display: 'flex', gap: 0, overflowX: 'auto', paddingBottom: 1 }} className="hide-scrollbar">
+          <Tabs
+            value={tab}
+            onChange={(_: React.SyntheticEvent, v: Tab) => setTab(v)}
+            variant="scrollable"
+            scrollButtons={false}
+            sx={{
+              '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, minWidth: 0, fontSize: 12.5, px: 1.75, py: '9px', color: t.txtFaint },
+              '& .MuiTab-root.Mui-selected': { color: t.accent, fontWeight: 800 },
+              '& .MuiTabs-indicator': { bgcolor: t.accent },
+              borderBottom: '1px solid rgba(255,255,255,.05)',
+              minHeight: 'unset',
+            }}
+          >
             {TABS.map((tb) => {
-              const isActive = tab === tb;
-              const count    = tabCounts[tb];
+              const count = tabCounts[tb];
               return (
-                <button
+                <Tab
                   key={tb}
-                  onClick={() => setTab(tb)}
-                  style={{
-                    flexShrink: 0, padding: '9px 14px', border: 0,
-                    background: 'transparent', cursor: 'pointer',
-                    fontFamily: 'inherit', fontSize: 12.5, fontWeight: isActive ? 800 : 600,
-                    color: isActive ? t.accent : t.txtFaint,
-                    borderBottom: isActive ? `2px solid ${t.accent}` : '2px solid transparent',
-                    transition: 'all .15s', letterSpacing: '-.01em',
-                    display: 'flex', alignItems: 'center', gap: 5,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {tb}
-                  {count > 0 && (
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      minWidth: 16, height: 16, borderRadius: 999, padding: '0 4px',
-                      fontSize: 9, fontWeight: 800,
-                      background: isActive ? t.accent : 'rgba(255,255,255,.09)',
-                      color: isActive ? t.bg : t.txtDim,
-                    }}>
-                      {count}
-                    </span>
-                  )}
-                </button>
+                  value={tb}
+                  label={
+                    <Stack direction="row" alignItems="center" spacing={0.625}>
+                      <span>{tb}</span>
+                      {count > 0 && (
+                        <Chip
+                          label={count}
+                          size="small"
+                          sx={{
+                            height: 16, fontSize: 9, fontWeight: 800,
+                            minWidth: 16,
+                            bgcolor: tab === tb ? t.accent : 'rgba(255,255,255,.09)',
+                            color: tab === tb ? t.bg : t.txtDim,
+                            '& .MuiChip-label': { px: '4px' },
+                          }}
+                        />
+                      )}
+                    </Stack>
+                  }
+                />
               );
             })}
-          </div>
-        </div>
+          </Tabs>
+        </Box>
 
         {/* ── MISSION LIST ── */}
-        <div style={{ padding: '16px 20px 0' }}>
+        <Box sx={{ px: 2.5, pt: 2 }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={tab}
@@ -717,7 +764,7 @@ export default function MyMissionsPage() {
               {listedHunts.length === 0 ? (
                 <EmptyState {...emptyProps[tab]} />
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <Stack spacing={1.75}>
                   {listedHunts.map((hunt, i) => (
                     <MissionRow
                       key={hunt.id}
@@ -730,11 +777,11 @@ export default function MyMissionsPage() {
                       index={i}
                     />
                   ))}
-                </div>
+                </Stack>
               )}
             </motion.div>
           </AnimatePresence>
-        </div>
+        </Box>
 
         {/* spacer above BottomNav */}
         <div style={{ height: 24 }} />

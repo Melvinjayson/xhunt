@@ -9,6 +9,15 @@ import {
   Users, BarChart2, Clock, Link2,
 } from 'lucide-react';
 import Link from 'next/link';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Avatar from '@mui/material/Avatar';
+import LinearProgress from '@mui/material/LinearProgress';
+import Chip from '@mui/material/Chip';
+import Grid from '@mui/material/Grid2';
 import { loadState, clearState, loadProfile } from '@/lib/store';
 import { useAuth } from '@/lib/auth/context';
 import type { CompletedHunt, ImpactProfile } from '@/lib/types';
@@ -68,30 +77,28 @@ function timeAgo(iso: string): string {
 /* ── Token-styled chip ──────────────────────────────────────────────────── */
 function Tag({ label, color }: { label: string; color: string }) {
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        padding: '3px 10px',
-        borderRadius: 100,
+    <Chip
+      label={label}
+      size="small"
+      sx={{
+        height: 22,
         fontSize: 11,
         fontWeight: 700,
         letterSpacing: '0.02em',
         color,
         background: `${color}14`,
         border: `1px solid ${color}28`,
-        whiteSpace: 'nowrap',
+        borderRadius: '100px',
+        '& .MuiChip-label': { px: '10px' },
       }}
-    >
-      {label}
-    </span>
+    />
   );
 }
 
 /* ── Token-styled progress bar (inline, no animation) ───────────────────── */
 function SkillBar({ value, color }: { value: number; color: string }) {
   return (
-    <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+    <Box sx={{ height: 5, borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${value}%` }}
@@ -102,7 +109,7 @@ function SkillBar({ value, color }: { value: number; color: string }) {
           background: `linear-gradient(90deg, ${color}60, ${color})`,
         }}
       />
-    </div>
+    </Box>
   );
 }
 
@@ -229,182 +236,185 @@ export default function ProfilePage() {
       <div className="consumer-app-inner">
 
         {/* ── Hero ── */}
-        <div
-          style={{
+        <Box
+          sx={{
             padding: '56px 20px 24px',
             background: `radial-gradient(600px 500px at 50% -40px, ${t.accent}08 0%, ${t.ai}06 40%, transparent 70%), ${t.surface}`,
             borderBottom: `1px solid ${t.border}`,
           }}
         >
           {/* Title bar */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: t.txt, letterSpacing: '-0.02em' }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: t.txt, letterSpacing: '-0.02em' }}>
               Impact Portfolio
-            </h1>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            </Typography>
+            <Stack direction="row" alignItems="center" spacing={1}>
               {loading && <Loader2 size={14} color={t.txtFaint} style={{ animation: 'spin 1s linear infinite' }} />}
-              <button
+              <IconButton
                 onClick={copyLink}
                 title="Copy portfolio link"
-                style={{
-                  width: 38, height: 38, borderRadius: 12, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                size="small"
+                sx={{
+                  width: 38, height: 38, borderRadius: '12px',
                   background: `${t.accent}10`, border: `1px solid ${t.accent}25`,
                 }}
               >
                 {copied
                   ? <Check size={15} color={t.accent} />
                   : <Copy size={15} color={t.accent} />}
-              </button>
-              <button
+              </IconButton>
+              <IconButton
                 onClick={() => {
                   if (confirm('Reset all data and start fresh?')) {
                     clearState();
                     router.replace('/');
                   }
                 }}
-                style={{
-                  width: 38, height: 38, borderRadius: 12, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                size="small"
+                sx={{
+                  width: 38, height: 38, borderRadius: '12px',
                   background: 'rgba(255,255,255,0.04)', border: `1px solid ${t.border}`,
                 }}
               >
                 <Settings size={16} color={t.txtDim} />
-              </button>
-            </div>
-          </div>
+              </IconButton>
+            </Stack>
+          </Stack>
 
           {/* Avatar + name */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div
-                style={{
-                  width: 68, height: 68, borderRadius: 22,
+          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2.5 }}>
+            <Box sx={{ position: 'relative', flexShrink: 0 }}>
+              <Avatar
+                sx={{
+                  width: 68, height: 68, borderRadius: '22px',
                   background: `linear-gradient(135deg, ${t.accent}22, ${t.ai}30)`,
                   border: `2px solid ${t.accent}40`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: `0 0 28px ${t.accent}20`,
+                  fontSize: 24, fontWeight: 900, color: t.accent,
                 }}
               >
-                <span style={{ fontSize: 24, fontWeight: 900, color: t.accent }}>{initials}</span>
-              </div>
+                {initials}
+              </Avatar>
               {/* Online dot */}
-              <div
-                style={{
+              <Box
+                sx={{
                   position: 'absolute', bottom: -4, right: -4,
                   width: 20, height: 20, borderRadius: '50%',
                   background: t.card, border: `2px solid ${t.bg}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
               >
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: tierColor, boxShadow: `0 0 8px ${tierColor}` }} />
-              </div>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: t.txt, letterSpacing: '-0.02em' }}>{name}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: tierColor, boxShadow: `0 0 8px ${tierColor}` }} />
+              </Box>
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography sx={{ mb: '6px', fontSize: 20, fontWeight: 800, color: t.txt, letterSpacing: '-0.02em' }}>{name}</Typography>
+              <Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap">
                 <Tag label={tierLabel} color={tierColor} />
                 {impactProfile?.archetype && (
                   <Tag label={impactProfile.archetype} color={aColor} />
                 )}
-              </div>
-            </div>
-          </div>
+              </Stack>
+            </Box>
+          </Stack>
 
           {/* Stats row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4" style={{ gap: 8 }}>
+          <Grid container spacing={1}>
             {[
               { label: 'MMS',      value: mms,                   color: t.accent,  Icon: TrendingUp },
               { label: 'Missions', value: completedHunts.length, color: t.accent,  Icon: Trophy     },
               { label: 'Skills',   value: skills.length,         color: t.ai,      Icon: Brain      },
               { label: 'Impact',   value: impactScore,           color: t.warning, Icon: Star       },
             ].map(({ label, value, color, Icon }) => (
-              <div
-                key={label}
-                style={{
-                  borderRadius: 14, padding: '11px 6px', textAlign: 'center',
-                  background: t.card, border: `1px solid ${t.border}`,
-                }}
-              >
-                <Icon size={12} color={color} style={{ marginBottom: 4 }} />
-                <div style={{ fontSize: 17, fontWeight: 800, color, lineHeight: 1 }}>{value.toLocaleString()}</div>
-                <div style={{ fontSize: 9.5, fontWeight: 600, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>{label}</div>
-              </div>
+              <Grid key={label} size={{ xs: 6, sm: 3 }}>
+                <Box
+                  sx={{
+                    borderRadius: '14px', padding: '11px 6px', textAlign: 'center',
+                    background: t.card, border: `1px solid ${t.border}`,
+                  }}
+                >
+                  <Icon size={12} color={color} style={{ marginBottom: 4 }} />
+                  <Typography sx={{ fontSize: 17, fontWeight: 800, color, lineHeight: 1 }}>{value.toLocaleString()}</Typography>
+                  <Typography sx={{ fontSize: 9.5, fontWeight: 600, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em', mt: '3px' }}>{label}</Typography>
+                </Box>
+              </Grid>
             ))}
-          </div>
-        </div>
+          </Grid>
+        </Box>
 
-        <div className="lg:flex lg:gap-8 lg:items-start" style={{ padding: '20px' }}>
+        <Box sx={{ display: { xs: 'block', lg: 'flex' }, gap: 4, alignItems: 'flex-start', p: 2.5 }}>
 
           {/* Left column */}
-          <div className="lg:flex-1 lg:min-w-0">
+          <Box className="lg:flex-1 lg:min-w-0">
 
           {/* ── Participation Passport Metrics ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 10, marginBottom: 20 }}>
+          <Grid container spacing={1.25} sx={{ mb: 2.5 }}>
             {[
               { label: 'Completion Rate', value: `${completionRate}%`,   color: t.accent  },
               { label: 'Verification',    value: `${verificationRate}%`, color: t.ai      },
               { label: 'Trust Score',     value: String(trustScore),     color: t.warning },
             ].map(({ label, value, color }) => (
-              <div
-                key={label}
-                style={{
-                  padding: 12, borderRadius: 14, textAlign: 'center',
-                  background: t.surface, border: `1px solid ${t.border}`,
-                }}
-              >
-                <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color, letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</p>
-                <p style={{ margin: '4px 0 0', fontSize: 9.5, color: t.txtFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
-              </div>
+              <Grid key={label} size={{ xs: 12, sm: 4 }}>
+                <Box
+                  sx={{
+                    padding: '12px', borderRadius: '14px', textAlign: 'center',
+                    background: t.surface, border: `1px solid ${t.border}`,
+                  }}
+                >
+                  <Typography sx={{ fontSize: 20, fontWeight: 900, color, letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</Typography>
+                  <Typography sx={{ mt: '4px', fontSize: 9.5, color: t.txtFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</Typography>
+                </Box>
+              </Grid>
             ))}
-          </div>
+          </Grid>
 
           {/* ── Skills Intelligence ── */}
           {skills.length > 0 && (
             <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 22 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: t.txt }}>Skills</h2>
-                <span
-                  style={{
-                    fontSize: 10, fontWeight: 700, color: t.txtFaint, letterSpacing: '0.07em',
-                    textTransform: 'uppercase', background: 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${t.border}`, borderRadius: 999, padding: '3px 10px',
+              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt }}>Skills</Typography>
+                <Chip
+                  label="AI Inferred"
+                  size="small"
+                  sx={{
+                    fontSize: 10, fontWeight: 700, color: t.txtFaint,
+                    background: 'rgba(255,255,255,0.04)', border: `1px solid ${t.border}`,
+                    letterSpacing: '0.07em',
                   }}
-                >
-                  AI Inferred
-                </span>
-              </div>
+                />
+              </Stack>
               <Surface variant="card">
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <Stack spacing={1.75} sx={{ p: 2 }}>
                   {skills.slice(0, 6).map((s, i) => {
                     const cfg = LEVEL_CFG[s.level] ?? LEVEL_CFG.Beginner;
                     return (
                       <motion.div key={s.name} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 12.5, fontWeight: 600, color: t.txtDim }}>{s.name}</span>
-                            <span
-                              style={{
+                        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: '6px' }}>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: t.txtDim }}>{s.name}</Typography>
+                            <Chip
+                              label={s.level}
+                              size="small"
+                              sx={{
                                 fontSize: 9, fontWeight: 800, color: cfg.color,
-                                background: cfg.bg, borderRadius: 999, padding: '1px 7px',
+                                background: cfg.bg, borderRadius: '999px', height: 18,
                                 textTransform: 'uppercase', letterSpacing: '0.06em',
+                                '& .MuiChip-label': { px: '7px' },
                               }}
-                            >
-                              {s.level}
-                            </span>
-                          </div>
-                          <span style={{ fontSize: 11, fontWeight: 800, color: cfg.color }}>{s.confidence}%</span>
-                        </div>
+                            />
+                          </Stack>
+                          <Typography sx={{ fontSize: 11, fontWeight: 800, color: cfg.color }}>{s.confidence}%</Typography>
+                        </Stack>
                         <SkillBar value={s.confidence} color={cfg.color} />
                         {s.evidence.length > 0 && (
-                          <p style={{ margin: '4px 0 0', fontSize: 10, color: t.txtFaint }}>
+                          <Typography sx={{ mt: '4px', fontSize: 10, color: t.txtFaint }}>
                             via {s.evidence.slice(0, 2).join(' · ')}
-                          </p>
+                          </Typography>
                         )}
                       </motion.div>
                     );
                   })}
-                </div>
+                </Stack>
               </Surface>
             </motion.section>
           )}
@@ -412,146 +422,156 @@ export default function ProfilePage() {
           {/* ── Impact Areas ── */}
           {categories.length > 0 && (
             <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} style={{ marginBottom: 22 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: t.txt }}>Impact Areas</h2>
+              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt }}>Impact Areas</Typography>
                 <Globe size={13} color={t.txtFaint} />
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              </Stack>
+              <Stack direction="row" flexWrap="wrap" spacing={1}>
                 {categories.map((cat) => (
-                  <div
+                  <Chip
                     key={cat.catId}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      borderRadius: 999, padding: '6px 13px',
+                    label={
+                      <Stack direction="row" alignItems="center" spacing={0.75}>
+                        <span style={{ fontSize: 13 }}>{cat.emoji}</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: cat.color }}>{cat.label}</span>
+                        <Chip
+                          label={cat.count}
+                          size="small"
+                          sx={{
+                            fontSize: 9.5, fontWeight: 700, color: cat.color,
+                            background: `${cat.color}18`, height: 18,
+                            '& .MuiChip-label': { px: '5px' },
+                          }}
+                        />
+                      </Stack>
+                    }
+                    sx={{
                       background: `${cat.color}10`, border: `1px solid ${cat.color}28`,
+                      borderRadius: '999px', height: 'auto', py: '6px',
+                      '& .MuiChip-label': { px: '13px' },
                     }}
-                  >
-                    <span style={{ fontSize: 13 }}>{cat.emoji}</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: cat.color }}>{cat.label}</span>
-                    <span
-                      style={{
-                        fontSize: 9.5, fontWeight: 700, color: cat.color,
-                        background: `${cat.color}18`, borderRadius: 999, padding: '0 5px',
-                      }}
-                    >
-                      {cat.count}
-                    </span>
-                  </div>
+                  />
                 ))}
-              </div>
+              </Stack>
             </motion.section>
           )}
 
           {/* ── Impact DNA ── */}
           {impactProfile && (
             <section style={{ marginBottom: 22 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: t.txt }}>Impact DNA</h2>
-                <span
-                  style={{
-                    fontSize: 10, fontWeight: 700, color: t.txtFaint, letterSpacing: '0.07em',
-                    textTransform: 'uppercase', background: 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${t.border}`, borderRadius: 999, padding: '3px 10px',
+              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt }}>Impact DNA</Typography>
+                <Chip
+                  label="AI Profile"
+                  size="small"
+                  sx={{
+                    fontSize: 10, fontWeight: 700, color: t.txtFaint,
+                    background: 'rgba(255,255,255,0.04)', border: `1px solid ${t.border}`,
+                    letterSpacing: '0.07em',
                   }}
-                >
-                  AI Profile
-                </span>
-              </div>
+                />
+              </Stack>
 
               {/* Archetype card */}
-              <div
-                style={{
-                  borderRadius: 20, padding: '14px 16px', marginBottom: 10,
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1.75}
+                sx={{
+                  borderRadius: '20px', padding: '14px 16px', mb: 1.25,
                   background: `linear-gradient(135deg, ${aColor}08, ${t.ai}06)`,
                   border: `1px solid ${aColor}18`,
-                  display: 'flex', alignItems: 'center', gap: 14,
                 }}
               >
-                <div
-                  style={{
-                    width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+                <Box
+                  sx={{
+                    width: 46, height: 46, borderRadius: '14px', flexShrink: 0,
                     background: `${aColor}18`, border: `1.5px solid ${aColor}30`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
                 >
                   <Brain size={21} color={aColor} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: '0 0 1px', fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Archetype</p>
-                  <p style={{ margin: '0 0 3px', fontSize: 18, fontWeight: 900, color: aColor, letterSpacing: '-0.02em' }}>{impactProfile.archetype}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ fontSize: 10, color: t.txtFaint }}>Impact Score</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: aColor }}>{impactProfile.impactScore}</span>
-                    <span style={{ fontSize: 10, color: t.txtFaint }}>/ 100</span>
-                  </div>
-                </div>
-              </div>
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Archetype</Typography>
+                  <Typography sx={{ fontSize: 18, fontWeight: 900, color: aColor, letterSpacing: '-0.02em', mb: '3px' }}>{impactProfile.archetype}</Typography>
+                  <Stack direction="row" alignItems="center" spacing={0.625}>
+                    <Typography sx={{ fontSize: 10, color: t.txtFaint }}>Impact Score</Typography>
+                    <Typography sx={{ fontSize: 13, fontWeight: 800, color: aColor }}>{impactProfile.impactScore}</Typography>
+                    <Typography sx={{ fontSize: 10, color: t.txtFaint }}>/ 100</Typography>
+                  </Stack>
+                </Box>
+              </Stack>
 
               {/* Strengths */}
               {impactProfile.strengths.length > 0 && (
                 <Surface variant="card" style={{ marginBottom: 10 }}>
-                  <div style={{ padding: '14px 16px' }}>
-                    <p style={{ margin: '0 0 12px', fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Top Strengths</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <Box sx={{ p: '14px 16px' }}>
+                    <Typography sx={{ mb: 1.5, fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Top Strengths</Typography>
+                    <Stack spacing={1.25}>
                       {impactProfile.strengths.slice(0, 4).map((s) => (
-                        <div key={s.name}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                            <span style={{ fontSize: 11, color: t.txtDim, fontWeight: 600 }}>{s.name}</span>
-                            <span style={{ fontSize: 11, color: aColor, fontWeight: 800 }}>{s.score}%</span>
-                          </div>
+                        <Box key={s.name}>
+                          <Stack direction="row" justifyContent="space-between" sx={{ mb: '5px' }}>
+                            <Typography sx={{ fontSize: 11, color: t.txtDim, fontWeight: 600 }}>{s.name}</Typography>
+                            <Typography sx={{ fontSize: 11, color: aColor, fontWeight: 800 }}>{s.score}%</Typography>
+                          </Stack>
                           <SkillBar value={s.score} color={aColor} />
-                        </div>
+                        </Box>
                       ))}
-                    </div>
-                  </div>
+                    </Stack>
+                  </Box>
                 </Surface>
               )}
 
               {/* Causes + Availability */}
-              <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 10 }}>
+              <Grid container spacing={1.25}>
                 {impactProfile.causes.length > 0 && (
-                  <Surface variant="inset">
-                    <div style={{ padding: '12px 14px' }}>
-                      <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Causes</p>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {impactProfile.causes.map((c) => (
-                          <Tag key={c} label={c} color={t.accent} />
-                        ))}
-                      </div>
-                    </div>
-                  </Surface>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Surface variant="inset">
+                      <Box sx={{ p: '12px 14px' }}>
+                        <Typography sx={{ mb: 1, fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Causes</Typography>
+                        <Stack direction="row" flexWrap="wrap" spacing={0.5}>
+                          {impactProfile.causes.map((c) => (
+                            <Tag key={c} label={c} color={t.accent} />
+                          ))}
+                        </Stack>
+                      </Box>
+                    </Surface>
+                  </Grid>
                 )}
-                <Surface variant="inset">
-                  <div style={{ padding: '12px 14px' }}>
-                    <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Availability</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Sparkles size={11} color={t.accent} />
-                      <span style={{ fontSize: 11, color: t.txt, fontWeight: 600 }}>{impactProfile.availability}</span>
-                    </div>
-                    <p style={{ margin: '5px 0 0', fontSize: 9.5, color: t.txtFaint }}>per week</p>
-                  </div>
-                </Surface>
-              </div>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Surface variant="inset">
+                    <Box sx={{ p: '12px 14px' }}>
+                      <Typography sx={{ mb: 1, fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Availability</Typography>
+                      <Stack direction="row" alignItems="center" spacing={0.75}>
+                        <Sparkles size={11} color={t.accent} />
+                        <Typography sx={{ fontSize: 11, color: t.txt, fontWeight: 600 }}>{impactProfile.availability}</Typography>
+                      </Stack>
+                      <Typography sx={{ mt: '5px', fontSize: 9.5, color: t.txtFaint }}>per week</Typography>
+                    </Box>
+                  </Surface>
+                </Grid>
+              </Grid>
             </section>
           )}
 
           {/* ── Interests ── */}
           {interests.length > 0 && (
             <section style={{ marginBottom: 22 }}>
-              <h2 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 700, color: t.txt }}>Interests</h2>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt, mb: 1.5 }}>Interests</Typography>
+              <Stack direction="row" flexWrap="wrap" spacing={1}>
                 {interests.map((id) => (
-                  <span
+                  <Chip
                     key={id}
-                    style={{
-                      borderRadius: 999, padding: '6px 14px', fontSize: 13, fontWeight: 500,
+                    label={INTEREST_LABELS[id] ?? id}
+                    sx={{
+                      borderRadius: '999px', fontSize: 13, fontWeight: 500,
                       color: t.txt, background: t.card, border: `1px solid ${t.border}`,
+                      height: 'auto', py: '6px',
                     }}
-                  >
-                    {INTEREST_LABELS[id] ?? id}
-                  </span>
+                  />
                 ))}
-              </div>
+              </Stack>
             </section>
           )}
 
@@ -559,25 +579,31 @@ export default function ProfilePage() {
           {streak > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              style={{
-                borderRadius: 20, padding: '16px 18px', marginBottom: 16,
-                display: 'flex', alignItems: 'center', gap: 14,
-                background: `${t.warning}08`, border: `1px solid ${t.warning}20`,
-              }}
+              style={{ marginBottom: 16 }}
             >
-              <div
-                style={{
-                  width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: `${t.warning}12`,
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1.75}
+                sx={{
+                  borderRadius: '20px', padding: '16px 18px',
+                  background: `${t.warning}08`, border: `1px solid ${t.warning}20`,
                 }}
               >
-                <Flame size={22} color={t.warning} />
-              </div>
-              <div>
-                <p style={{ margin: '0 0 1px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: t.txtFaint }}>Daily Streak</p>
-                <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: t.warning }}>{streak} Day{streak !== 1 ? 's' : ''}</p>
-              </div>
+                <Box
+                  sx={{
+                    width: 44, height: 44, borderRadius: '14px', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: `${t.warning}12`,
+                  }}
+                >
+                  <Flame size={22} color={t.warning} />
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: t.txtFaint }}>Daily Streak</Typography>
+                  <Typography sx={{ fontSize: 20, fontWeight: 800, color: t.warning }}>{streak} Day{streak !== 1 ? 's' : ''}</Typography>
+                </Box>
+              </Stack>
             </motion.div>
           )}
 
@@ -585,77 +611,85 @@ export default function ProfilePage() {
           {subStatus && (
             <motion.div
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              style={{
-                borderRadius: 20, padding: '14px 16px', marginBottom: 16,
-                display: 'flex', alignItems: 'center', gap: 12,
-                background: subStatus.isTrialActive ? `${t.ai}08` : subStatus.tier === 'pro' ? `${t.accent}06` : t.card,
-                border: `1px solid ${subStatus.isTrialActive ? `${t.ai}28` : subStatus.tier === 'pro' ? `${t.accent}20` : t.border}`,
-              }}
+              style={{ marginBottom: 16 }}
             >
-              <div
-                style={{
-                  width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: subStatus.isTrialActive ? `${t.ai}14` : subStatus.tier === 'pro' ? `${t.accent}10` : 'rgba(255,255,255,0.04)',
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1.5}
+                sx={{
+                  borderRadius: '20px', padding: '14px 16px',
+                  background: subStatus.isTrialActive ? `${t.ai}08` : subStatus.tier === 'pro' ? `${t.accent}06` : t.card,
+                  border: `1px solid ${subStatus.isTrialActive ? `${t.ai}28` : subStatus.tier === 'pro' ? `${t.accent}20` : t.border}`,
                 }}
               >
-                {subStatus.tier === 'pro'
-                  ? <Shield size={19} color={t.accent} />
-                  : subStatus.isTrialActive
-                  ? <Sparkles size={19} color={t.ai} />
-                  : <Zap size={19} color={t.txtFaint} />}
-              </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ margin: '0 0 1px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: t.txtFaint }}>Current Plan</p>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: t.txt }}>
-                  {subStatus.tier === 'pro' ? 'Pro' : subStatus.isTrialActive ? `Trial · ${subStatus.trialDaysLeft}d left` : 'Free'}
-                </p>
-              </div>
-              {subStatus.tier !== 'pro' && (
-                <button
-                  onClick={() => router.push('/upgrade')}
-                  style={{
-                    fontSize: 12, fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer',
-                    color: subStatus.isTrialActive ? t.ai : t.accent,
-                    display: 'flex', alignItems: 'center', gap: 3, padding: 0, flexShrink: 0,
+                <Box
+                  sx={{
+                    width: 40, height: 40, borderRadius: '12px', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: subStatus.isTrialActive ? `${t.ai}14` : subStatus.tier === 'pro' ? `${t.accent}10` : 'rgba(255,255,255,0.04)',
                   }}
                 >
-                  {subStatus.isTrialActive ? 'Upgrade' : subStatus.hasUsedTrial ? 'Go Pro' : 'Try Free'}
-                  <ArrowRight size={12} />
-                </button>
-              )}
+                  {subStatus.tier === 'pro'
+                    ? <Shield size={19} color={t.accent} />
+                    : subStatus.isTrialActive
+                    ? <Sparkles size={19} color={t.ai} />
+                    : <Zap size={19} color={t.txtFaint} />}
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: t.txtFaint }}>Current Plan</Typography>
+                  <Typography sx={{ fontSize: 14, fontWeight: 700, color: t.txt }}>
+                    {subStatus.tier === 'pro' ? 'Pro' : subStatus.isTrialActive ? `Trial · ${subStatus.trialDaysLeft}d left` : 'Free'}
+                  </Typography>
+                </Box>
+                {subStatus.tier !== 'pro' && (
+                  <Button
+                    onClick={() => router.push('/upgrade')}
+                    size="small"
+                    sx={{
+                      fontSize: 12, fontWeight: 700, color: subStatus.isTrialActive ? t.ai : t.accent,
+                      background: 'none', border: 'none', flexShrink: 0, minWidth: 0,
+                      p: 0, gap: '3px',
+                    }}
+                    endIcon={<ArrowRight size={12} />}
+                  >
+                    {subStatus.isTrialActive ? 'Upgrade' : subStatus.hasUsedTrial ? 'Go Pro' : 'Try Free'}
+                  </Button>
+                )}
+              </Stack>
             </motion.div>
           )}
 
           {/* ── Rewards CTA ── */}
-          <a
+          <Box
+            component="a"
             href="/rewards"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              padding: '14px 16px', borderRadius: 18, marginBottom: 14,
+            sx={{
+              display: 'flex', alignItems: 'center', gap: '14px',
+              padding: '14px 16px', borderRadius: '18px', mb: 1.75,
               background: `linear-gradient(135deg, ${t.accent}08, ${t.ai}06)`,
               border: `1px solid ${t.accent}20`, textDecoration: 'none',
             }}
           >
-            <div
-              style={{
-                width: 40, height: 40, borderRadius: 12, flexShrink: 0, fontSize: 18,
+            <Box
+              sx={{
+                width: 40, height: 40, borderRadius: '12px', flexShrink: 0, fontSize: 18,
                 background: `linear-gradient(135deg, ${t.accent}, ${t.ai})`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
               🏆
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ margin: '0 0 2px', fontSize: 14, fontWeight: 700, color: t.txt }}>Rewards & Earnings</p>
-              <p style={{ margin: 0, fontSize: 12, color: t.txtDim }}>Badges, payouts, Hunter Score progress</p>
-            </div>
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: t.txt, mb: '2px' }}>Rewards & Earnings</Typography>
+              <Typography sx={{ fontSize: 12, color: t.txtDim }}>Badges, payouts, Hunter Score progress</Typography>
+            </Box>
             <ArrowRight size={16} color={t.accent} />
-          </a>
+          </Box>
 
           {/* ── More links ── */}
           <Surface variant="card" style={{ marginBottom: 20 }}>
-            <div style={{ padding: '4px 0' }}>
+            <Box sx={{ py: '4px' }}>
               {[
                 { label: 'People', icon: <Users size={16} />, href: '/people', color: t.info },
                 { label: 'Activity Timeline', icon: <BarChart2 size={16} />, href: '/timeline', color: t.ai },
@@ -672,23 +706,23 @@ export default function ProfilePage() {
                     textDecoration: 'none',
                   }}
                 >
-                  <div
-                    style={{
-                      width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                  <Box
+                    sx={{
+                      width: 32, height: 32, borderRadius: '10px', flexShrink: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       background: `${color}12`, color,
                     }}
                   >
                     {icon}
-                  </div>
-                  <span style={{ fontSize: 14, fontWeight: 500, color: t.txt, flex: 1 }}>{label}</span>
+                  </Box>
+                  <Typography sx={{ fontSize: 14, fontWeight: 500, color: t.txt, flex: 1 }}>{label}</Typography>
                   <ChevronRight size={16} color={t.txtFaint} />
                 </Link>
               ))}
-            </div>
+            </Box>
           </Surface>
 
-          </div>{/* end left column */}
+          </Box>{/* end left column */}
 
           {/* Right column — mission timeline (stacks below on mobile, sidebar on desktop) */}
           <div className="lg:w-80 lg:flex-shrink-0" style={{ marginTop: 0 }}>
@@ -696,22 +730,22 @@ export default function ProfilePage() {
 
           {/* ── Mission Timeline ── */}
           <section>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: t.txt }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.75 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt }}>
                 Mission History {completedHunts.length > 0 && `(${completedHunts.length})`}
-              </h2>
+              </Typography>
               {completedHunts.length > 0 && (
                 <Link href="/missions" style={{ fontSize: 11, fontWeight: 600, color: t.accent, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
                   Browse More <ArrowRight size={11} />
                 </Link>
               )}
-            </div>
+            </Stack>
 
             {completedHunts.length === 0 ? (
               <Surface variant="card">
-                <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-                  <div
-                    style={{
+                <Box sx={{ p: '32px 20px', textAlign: 'center' }}>
+                  <Box
+                    sx={{
                       width: 48, height: 48, borderRadius: '50%',
                       background: `${t.accent}08`, border: `1px solid ${t.accent}18`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -719,31 +753,32 @@ export default function ProfilePage() {
                     }}
                   >
                     <Trophy size={22} color={t.accent} />
-                  </div>
-                  <p style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 700, color: t.txt }}>No completed missions yet</p>
-                  <p style={{ margin: '0 0 18px', fontSize: 13, color: t.txtDim }}>Complete missions to build your impact portfolio.</p>
-                  <button
+                  </Box>
+                  <Typography sx={{ mb: '4px', fontSize: 15, fontWeight: 700, color: t.txt }}>No completed missions yet</Typography>
+                  <Typography sx={{ mb: '18px', fontSize: 13, color: t.txtDim }}>Complete missions to build your impact portfolio.</Typography>
+                  <Button
                     onClick={() => router.push('/missions')}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                    size="small"
+                    endIcon={<ArrowRight size={14} />}
+                    sx={{
                       fontSize: 13, fontWeight: 700, color: t.accent,
-                      background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                      background: 'none', border: 'none', p: 0, minWidth: 0,
                     }}
                   >
-                    Browse Missions <ArrowRight size={14} />
-                  </button>
-                </div>
+                    Browse Missions
+                  </Button>
+                </Box>
               </Surface>
             ) : (
-              <div style={{ position: 'relative' }}>
+              <Box sx={{ position: 'relative' }}>
                 {/* Timeline track */}
-                <div
-                  style={{
+                <Box
+                  sx={{
                     position: 'absolute', left: 19, top: 8, bottom: 8,
-                    width: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 1,
+                    width: 2, background: 'rgba(255,255,255,0.05)', borderRadius: '1px',
                   }}
                 />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <Stack spacing={1.25}>
                   {completedHunts.map((c, i) => (
                     <motion.div
                       key={c.huntId}
@@ -753,45 +788,45 @@ export default function ProfilePage() {
                       style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}
                     >
                       {/* Node */}
-                      <div
-                        style={{
+                      <Box
+                        sx={{
                           width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
                           background: t.card, border: `2px solid ${t.accent}40`,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          zIndex: 1, marginTop: 11,
+                          zIndex: 1, mt: '11px',
                         }}
                       >
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.accent, boxShadow: `0 0 6px ${t.accent}80` }} />
-                      </div>
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: t.accent, boxShadow: `0 0 6px ${t.accent}80` }} />
+                      </Box>
                       {/* Card */}
                       <Surface variant="card" style={{ flex: 1 }}>
-                        <div style={{ padding: '13px 15px' }}>
-                          <p style={{ margin: '0 0 3px', fontSize: 13.5, fontWeight: 600, color: t.txt, lineHeight: 1.3 }}>{c.huntTitle}</p>
-                          <p style={{ margin: '0 0 8px', fontSize: 11.5, fontWeight: 600, color: t.accent }}>{c.reward.split('+')[0].trim()}</p>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <p style={{ margin: 0, fontSize: 10.5, color: t.txtFaint }}>
+                        <Box sx={{ p: '13px 15px' }}>
+                          <Typography sx={{ mb: '3px', fontSize: 13.5, fontWeight: 600, color: t.txt, lineHeight: 1.3 }}>{c.huntTitle}</Typography>
+                          <Typography sx={{ mb: 1, fontSize: 11.5, fontWeight: 600, color: t.accent }}>{c.reward.split('+')[0].trim()}</Typography>
+                          <Stack direction="row" alignItems="center" justifyContent="space-between">
+                            <Typography sx={{ fontSize: 10.5, color: t.txtFaint }}>
                               {new Date(c.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </p>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            </Typography>
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
                               <CheckCircle size={11} color={t.accent} />
-                              <span style={{ fontSize: 10, fontWeight: 700, color: t.accent }}>Completed</span>
-                            </div>
-                          </div>
-                        </div>
+                              <Typography sx={{ fontSize: 10, fontWeight: 700, color: t.accent }}>Completed</Typography>
+                            </Stack>
+                          </Stack>
+                        </Box>
                       </Surface>
                     </motion.div>
                   ))}
-                </div>
-              </div>
+                </Stack>
+              </Box>
             )}
           </section>
 
-          <p style={{ textAlign: 'center', fontSize: 11, marginTop: 32, color: t.txtFaint }}>
+          <Typography sx={{ textAlign: 'center', fontSize: 11, mt: 4, color: t.txtFaint }}>
             X-Hunt · AI-Powered Outcome Intelligence
-          </p>
+          </Typography>
           </div>{/* end sticky */}
           </div>{/* end right column */}
-        </div>{/* end flex wrapper */}
+        </Box>{/* end flex wrapper */}
       </div>
     </div>
   );
