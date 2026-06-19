@@ -40,7 +40,7 @@ export async function createPreviewSession(
     email,
     app_role: role,
     surface,
-    onboarding_complete: isWorkspace,
+    onboarding_complete: true,
     tenant_id: tenantId,
     type: 'access',
   })
@@ -58,7 +58,7 @@ export async function createPreviewSession(
       avatar_url: null,
       role,
       default_surface: surface,
-      onboarding_complete: isWorkspace,
+      onboarding_complete: true,
       tenant_id: tenantId,
     },
   };
