@@ -56,6 +56,9 @@ export async function POST(req: NextRequest) {
     }
 
     case 'submit': {
+      if (!body.task_id || typeof body.task_id !== 'string') {
+        return NextResponse.json({ error: 'task_id is required' }, { status: 400 });
+      }
       const completion = await submitCompletion(userId, body.task_id as string, {
         proof_text: body.proof_text as string | undefined,
         proof_url:  body.proof_url  as string | undefined,

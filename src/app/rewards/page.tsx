@@ -33,7 +33,7 @@ function timeAgo(iso: string): string {
 }
 
 const TIERS = [
-  { name: 'Explorer',        min: 0,    max: 2.9,  color: '#54625f', next: 'Verified Hunter' },
+  { name: 'Explorer',        min: 0,    max: 2.9,  color: t.txtFaint, next: 'Verified Hunter' },
   { name: 'Verified Hunter', min: 3.0,  max: 5.9,  color: t.accent,  next: 'Pro Hunter'      },
   { name: 'Pro Hunter',      min: 6.0,  max: 8.4,  color: t.ai,      next: 'Elite Hunter'    },
   { name: 'Elite Hunter',    min: 8.5,  max: 10.0, color: t.warning, next: null              },

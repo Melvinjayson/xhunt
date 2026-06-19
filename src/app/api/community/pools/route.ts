@@ -62,6 +62,12 @@ export async function POST(req: NextRequest) {
     }
 
     case 'contribute': {
+      if (!body.pool_id || typeof body.pool_id !== 'string') {
+        return NextResponse.json({ error: 'pool_id is required' }, { status: 400 });
+      }
+      if (!body.amount || typeof body.amount !== 'number' || body.amount <= 0) {
+        return NextResponse.json({ error: 'amount must be a positive number' }, { status: 400 });
+      }
       const pc = await contributeToPool(
         userId,
         body.pool_id as string,

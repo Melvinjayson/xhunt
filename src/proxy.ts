@@ -22,6 +22,7 @@ const PROTECTED_PATTERNS = [
   /^\/workspace/, /^\/admin/,
   /^\/home/, /^\/explore/, /^\/missions/, /^\/messages/, /^\/profile/,
   /^\/hunt/, /^\/active/, /^\/complete/, /^\/live/, /^\/people/, /^\/rewards/,
+  /^\/barter/, /^\/community/,
 ];
 
 function isPublic(pathname: string) {
