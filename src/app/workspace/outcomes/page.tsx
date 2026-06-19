@@ -63,15 +63,15 @@ const HEALTH_CONFIG: Record<MissionHealth, { label: string; clr: string; bg: str
 };
 
 const VALIDATION_STATUS = {
-  pending:           { label: 'Pending',        clr: t.warning, bg: 'bg-[#FFB84D]/10' },
-  under_review:      { label: 'Under Review',   clr: t.ai,      bg: 'bg-[#6D5DFD]/10' },
-  approved:          { label: 'Approved',       clr: t.accent,  bg: 'bg-[#22FFAA]/10' },
-  rejected:          { label: 'Rejected',       clr: t.error,   bg: 'bg-[#FF5C7A]/10' },
-  requires_evidence: { label: 'Needs Evidence', clr: t.warning, bg: 'bg-[#FFB84D]/10' },
+  pending:           { label: 'Pending',        clr: t.warning, bg: 'bg-[var(--t-warn)]/10'   },
+  under_review:      { label: 'Under Review',   clr: t.ai,      bg: 'bg-[var(--t-ai)]/10'     },
+  approved:          { label: 'Approved',       clr: t.accent,  bg: 'bg-[var(--t-accent)]/10' },
+  rejected:          { label: 'Rejected',       clr: t.error,   bg: 'bg-[var(--t-err)]/10'    },
+  requires_evidence: { label: 'Needs Evidence', clr: t.warning, bg: 'bg-[var(--t-warn)]/10'   },
 };
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('bg-[#0D1530] animate-pulse rounded-lg', className)} />;
+  return <div className={cn('bg-[var(--t-elev)] animate-pulse rounded-lg', className)} />;
 }
 
 /* ── Page ────────────────────────────────────────────────────────────────── */
@@ -169,7 +169,7 @@ export default function OutcomesPage() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#6D5DFD]/10 border border-[#6D5DFD]/20 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-[var(--t-ai)]/10 border border-[var(--t-ai)]/20 flex items-center justify-center">
             <TrendingUp size={18} style={{ color: t.ai }} strokeWidth={1.8} />
           </div>
           <div>
@@ -179,11 +179,11 @@ export default function OutcomesPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link href="/admin/outcomes/validation">
-            <button className="flex items-center gap-2 h-9 px-4 bg-[#0A1226] border border-[#162440] text-[#F0F4FF] rounded-xl font-medium text-[13px] hover:border-[#6D5DFD]/40 transition-colors">
+            <button className="flex items-center gap-2 h-9 px-4 bg-[var(--t-card)] border border-[var(--t-elev)] rounded-xl font-medium text-[13px] hover:border-[var(--t-ai)]/40 transition-colors" style={{ color: t.txt }}>
               <FileCheck size={14} strokeWidth={2} />
               Validation Queue
               {validations.filter((v) => v.status === 'pending').length > 0 && (
-                <span className="w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center" style={{ background: t.warning, color: '#060a0e' }}>
+                <span className="w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center" style={{ background: t.warning, color: t.bg }}>
                   {validations.filter((v) => v.status === 'pending').length}
                 </span>
               )}
@@ -192,7 +192,8 @@ export default function OutcomesPage() {
           <button
             onClick={generateNarrative}
             disabled={generating}
-            className="flex items-center gap-2 h-9 px-4 bg-[#6D5DFD]/10 border border-[#6D5DFD]/25 text-[#A99FFE] rounded-xl font-medium text-[13px] hover:bg-[#6D5DFD]/15 transition-colors disabled:opacity-60"
+            className="flex items-center gap-2 h-9 px-4 bg-[var(--t-ai)]/10 border border-[var(--t-ai)]/25 rounded-xl font-medium text-[13px] hover:bg-[var(--t-ai)]/15 transition-colors disabled:opacity-60"
+            style={{ color: t.aiLight }}
           >
             {generating
               ? <><RefreshCw size={13} strokeWidth={2} className="animate-spin" /> Generating…</>
@@ -208,14 +209,14 @@ export default function OutcomesPage() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, height: 0 }}
-            className="bg-gradient-to-r from-[#0E0C2A] to-[#0A1226] border border-[#6D5DFD]/22 rounded-2xl p-5 flex gap-4"
+            className="bg-gradient-to-r from-[var(--t-bg)] to-[var(--t-card)] border border-[var(--t-ai)]/22 rounded-2xl p-5 flex gap-4"
           >
-            <div className="w-9 h-9 rounded-xl bg-[#6D5DFD]/15 border border-[#6D5DFD]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="w-9 h-9 rounded-xl bg-[var(--t-ai)]/15 border border-[var(--t-ai)]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
               <Bot size={16} style={{ color: t.aiLight }} strokeWidth={1.8} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: t.ai }}>AI Impact Analysis</p>
-              <p className="text-[13px] text-[#C4CADF] leading-relaxed">{narrative}</p>
+              <p className="text-[13px] leading-relaxed" style={{ color: t.txtDim }}>{narrative}</p>
             </div>
             <button onClick={() => setNarrative('')} className="text-[11px] flex-shrink-0 mt-1" style={{ color: t.txtFaint }}>✕</button>
           </motion.div>
@@ -225,19 +226,19 @@ export default function OutcomesPage() {
       {/* ── KPI Grid ── */}
       <div className="grid grid-cols-3 gap-4 lg:grid-cols-6">
         {[
-          { label: 'Active Missions',     value: summary?.totalMissions ?? 0,           icon: Target,      clr: t.accent,  bg: 'bg-[#22FFAA]/8',  suffix: '' },
-          { label: 'Avg MEI Score',        value: summary?.avgMei ?? 0,                  icon: BarChart3,   clr: t.ai,      bg: 'bg-[#6D5DFD]/10', suffix: '' },
-          { label: 'Completion Rate',      value: summary?.overallCompletionRate ?? 0,   icon: CheckCircle2,clr: t.accent,  bg: 'bg-[#22FFAA]/8',  suffix: '%' },
-          { label: 'SDG Goals Reached',    value: summary?.sdgReach ?? 0,               icon: Globe,       clr: '#2DD4BF', bg: 'bg-[#2DD4BF]/10', suffix: '' },
-          { label: 'Total Participants',   value: summary?.totalParticipants ?? 0,       icon: Users,       clr: t.warning, bg: 'bg-[#FFB84D]/10', suffix: '' },
-          { label: 'Reward Conversion',    value: rewardConversion,                      icon: Award,       clr: t.txt,     bg: 'bg-[#0D1530]',    suffix: '%' },
+          { label: 'Active Missions',     value: summary?.totalMissions ?? 0,           icon: Target,      clr: t.accent,  bg: 'bg-[var(--t-accent)]/8', suffix: '' },
+          { label: 'Avg MEI Score',        value: summary?.avgMei ?? 0,                  icon: BarChart3,   clr: t.ai,      bg: 'bg-[var(--t-ai)]/10',    suffix: '' },
+          { label: 'Completion Rate',      value: summary?.overallCompletionRate ?? 0,   icon: CheckCircle2,clr: t.accent,  bg: 'bg-[var(--t-accent)]/8', suffix: '%' },
+          { label: 'SDG Goals Reached',    value: summary?.sdgReach ?? 0,               icon: Globe,       clr: t.info,    bg: 'bg-[var(--t-info)]/10',  suffix: '' },
+          { label: 'Total Participants',   value: summary?.totalParticipants ?? 0,       icon: Users,       clr: t.warning, bg: 'bg-[var(--t-warn)]/10',  suffix: '' },
+          { label: 'Reward Conversion',    value: rewardConversion,                      icon: Award,       clr: t.txt,     bg: 'bg-[var(--t-elev)]',     suffix: '%' },
         ].map(({ label, value, icon: Icon, clr, bg, suffix }, i) => (
           <motion.div
             key={label}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-4 col-span-1"
+            className="bg-[var(--t-card)] border border-[var(--t-elev)] rounded-2xl p-4 col-span-1"
           >
             <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center mb-3', bg)}>
               <Icon size={15} style={{ color: clr }} strokeWidth={1.8} />
@@ -254,14 +255,14 @@ export default function OutcomesPage() {
       <div className="grid grid-cols-3 gap-4">
 
         {/* Mission Effectiveness Leaderboard */}
-        <div className="col-span-2 bg-[#0A1226] border border-[#0F1D35] rounded-2xl overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[#0F1D35]">
+        <div className="col-span-2 bg-[var(--t-card)] border border-[var(--t-elev)] rounded-2xl overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--t-elev)]">
             <div className="flex items-center gap-2">
               <Activity size={14} style={{ color: t.accent }} strokeWidth={2} />
               <p className="text-[13px] font-bold" style={{ color: t.txt }}>Mission Effectiveness Index</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold bg-[#22FFAA]/10 px-2.5 py-1 rounded-full" style={{ color: t.accent }}>
+              <span className="text-[11px] font-bold bg-[var(--t-accent)]/10 px-2.5 py-1 rounded-full" style={{ color: t.accent }}>
                 Avg {summary?.avgMei ?? 0}
               </span>
               <div className="relative">
@@ -270,7 +271,7 @@ export default function OutcomesPage() {
                   value={missionSearch}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Filter missions…"
-                  className="h-7 pl-7 pr-2.5 w-36 bg-[#07101F] border border-[#0F1D35] rounded-lg text-[11px] placeholder:text-[#4A5578] focus:outline-none"
+                  className="h-7 pl-7 pr-2.5 w-36 bg-[var(--t-surface)] border border-[var(--t-elev)] rounded-lg text-[11px] focus:outline-none"
                   style={{ color: t.txt }}
                 />
               </div>
@@ -278,7 +279,7 @@ export default function OutcomesPage() {
           </div>
 
           {/* Table header */}
-          <div className="grid px-5 py-2.5 border-b border-[#0F1D35] bg-[#07101F]"
+          <div className="grid px-5 py-2.5 border-b border-[var(--t-elev)] bg-[var(--t-surface)]"
             style={{ gridTemplateColumns: '2fr 1fr 80px 70px 60px' }}>
             {['Mission', 'Health', 'MEI', 'Completion', 'Participants'].map((h) => (
               <p key={h} className="text-[10px] font-bold uppercase tracking-wider" style={{ color: t.txtFaint }}>{h}</p>
@@ -292,7 +293,7 @@ export default function OutcomesPage() {
               <p className="text-sm mt-1" style={{ color: t.txtFaint }}>MEI scores appear once participants complete missions.</p>
             </div>
           ) : (
-            <div className="divide-y divide-[#0F1D35] overflow-y-auto max-h-[360px]">
+            <div className="divide-y divide-[var(--t-elev)] overflow-y-auto max-h-[360px]">
               {filteredMissions.map((m, i) => {
                 const h = HEALTH_CONFIG[m.health];
                 return (
@@ -301,7 +302,7 @@ export default function OutcomesPage() {
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="grid px-5 py-3 items-center hover:bg-[#0D1530] transition-colors"
+                    className="grid px-5 py-3 items-center hover:bg-[var(--t-elev)] transition-colors"
                     style={{ gridTemplateColumns: '2fr 1fr 80px 70px 60px' }}
                   >
                     <div className="pr-3 min-w-0">
@@ -316,7 +317,7 @@ export default function OutcomesPage() {
                       {m.score?.mei ?? '—'}
                     </p>
                     <div className="flex items-center gap-1.5">
-                      <div className="w-8 h-1 bg-[#0D1530] rounded-full overflow-hidden">
+                      <div className="w-8 h-1 bg-[var(--t-elev)] rounded-full overflow-hidden">
                         <div className="h-full rounded-full" style={{ width: `${m.completionRate}%`, backgroundColor: h.glow }} />
                       </div>
                       <span className="text-[10px] font-bold tabular-nums" style={{ color: h.glow }}>{m.completionRate}%</span>
@@ -330,11 +331,11 @@ export default function OutcomesPage() {
         </div>
 
         {/* SDG Impact Breakdown */}
-        <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-5 flex flex-col">
+        <div className="bg-[var(--t-card)] border border-[var(--t-elev)] rounded-2xl p-5 flex flex-col">
           <div className="flex items-center gap-2 mb-4">
-            <Globe size={14} style={{ color: '#2DD4BF' }} strokeWidth={2} />
+            <Globe size={14} style={{ color: t.info }} strokeWidth={2} />
             <p className="text-[13px] font-bold" style={{ color: t.txt }}>SDG Impact Areas</p>
-            <span className="ml-auto text-[11px] font-bold bg-[#2DD4BF]/10 px-2 py-0.5 rounded-full" style={{ color: '#2DD4BF' }}>
+            <span className="ml-auto text-[11px] font-bold bg-[var(--t-info)]/10 px-2 py-0.5 rounded-full" style={{ color: t.info }}>
               {summary?.sdgReach ?? 0} goals
             </span>
           </div>
@@ -365,7 +366,7 @@ export default function OutcomesPage() {
                       </div>
                       <span className="text-[11px] font-bold" style={{ color }}>{count}</span>
                     </div>
-                    <div className="h-1.5 bg-[#0D1530] rounded-full overflow-hidden mb-1.5">
+                    <div className="h-1.5 bg-[var(--t-elev)] rounded-full overflow-hidden mb-1.5">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.round((count / maxCount) * 100)}%` }}
@@ -398,12 +399,12 @@ export default function OutcomesPage() {
       <div className="grid grid-cols-3 gap-4">
 
         {/* Outcome Health Gauge */}
-        <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-5">
+        <div className="bg-[var(--t-card)] border border-[var(--t-elev)] rounded-2xl p-5">
           <p className="text-[11px] font-bold uppercase tracking-wider mb-4" style={{ color: t.txtFaint }}>Portfolio Health</p>
           <div className="flex items-center justify-center mb-5">
             <div className="relative w-32 h-32">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="40" fill="none" stroke="#0F1D35" strokeWidth="8" />
+                <circle cx="50" cy="50" r="40" fill="none" stroke={t.panel} strokeWidth="8" />
                 <circle
                   cx="50" cy="50" r="40" fill="none"
                   stroke={outcomeHealth >= 70 ? t.accent : outcomeHealth >= 40 ? t.warning : t.error}
@@ -426,7 +427,7 @@ export default function OutcomesPage() {
             {[
               { label: 'Completion',   value: summary?.overallCompletionRate ?? 0,                   color: t.accent  },
               { label: 'Avg MEI',      value: summary?.avgMei ?? 0,                                  color: t.ai      },
-              { label: 'SDG Reach',    value: Math.min((summary?.sdgReach ?? 0) * 6, 100),           color: '#2DD4BF', display: `${summary?.sdgReach ?? 0} goals` },
+              { label: 'SDG Reach',    value: Math.min((summary?.sdgReach ?? 0) * 6, 100),           color: t.info,    display: `${summary?.sdgReach ?? 0} goals` },
               { label: 'Reward Conv.', value: rewardConversion,                                      color: t.warning },
             ].map(({ label, value, color, display }) => (
               <div key={label}>
@@ -434,7 +435,7 @@ export default function OutcomesPage() {
                   <span style={{ color: t.txtDim }}>{label}</span>
                   <span className="font-bold tabular-nums" style={{ color }}>{display ?? `${value}%`}</span>
                 </div>
-                <div className="h-1.5 bg-[#0D1530] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[var(--t-elev)] rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${value}%` }}
@@ -449,8 +450,8 @@ export default function OutcomesPage() {
         </div>
 
         {/* Per-mission MEI Breakdown */}
-        <div className="col-span-2 bg-[#0A1226] border border-[#0F1D35] rounded-2xl overflow-hidden">
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-[#0F1D35]">
+        <div className="col-span-2 bg-[var(--t-card)] border border-[var(--t-elev)] rounded-2xl overflow-hidden">
+          <div className="flex items-center gap-2 px-5 py-4 border-b border-[var(--t-elev)]">
             <BarChart3 size={14} style={{ color: t.ai }} strokeWidth={2} />
             <p className="text-[13px] font-bold" style={{ color: t.txt }}>MEI Component Breakdown</p>
           </div>
@@ -486,7 +487,7 @@ export default function OutcomesPage() {
                           <span style={{ color: t.txtFaint }}>{l}</span>
                           <span style={{ color: c }}>{v ?? 0}</span>
                         </div>
-                        <div className="h-1.5 bg-[#0D1530] rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-[var(--t-elev)] rounded-full overflow-hidden">
                           <div className="h-full rounded-full" style={{ width: `${v ?? 0}%`, backgroundColor: c }} />
                         </div>
                       </div>
@@ -500,27 +501,27 @@ export default function OutcomesPage() {
       </div>
 
       {/* ── Validation Queue ── */}
-      <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#0F1D35]">
+      <div className="bg-[var(--t-card)] border border-[var(--t-elev)] rounded-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--t-elev)]">
           <div className="flex items-center gap-2">
             <FileCheck size={14} style={{ color: t.ai }} strokeWidth={2} />
             <p className="text-[13px] font-bold" style={{ color: t.txt }}>Outcome Validations</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-[#07101F] border border-[#0F1D35] rounded-xl p-1">
+            <div className="flex items-center gap-1 bg-[var(--t-surface)] border border-[var(--t-elev)] rounded-xl p-1">
               {['all', 'pending', 'under_review', 'approved', 'rejected'].map((s) => (
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
                   className={cn('px-2.5 h-6 rounded-lg text-[10px] font-semibold transition-all capitalize',
-                    statusFilter === s ? 'bg-[#0D1530]' : ''
+                    statusFilter === s ? 'bg-[var(--t-elev)]' : ''
                   )}
                   style={{ color: statusFilter === s ? t.txt : t.txtFaint }}
                 >{s.replace('_', ' ')}</button>
               ))}
             </div>
             <Link href="/admin/outcomes/validation">
-              <button className="text-[11px] font-semibold text-accent flex items-center gap-1 hover:text-[#1ae595] transition-colors">
+              <button className="text-[11px] font-semibold text-accent flex items-center gap-1 hover:opacity-80 transition-opacity">
                 Manage <ChevronRight size={11} strokeWidth={2} />
               </button>
             </Link>
@@ -535,22 +536,22 @@ export default function OutcomesPage() {
           </div>
         ) : (
           <>
-            <div className="grid px-5 py-3 border-b border-[#0F1D35] bg-[#07101F]"
+            <div className="grid px-5 py-3 border-b border-[var(--t-elev)] bg-[var(--t-surface)]"
               style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr 100px' }}>
               {['Outcome', 'Type', 'Confidence', 'Submitted', 'Status'].map((h) => (
                 <p key={h} className="text-[10px] font-bold uppercase tracking-wider" style={{ color: t.txtFaint }}>{h}</p>
               ))}
             </div>
-            <div className="divide-y divide-[#0F1D35]">
+            <div className="divide-y divide-[var(--t-elev)]">
               {filtered.slice(0, 10).map((v) => {
                 const sc = VALIDATION_STATUS[v.status as keyof typeof VALIDATION_STATUS] ?? VALIDATION_STATUS.pending;
                 return (
-                  <div key={v.id} className="grid px-5 py-3.5 items-center hover:bg-[#0D1530] transition-colors"
+                  <div key={v.id} className="grid px-5 py-3.5 items-center hover:bg-[var(--t-elev)] transition-colors"
                     style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr 100px' }}>
                     <p className="text-[12px] font-medium truncate pr-4" style={{ color: t.txt }}>Outcome #{v.id.slice(0, 8)}</p>
                     <span className="text-[11px] capitalize" style={{ color: t.txtDim }}>{v.validation_type.replace('_', ' ')}</span>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 bg-[#0D1530] rounded-full overflow-hidden max-w-[60px]">
+                      <div className="flex-1 h-1.5 bg-[var(--t-elev)] rounded-full overflow-hidden max-w-[60px]">
                         <div className="h-full rounded-full" style={{ width: `${(v.confidence_score ?? 0) * 100}%`, background: t.accent }} />
                       </div>
                       <span className="text-[11px] tabular-nums" style={{ color: t.txtDim }}>{Math.round((v.confidence_score ?? 0) * 100)}%</span>

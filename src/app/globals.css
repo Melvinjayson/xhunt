@@ -62,6 +62,7 @@
   --t-ai:      #6D5DFD;
   --t-warn:    #FFB84D;
   --t-err:     #FF5C7A;
+  --t-info:    #60A5FA;
   --t-live:    #ff3b30;
 }
 
@@ -91,6 +92,7 @@
   --t-ai:      #5448D9;
   --t-warn:    #D97706;
   --t-err:     #DC2626;
+  --t-info:    #3B82F6;
   --t-live:    #DC2626;
 }
 

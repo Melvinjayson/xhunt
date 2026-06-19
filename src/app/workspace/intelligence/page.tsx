@@ -142,9 +142,9 @@ export default function WorkspaceIntelligencePage() {
                       'text-left p-4 rounded-2xl border transition-all',
                       active
                         ? 'bg-accent/10 border-accent/30'
-                        : 'border-[#0F1D35] hover:border-[#1A2E50]'
+                        : 'hover:border-[var(--t-elev)]'
                     )}
-                    style={!active ? { background: t.surface } : {}}
+                    style={!active ? { background: t.surface, borderColor: t.panel } : {}}
                   >
                     <p className={cn('text-[13px] font-bold mb-1', active ? 'text-accent' : '')}
                       style={!active ? { color: t.txt } : {}}>
@@ -172,7 +172,7 @@ export default function WorkspaceIntelligencePage() {
                   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void handleInvoke();
                 }}
               />
-              <p className="absolute bottom-3 right-3 text-[10px]" style={{ color: '#2A3550' }}>⌘↵ to run</p>
+              <p className="absolute bottom-3 right-3 text-[10px]" style={{ color: t.txtFaint }}>⌘↵ to run</p>
             </div>
           </div>
 
@@ -200,7 +200,7 @@ export default function WorkspaceIntelligencePage() {
             onClick={handleInvoke}
             disabled={invoking || !objective.trim()}
             className="flex items-center gap-2 h-11 px-6 bg-accent rounded-xl font-bold text-[13px] disabled:opacity-50 shadow-[0_4px_20px_rgba(34,255,170,0.2)] transition-opacity w-full justify-center"
-            style={{ color: '#060a0e' }}
+            style={{ color: t.bg }}
           >
             {invoking ? (
               <><RefreshCw size={14} className="animate-spin" /> Consulting Intelligence Layer…</>
@@ -219,14 +219,16 @@ export default function WorkspaceIntelligencePage() {
             >
               {/* Constitutional verdict */}
               {result?.constitutional && (
-                <div className={cn(
-                  'flex items-center gap-2 px-4 py-2.5 border-b text-[12px] font-medium',
-                  result.constitutional.verdict === 'approved'
-                    ? 'bg-accent/5 border-accent/15 text-accent'
-                    : result.constitutional.verdict === 'rejected'
-                    ? 'bg-[#ff5252]/5 border-[#ff5252]/15 text-[#ff5252]'
-                    : 'bg-[#fbbf24]/5 border-[#fbbf24]/15 text-[#fbbf24]'
-                )}>
+                <div
+                  className="flex items-center gap-2 px-4 py-2.5 border-b text-[12px] font-medium"
+                  style={
+                    result.constitutional.verdict === 'approved'
+                      ? { background: `${t.accent}0D`, borderColor: `${t.accent}26`, color: t.accent }
+                      : result.constitutional.verdict === 'rejected'
+                      ? { background: `${t.error}0D`, borderColor: `${t.error}26`, color: t.error }
+                      : { background: `${t.warning}0D`, borderColor: `${t.warning}26`, color: t.warning }
+                  }
+                >
                   {result.constitutional.verdict === 'approved' ? (
                     <CheckCircle2 size={13} strokeWidth={2} />
                   ) : result.constitutional.verdict === 'rejected' ? (
@@ -263,7 +265,7 @@ export default function WorkspaceIntelligencePage() {
           <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: t.txtFaint }}>Active Agents ({activeAgents.length})</p>
           {displayAgents.length === 0 ? (
             <div className="py-8 text-center rounded-2xl" style={{ background: t.surface, border: `1px solid ${t.panel}` }}>
-              <Bot size={28} className="mx-auto mb-2" strokeWidth={1.5} style={{ color: '#2A3550' }} />
+              <Bot size={28} className="mx-auto mb-2" strokeWidth={1.5} style={{ color: t.txtFaint }} />
               <p className="text-sm" style={{ color: t.txtFaint }}>No agents active</p>
             </div>
           ) : (

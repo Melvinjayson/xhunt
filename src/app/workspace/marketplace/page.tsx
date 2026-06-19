@@ -271,7 +271,7 @@ function EditDrawer({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition-all"
                   style={{
                     background:  form.category === c.id ? `${c.color}15` : 'transparent',
-                    color:       form.category === c.id ? c.color : '#8B9CC0',
+                    color:       form.category === c.id ? c.color : t.txtDim,
                     borderColor: form.category === c.id ? `${c.color}30` : 'rgba(255,255,255,0.07)',
                   }}>
                   {c.emoji} {c.label}
@@ -292,7 +292,7 @@ function EditDrawer({
                     className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border transition-all"
                     style={{
                       background:  active ? `${meta.color}15` : 'transparent',
-                      color:       active ? meta.color : '#4A5578',
+                      color:       active ? meta.color : t.txtFaint,
                       borderColor: active ? `${meta.color}30` : 'rgba(255,255,255,0.06)',
                     }}>
                     {meta.emoji} {n}
@@ -342,7 +342,7 @@ function EditDrawer({
                     className="flex-1 h-9 rounded-xl text-[12px] font-semibold border transition-all"
                     style={{
                       background:  form.status === s ? meta.bg : 'transparent',
-                      color:       form.status === s ? meta.color : '#8B9CC0',
+                      color:       form.status === s ? meta.color : t.txtDim,
                       borderColor: form.status === s ? `${meta.color}30` : 'rgba(255,255,255,0.07)',
                     }}>
                     {meta.label}
@@ -626,7 +626,7 @@ export default function WorkspaceMarketplacePage() {
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: '#07101F' }} />
+              <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: t.surface }} />
             ))}
           </div>
         ) : tab === 'listings' ? (
@@ -775,16 +775,16 @@ export default function WorkspaceMarketplacePage() {
                         </span>
                       </div>
                       {listing && (
-                        <p className="text-[11px] mb-1" style={{ color: '#4A5578' }}>
+                        <p className="text-[11px] mb-1" style={{ color: t.txtFaint }}>
                           → {listing.mission.title}
                         </p>
                       )}
                       {app.cover_note && (
-                        <p className="text-[12px] mt-1.5 p-2 rounded-xl line-clamp-2" style={{ background: '#0A1226', color: '#8B9CC0' }}>
+                        <p className="text-[12px] mt-1.5 p-2 rounded-xl line-clamp-2" style={{ background: t.card, color: t.txtDim }}>
                           {app.cover_note}
                         </p>
                       )}
-                      <p className="text-[10px] mt-1.5" style={{ color: '#4A5578' }}>{formatDate(app.created_at)}</p>
+                      <p className="text-[10px] mt-1.5" style={{ color: t.txtFaint }}>{formatDate(app.created_at)}</p>
                     </div>
                   </div>
                   {app.status === 'pending' && (
@@ -794,7 +794,7 @@ export default function WorkspaceMarketplacePage() {
                         void load();
                       }}
                         className="flex-1 h-8 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-1.5"
-                        style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: '#22FFAA' }}>
+                        style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: t.accent }}>
                         <CheckCircle2 size={12} strokeWidth={2} /> Accept
                       </button>
                       <button onClick={async () => {
@@ -802,7 +802,7 @@ export default function WorkspaceMarketplacePage() {
                         void load();
                       }}
                         className="flex-1 h-8 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-1.5"
-                        style={{ background: 'rgba(255,92,122,0.08)', border: '1px solid rgba(255,92,122,0.2)', color: '#FF5C7A' }}>
+                        style={{ background: 'rgba(255,92,122,0.08)', border: '1px solid rgba(255,92,122,0.2)', color: t.error }}>
                         <XCircle size={12} strokeWidth={2} /> Decline
                       </button>
                     </div>
