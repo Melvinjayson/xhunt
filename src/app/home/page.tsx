@@ -599,108 +599,11 @@ export default function HomePage() {
 
         </div>
 
-        {/* Desktop right rail */}
-        <DesktopRail
-          streak={streak}
-          reputationScore={reputationScore}
-          trust={trust}
-          quickActions={quickActions}
-          inProgressCount={inProgressHunts.length}
-          rewardsBalance={rewardsBalance}
-        />
       </div>
 
       <BottomNav />
       <CopilotFab />
     </div>
-  );
-}
-
-// ─── desktop right rail ───────────────────────────────────────────────────────
-
-interface DesktopRailProps {
-  streak: number;
-  reputationScore: number;
-  trust: TrustData | null;
-  quickActions: QuickAction[];
-  inProgressCount: number;
-  rewardsBalance: number;
-}
-
-function DesktopRail({
-  streak,
-  reputationScore,
-  trust,
-  quickActions,
-  inProgressCount,
-  rewardsBalance,
-}: DesktopRailProps) {
-  return (
-    <>
-      <style>{`
-        .xh-desktop-rail { display: none !important; }
-        @media (min-width: 1200px) {
-          .xh-desktop-rail { display: block !important; }
-        }
-      `}</style>
-      <aside
-        className="xh-desktop-rail"
-        style={{
-          position: 'fixed',
-          top: 80,
-          right: 0,
-          width: 240,
-          bottom: 0,
-          overflowY: 'auto',
-          padding: '0 16px 32px',
-        }}
-      >
-        {/* mini wallet */}
-        <Box sx={{ bgcolor: `${t.ai}14`, border: `1px solid ${t.ai}25`, borderRadius: '16px', p: 2, mb: 1.75 }}>
-          <Stack direction="row" spacing={1} sx={{ mb: 1, alignItems: 'center' }}>
-            <Wallet size={14} color={t.aiLight} />
-            <Typography variant="caption" sx={{ fontWeight: 700, color: t.aiLight, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Wallet</Typography>
-          </Stack>
-          <Typography sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', lineHeight: 1 }}>
-            ${rewardsBalance.toFixed(2)}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11, display: 'block', mt: 0.5 }}>earned balance</Typography>
-        </Box>
-
-        {/* streak */}
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', bgcolor: `${t.warning}18`, border: `1px solid ${t.warning}30`, borderRadius: '16px', p: 2, mb: 1.75 }}>
-          <Flame size={20} color={t.warning} />
-          <Box>
-            <Typography sx={{ fontSize: 20, fontWeight: 700, color: t.warning, lineHeight: 1 }}>{streak}</Typography>
-            <Typography variant="caption" color="text.secondary">day streak</Typography>
-          </Box>
-        </Stack>
-
-        {/* reputation compact */}
-        <Box sx={{ bgcolor: t.card, borderRadius: '16px', p: 2, mb: 1.75, border: '1px solid', borderColor: 'divider' }}>
-          <Stack direction="row" sx={{ mb: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>Reputation</Typography>
-            <Typography sx={{ fontSize: 16, fontWeight: 700, color: 'secondary.main' }}>{Math.round(reputationScore)}</Typography>
-          </Stack>
-          {trust && (
-            <Stack spacing={1}>
-              <ProgressBar value={trust.reliability} color={t.accent} label="Reliability" height={3} />
-              <ProgressBar value={trust.skill} color={t.ai} label="Skill" height={3} />
-              <ProgressBar value={trust.impact} color={t.info} label="Impact" height={3} />
-            </Stack>
-          )}
-        </Box>
-
-        {/* active missions count */}
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', bgcolor: t.card, borderRadius: '16px', p: 2, mb: 1.75, border: '1px solid', borderColor: 'divider' }}>
-          <CheckCircle2 size={18} color={t.accent} />
-          <Box>
-            <Typography sx={{ fontSize: 20, fontWeight: 700, color: 'text.primary', lineHeight: 1 }}>{inProgressCount}</Typography>
-            <Typography variant="caption" color="text.secondary">active missions</Typography>
-          </Box>
-        </Stack>
-      </aside>
-    </>
   );
 }
 

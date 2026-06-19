@@ -232,14 +232,14 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="consumer-app" style={{ minHeight: '100vh', paddingBottom: 100, color: t.txt }}>
+    <div className="consumer-app" style={{ minHeight: '100vh', paddingBottom: 'max(100px, calc(72px + env(safe-area-inset-bottom, 0px)))', color: t.txt }}>
       <div className="consumer-app-inner">
 
         {/* ── Hero ── */}
         <Box
           sx={{
-            padding: '56px 20px 24px',
-            background: `radial-gradient(600px 500px at 50% -40px, ${t.accent}08 0%, ${t.ai}06 40%, transparent 70%), ${t.surface}`,
+            padding: '72px 20px 32px',
+            background: `linear-gradient(180deg, ${t.accent}14 0%, ${t.ai}0a 35%, ${t.surface} 100%)`,
             borderBottom: `1px solid ${t.border}`,
           }}
         >
@@ -342,7 +342,9 @@ export default function ProfilePage() {
           </Grid>
         </Box>
 
-        <Box sx={{ display: { xs: 'block', lg: 'flex' }, gap: 4, alignItems: 'flex-start', p: 2.5 }}>
+      </div>{/* end consumer-app-inner */}
+
+      <Box sx={{ display: { xs: 'block', lg: 'flex' }, gap: 3, alignItems: 'flex-start', px: 2.5, py: 2.5 }}>
 
           {/* Left column */}
           <Box className="lg:flex-1 lg:min-w-0">
@@ -826,8 +828,7 @@ export default function ProfilePage() {
           </Typography>
           </div>{/* end sticky */}
           </div>{/* end right column */}
-        </Box>{/* end flex wrapper */}
-      </div>
+      </Box>{/* end flex wrapper */}
     </div>
   );
 }

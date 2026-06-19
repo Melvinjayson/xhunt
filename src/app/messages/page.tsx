@@ -75,8 +75,8 @@ export default function MessagesPage() {
   const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
 
   return (
-    <Box className="consumer-app" sx={{ minHeight: '100vh', bgcolor: t.bg }}>
-      <Box className="consumer-app-inner">
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: t.bg, overflow: 'hidden' }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <Box sx={{
           position: 'sticky', top: 0, zIndex: 30,

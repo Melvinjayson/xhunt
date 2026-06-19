@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   ChevronLeft, Send, Users, Target, Building2,
-  MessageSquare, MoreVertical, Loader2, AlertCircle,
+  MessageSquare, MoreVertical, Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -329,14 +329,33 @@ export default function ChatPage() {
         {/* Error state */}
         {convErr && (
           <Box sx={{
-            display: 'flex', alignItems: 'center', gap: 1,
-            px: 2, py: 1.5,
-            bgcolor: 'rgba(255,92,122,0.08)',
-            border: '1px solid rgba(255,92,122,0.2)',
-            borderRadius: '10px', mb: 1.5,
+            flex: 1, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            gap: 2, py: 8, px: 3, textAlign: 'center',
           }}>
-            <AlertCircle size={16} color={t.error} />
-            <Typography variant="body2" sx={{ color: t.error }}>{convErr}</Typography>
+            <Box sx={{ width: 56, height: 56, borderRadius: '50%', bgcolor: `${t.txtFaint}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <MessageSquare size={24} color={t.txtFaint} />
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+                Conversation unavailable
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.disabled', maxWidth: 240 }}>
+                This conversation couldn&apos;t be loaded. It may have been removed or you may not have access.
+              </Typography>
+            </Box>
+            <Box
+              component="button"
+              onClick={() => router.push('/messages')}
+              sx={{
+                mt: 1, px: 3, py: 1, borderRadius: '20px',
+                border: `1px solid ${t.border}`, bgcolor: t.card,
+                color: 'text.primary', fontSize: 14, fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Back to messages
+            </Box>
           </Box>
         )}
 

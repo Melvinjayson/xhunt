@@ -14,7 +14,7 @@ import type {
   BarterListing, BarterOffer, BarterTransaction, BarterAssetType, BarterWantType, AssetValue,
 } from '@/lib/economy/barter';
 
-const LINE = 'rgba(255,255,255,.07)';
+const LINE = t.border;
 
 type TabId = 'browse' | 'mine' | 'my_offers' | 'history';
 type FilterType = BarterAssetType | 'all';
@@ -222,7 +222,7 @@ function Drawer({ open, onClose, title, children }: {
             onClick={onClose}
             style={{
               position: 'fixed', inset: 0, zIndex: 60,
-              background: 'rgba(5,8,22,.82)', backdropFilter: 'blur(4px)',
+              background: `${t.bg}d0`, backdropFilter: 'blur(4px)',
             }}
           />
           <motion.div
@@ -806,7 +806,7 @@ export default function BarterPage() {
 
       <div style={{
         position: 'sticky', top: 0, zIndex: 40,
-        background: 'rgba(5,8,22,.94)', backdropFilter: 'blur(20px)',
+        background: `${t.bg}f0`, backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${LINE}`, padding: '12px 16px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
