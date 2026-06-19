@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   Coins, Activity, ShieldCheck, TrendingUp,
   CheckCircle2, Clock, XCircle, Award, Users,
-  Link2, ArrowUpRight, Plus, RefreshCw
+  Link2, ArrowUpRight, Plus, RefreshCw, ArrowLeftRight
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { t } from '@/theme/colors';
@@ -43,7 +43,22 @@ interface MatchResult {
   status: string;
 }
 
-type TabId = 'overview' | 'contributions' | 'trust' | 'matches';
+interface BarterStat {
+  totalListings: number;
+  activeListings: number;
+  completedTrades: number;
+  pointsTransferred: number;
+  byType: Record<string, number>;
+}
+
+interface RecentTrade {
+  id: string;
+  initiator_gave: { type: string; amount?: number; badge_label?: string; skill?: string; hours?: number; description?: string };
+  responder_gave: { type: string; amount?: number; badge_label?: string; skill?: string; hours?: number; description?: string };
+  completed_at: string;
+}
+
+type TabId = 'overview' | 'contributions' | 'trust' | 'matches' | 'barter';
 
 const CONTRIBUTION_TYPE_LABELS: Record<string, string> = {
   mission_completion: 'Mission Completed',
@@ -63,23 +78,31 @@ export default function WorkspaceEconomyPage() {
   const [summary, setSummary] = useState<ContributionSummary | null>(null);
   const [trust, setTrust] = useState<TrustProfile | null>(null);
   const [matches, setMatches] = useState<MatchResult[]>([]);
+  const [barterStats, setBarterStats] = useState<BarterStat | null>(null);
+  const [recentTrades, setRecentTrades] = useState<RecentTrade[]>([]);
 
   useEffect(() => {
     async function load() {
       try {
-        const [cSumRes, cRes, tRes, mRes] = await Promise.all([
+        const [cSumRes, cRes, tRes, mRes, barterRes] = await Promise.all([
           fetch('/api/economy/contributions?summary=true'),
           fetch('/api/economy/contributions?limit=10'),
           fetch('/api/economy/trust'),
           fetch('/api/economy/match'),
+          fetch('/api/economy/barter?view=transactions'),
         ]);
-        const [cSum, c, tData, m] = await Promise.all([
-          cSumRes.json(), cRes.json(), tRes.json(), mRes.json(),
+        const [cSum, c, tData, m, barterData] = await Promise.all([
+          cSumRes.json(), cRes.json(), tRes.json(), mRes.json(), barterRes.json(),
         ]);
         setSummary(cSum.summary ?? null);
         setContributions(c.contributions ?? []);
         setTrust(tData.profile ?? null);
         setMatches(m.matches ?? []);
+        setRecentTrades(Array.isArray(barterData) ? barterData.slice(0, 8) : []);
+        setBarterStats({
+          totalListings: 0, activeListings: 0, completedTrades: Array.isArray(barterData) ? barterData.length : 0,
+          pointsTransferred: 0, byType: {}
+        });
       } catch (err) {
         console.error('[economy]', err);
       } finally {
@@ -131,7 +154,7 @@ export default function WorkspaceEconomyPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 flex-wrap">
-        {(['overview', 'contributions', 'trust', 'matches'] as TabId[]).map((tabId) => (
+        {(['overview', 'contributions', 'trust', 'matches', 'barter'] as TabId[]).map((tabId) => (
           <button
             key={tabId}
             onClick={() => setTab(tabId)}
@@ -144,7 +167,7 @@ export default function WorkspaceEconomyPage() {
               : { color: t.txtDim, borderColor: t.panel }
             }
           >
-            {tabId === 'matches' ? 'Opportunity Matches' : tabId}
+            {tabId === 'matches' ? 'Opportunity Matches' : tabId === 'barter' ? 'Barter Exchange' : tabId}
           </button>
         ))}
       </div>
@@ -159,9 +182,11 @@ export default function WorkspaceEconomyPage() {
         <ContributionsTab contributions={contributions} />
       ) : tab === 'trust' ? (
         <TrustTab trust={trust} />
-      ) : (
+      ) : tab === 'matches' ? (
         <MatchesTab matches={matches} />
-      )}
+      ) : tab === 'barter' ? (
+        <BarterTab stats={barterStats} trades={recentTrades} />
+      ) : null}
     </div>
   );
 }
@@ -430,6 +455,110 @@ function TrustTab({ trust }: { trust: TrustProfile | null }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function BarterTab({ stats, trades }: { stats: BarterStat | null; trades: RecentTrade[] }) {
+  function fmtAsset(val: RecentTrade['initiator_gave']): string {
+    switch (val.type) {
+      case 'points': return `${(val.amount ?? 0).toLocaleString()} pts`;
+      case 'badge': return val.badge_label ?? 'Badge';
+      case 'skill_session': return `${val.hours ?? 1}h ${val.skill ?? 'Session'}`;
+      default: return val.description ?? val.type;
+    }
+  }
+
+  const typeIcon: Record<string, string> = {
+    points: '⚡', badge: '🏅', skill_session: '🧠', coupon: '🎟️', benefit: '🎁', open: '🤝'
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Stat row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Active Listings', value: stats?.activeListings ?? 0, color: t.accent },
+          { label: 'Completed Trades', value: stats?.completedTrades ?? 0, color: t.ai },
+          { label: 'Pts Transferred', value: stats?.pointsTransferred ?? 0, color: t.warning },
+          { label: 'Total Listings', value: stats?.totalListings ?? 0, color: t.txt },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="rounded-xl px-4 py-4" style={{ background: t.surface, border: `1px solid ${t.panel}` }}>
+            <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: t.txtFaint }}>{label}</p>
+            <p className="text-[22px] font-bold" style={{ color }}>{value.toLocaleString()}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* By-type breakdown */}
+      {stats?.byType && Object.keys(stats.byType).length > 0 && (
+        <div className="rounded-xl p-5" style={{ background: t.surface, border: `1px solid ${t.panel}` }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: t.txtFaint }}>Listings by Asset Type</p>
+          <div className="flex flex-wrap gap-3">
+            {Object.entries(stats.byType).map(([type, count]) => (
+              <span key={type} className="text-[12px] font-semibold px-3 py-1.5 rounded-xl" style={{ background: `${t.ai}18`, color: t.aiLight }}>
+                {typeIcon[type] ?? '🔄'} {type.replace('_', ' ')} ({count})
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent trades */}
+      <div className="rounded-xl overflow-hidden" style={{ background: t.surface, border: `1px solid ${t.panel}` }}>
+        <div className="flex items-center gap-2 px-5 py-4 border-b" style={{ borderColor: t.panel }}>
+          <ArrowLeftRight size={14} style={{ color: t.ai }} strokeWidth={2} />
+          <p className="text-[13px] font-bold" style={{ color: t.txt }}>My Recent Trades</p>
+        </div>
+        {trades.length === 0 ? (
+          <div className="py-12 text-center">
+            <ArrowLeftRight size={24} className="mx-auto mb-2" style={{ color: t.txtFaint }} strokeWidth={1.5} />
+            <p className="font-medium" style={{ color: t.txtDim }}>No trades yet</p>
+            <p className="text-sm mt-1" style={{ color: t.txtFaint }}>
+              Visit the{' '}
+              <a href="/barter" className="underline" style={{ color: t.accent }}>Barter Exchange</a>
+              {' '}to start trading.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y" style={{ '--tw-divide-color': t.panel } as React.CSSProperties}>
+            {trades.map((trade) => (
+              <div key={trade.id} className="flex items-center gap-4 px-5 py-3.5">
+                <div className="text-[18px]">{typeIcon[trade.initiator_gave.type] ?? '🔄'}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-semibold" style={{ color: t.txt }}>
+                    Gave: {fmtAsset(trade.initiator_gave)}
+                  </p>
+                  <p className="text-[11px]" style={{ color: t.txtDim }}>
+                    Received: {fmtAsset(trade.responder_gave)}
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <span className="text-[10px] font-semibold px-2 py-1 rounded-lg" style={{ background: `${t.ai}18`, color: t.aiLight }}>
+                    Completed
+                  </span>
+                  <p className="text-[10px] mt-1" style={{ color: t.txtFaint }}>
+                    {new Date(trade.completed_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* CTA to consumer barter page */}
+      <a
+        href="/barter"
+        className="flex items-center justify-between px-5 py-4 rounded-xl transition-opacity hover:opacity-80"
+        style={{ background: `${t.ai}12`, border: `1px solid ${t.ai}30` }}
+      >
+        <div>
+          <p className="text-[13px] font-bold" style={{ color: t.aiLight }}>Open Barter Exchange</p>
+          <p className="text-[11px]" style={{ color: t.txtDim }}>Trade points, badges, and skills with the community</p>
+        </div>
+        <ArrowLeftRight size={18} style={{ color: t.ai }} strokeWidth={1.8} />
+      </a>
     </div>
   );
 }

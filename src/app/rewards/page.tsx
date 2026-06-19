@@ -355,6 +355,28 @@ export default function RewardsPage() {
           </button>
         </motion.div>
 
+        {/* ─── Barter Exchange CTA ─── */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }}>
+          <button
+            onClick={() => router.push('/barter')}
+            style={{
+              width: '100%', marginBottom: 12, padding: '18px 20px', borderRadius: 20, cursor: 'pointer',
+              background: `linear-gradient(135deg, ${t.ai}14, ${t.accent}0A)`,
+              border: `1px solid ${t.ai}30`,
+              display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left',
+            }}
+          >
+            <div style={{ width: 46, height: 46, borderRadius: 14, background: `${t.ai}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <TrendingUp size={20} style={{ color: t.ai }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 700, color: t.txt }}>Barter Exchange</p>
+              <p style={{ margin: 0, fontSize: 12, color: t.txtDim }}>Trade your points and badges with other hunters for skills, coupons, and recognition.</p>
+            </div>
+            <ChevronRight size={18} style={{ color: t.ai, flexShrink: 0 }} />
+          </button>
+        </motion.div>
+
         {/* ─── Social enterprise note ─── */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
           style={{ marginBottom: 16, padding: '16px', borderRadius: 16, background: t.surface, border: `1px solid ${LINE}` }}>
