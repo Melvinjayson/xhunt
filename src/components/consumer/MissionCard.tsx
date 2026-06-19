@@ -2,6 +2,13 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
+import Avatar from '@mui/material/Avatar';
 import { Bookmark, BookmarkCheck, Clock, MapPin, Shield, Zap } from 'lucide-react';
 import { t } from '@/theme/colors';
 import { toggleSavedHunt, loadState } from '@/lib/store';
@@ -56,149 +63,238 @@ export default function MissionCard({
   }
 
   const inner = (
-    <div
+    <Card
       onClick={onClick}
-      style={{
-        background: t.card,
+      sx={{
+        bgcolor: t.card,
         border: `1px solid ${t.border}`,
-        borderRadius: compact ? 16 : 20,
+        borderRadius: compact ? '16px' : '20px',
         overflow: 'hidden',
         cursor: 'pointer',
         transition: 'transform 0.18s ease, box-shadow 0.18s ease',
         position: 'relative',
-      }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)';
-        (e.currentTarget as HTMLDivElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.5)';
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLDivElement).style.transform = '';
-        (e.currentTarget as HTMLDivElement).style.boxShadow = '';
+        boxShadow: 'none',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: '0 6px 24px rgba(0,0,0,0.5)',
+        },
       }}
     >
       {/* Category accent bar */}
-      <div style={{ height: 3, background: `linear-gradient(90deg, ${category.color}, ${category.color}44)` }} />
+      <Box sx={{ height: 3, background: `linear-gradient(90deg, ${category.color}, ${category.color}44)` }} />
 
-      <div style={{ padding: compact ? '12px 14px' : '16px 18px' }}>
+      <Box sx={{ p: compact ? '12px 14px' : '16px 18px' }}>
         {/* Header row: org + save */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: 1.25 }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, flex: 1 }}>
             {/* Org avatar */}
-            <div style={{
-              width: 32, height: 32, borderRadius: 10, flexShrink: 0, overflow: 'hidden',
-              background: `${category.color}18`, border: `1px solid ${category.color}30`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-            }}>
-              {hunt.tenantLogo
-                ? <img src={hunt.tenantLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <span>{category.emoji}</span>}
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: t.txtFaint, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <Avatar
+              src={hunt.tenantLogo ?? undefined}
+              sx={{
+                width: 32,
+                height: 32,
+                borderRadius: '10px',
+                flexShrink: 0,
+                bgcolor: `${category.color}18`,
+                border: `1px solid ${category.color}30`,
+                fontSize: 16,
+              }}
+            >
+              {!hunt.tenantLogo && <span>{category.emoji}</span>}
+            </Avatar>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  display: 'block',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: 'text.secondary',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
                 {hunt.tenantName ?? 'Organization'}
-                {hunt.isVerified && <Shield size={9} strokeWidth={2} style={{ color: t.info, marginLeft: 4, display: 'inline' }} />}
-              </p>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {hunt.isVerified && (
+                  <Shield size={9} strokeWidth={2} style={{ color: t.info, marginLeft: 4, display: 'inline', verticalAlign: 'middle' }} />
+                )}
+              </Typography>
+            </Box>
+          </Stack>
+          <Stack direction="row" alignItems="center" spacing={1}>
             {matchScore != null && <MatchRing score={matchScore} size={36} strokeWidth={3} />}
-            <button
+            <IconButton
+              size="small"
               onClick={handleSave}
               title={saved ? 'Unsave' : 'Save'}
               disabled={saving}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: saved ? t.accent : t.txtFaint, flexShrink: 0 }}
+              sx={{
+                color: saved ? t.accent : 'text.secondary',
+                p: 0.5,
+                flexShrink: 0,
+              }}
             >
               {saved
                 ? <BookmarkCheck size={16} strokeWidth={2} />
                 : <Bookmark size={16} strokeWidth={1.8} />}
-            </button>
-          </div>
-        </div>
+            </IconButton>
+          </Stack>
+        </Stack>
 
         {/* Title */}
-        <h3 style={{ margin: '0 0 6px', fontSize: compact ? 14 : 15, fontWeight: 800, color: t.txt, lineHeight: 1.3, letterSpacing: '-0.01em' }}>
+        <Typography
+          variant="subtitle2"
+          sx={{
+            mb: 0.75,
+            fontSize: compact ? 14 : 15,
+            fontWeight: 800,
+            color: 'text.primary',
+            lineHeight: 1.3,
+            letterSpacing: '-0.01em',
+          }}
+        >
           {hunt.title}
-        </h3>
+        </Typography>
 
         {/* Description */}
         {!compact && hunt.story_context && (
-          <p style={{ margin: '0 0 12px', fontSize: 12, color: t.txtDim, lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          <Typography
+            variant="body2"
+            sx={{
+              mb: 1.5,
+              fontSize: 12,
+              color: 'text.secondary',
+              lineHeight: 1.55,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
             {hunt.story_context}
-          </p>
+          </Typography>
         )}
 
         {/* Tags */}
         {!compact && hunt.tags?.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 12 }}>
+          <Stack direction="row" flexWrap="wrap" gap={0.625} sx={{ mb: 1.5 }}>
             {hunt.tags.slice(0, 3).map((tag) => (
-              <span key={tag} style={{ fontSize: 10, fontWeight: 600, color: category.color, background: `${category.color}14`, padding: '2px 8px', borderRadius: 100 }}>
-                {tag}
-              </span>
+              <Chip
+                key={tag}
+                label={tag}
+                size="small"
+                sx={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  height: 20,
+                  color: category.color,
+                  bgcolor: `${category.color}14`,
+                  borderRadius: '100px',
+                  '& .MuiChip-label': { px: '8px' },
+                }}
+              />
             ))}
             {hunt.tags.length > 3 && (
-              <span style={{ fontSize: 10, fontWeight: 500, color: t.txtFaint }}>+{hunt.tags.length - 3}</span>
+              <Typography variant="caption" sx={{ fontSize: 10, fontWeight: 500, color: 'text.secondary', alignSelf: 'center' }}>
+                +{hunt.tags.length - 3}
+              </Typography>
             )}
-          </div>
+          </Stack>
         )}
 
         {/* Reward + meta row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <Stack direction="row" alignItems="center" flexWrap="wrap" gap={1}>
           {/* Cash reward */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${t.accent}14`, borderRadius: 8, padding: '4px 10px' }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: t.accent }}>${cash}</span>
-          </div>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: `${t.accent}14`, borderRadius: '8px', px: 1.25, py: 0.5 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 800, color: t.accent }}>${cash}</Typography>
+          </Box>
 
           {/* XP */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          <Stack direction="row" alignItems="center" spacing={0.375}>
             <Zap size={11} strokeWidth={2} style={{ color: t.ai }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: t.ai }}>{xp} XP</span>
-          </div>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: t.ai }}>{xp} XP</Typography>
+          </Stack>
 
           {/* Time */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          <Stack direction="row" alignItems="center" spacing={0.375}>
             <Clock size={11} strokeWidth={1.8} style={{ color: t.txtFaint }} />
-            <span style={{ fontSize: 11, color: t.txtFaint }}>{hunt.estimated_time}</span>
-          </div>
+            <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{hunt.estimated_time}</Typography>
+          </Stack>
 
           {/* Distance */}
           {distanceKm != null && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Stack direction="row" alignItems="center" spacing={0.375}>
               <MapPin size={11} strokeWidth={1.8} style={{ color: t.txtFaint }} />
-              <span style={{ fontSize: 11, color: t.txtFaint }}>{distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)}km`}</span>
-            </div>
+              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+                {distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)}km`}
+              </Typography>
+            </Stack>
           )}
-        </div>
+        </Stack>
 
         {/* Bottom row: badges */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+        <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.75} sx={{ mt: 1.25 }}>
           {/* Difficulty */}
-          <span style={{ fontSize: 10, fontWeight: 700, color: diff.color, background: diff.bg, padding: '3px 8px', borderRadius: 100 }}>
-            {diff.label}
-          </span>
+          <Chip
+            label={diff.label}
+            size="small"
+            sx={{
+              fontSize: 10,
+              fontWeight: 700,
+              height: 20,
+              color: diff.color,
+              bgcolor: diff.bg,
+              borderRadius: '100px',
+              '& .MuiChip-label': { px: '8px' },
+            }}
+          />
 
           {/* Mission type */}
           {typeMeta && (
-            <span style={{ fontSize: 10, fontWeight: 600, color: typeMeta.color, background: `${typeMeta.color}14`, padding: '3px 8px', borderRadius: 100 }}>
-              {typeMeta.emoji} {typeMeta.label}
-            </span>
+            <Chip
+              label={`${typeMeta.emoji} ${typeMeta.label}`}
+              size="small"
+              sx={{
+                fontSize: 10,
+                fontWeight: 600,
+                height: 20,
+                color: typeMeta.color,
+                bgcolor: `${typeMeta.color}14`,
+                borderRadius: '100px',
+                '& .MuiChip-label': { px: '8px' },
+              }}
+            />
           )}
 
           {/* Deadline */}
-          {dl && <span style={{ fontSize: 10, fontWeight: 600, color: dl.color, marginLeft: 'auto' }}>{dl.label}</span>}
+          {dl && (
+            <Typography sx={{ fontSize: 10, fontWeight: 600, color: dl.color, ml: 'auto' }}>
+              {dl.label}
+            </Typography>
+          )}
 
           {/* Spots */}
-          {!dl && sl && <span style={{ fontSize: 10, fontWeight: 600, color: sl.color, marginLeft: 'auto' }}>{sl.label}</span>}
+          {!dl && sl && (
+            <Typography sx={{ fontSize: 10, fontWeight: 600, color: sl.color, ml: 'auto' }}>
+              {sl.label}
+            </Typography>
+          )}
 
           {/* Demand */}
-          {demand && <span style={{ fontSize: 10, fontWeight: 600, color: t.warning }}>{demand}</span>}
+          {demand && (
+            <Typography sx={{ fontSize: 10, fontWeight: 600, color: t.warning }}>
+              {demand}
+            </Typography>
+          )}
 
           {/* Verification / mission status */}
           {(verificationStatus || missionStatus) && (
             <StatusPill status={verificationStatus ?? missionStatus!} />
           )}
-        </div>
-      </div>
-    </div>
+        </Stack>
+      </Box>
+    </Card>
   );
 
   if (onClick) return inner;

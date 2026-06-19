@@ -1,3 +1,8 @@
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Avatar from '@mui/material/Avatar';
+import { alpha } from '@mui/material/styles';
 import { t } from '@/theme/colors';
 
 interface PageHeaderProps {
@@ -23,35 +28,64 @@ export default function PageHeader({
 }: PageHeaderProps) {
   const showAvatar = !!(avatarUrl || initials);
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12,
-      padding: '16px 20px',
-      ...(sticky ? { position: 'sticky', top: 0, zIndex: 30, background: `${t.bg}E6`, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' } : {}),
-      ...(borderBottom ? { borderBottom: `1px solid ${t.border}` } : {}),
-    }}>
+    <Box
+      className={sticky ? 'sticky top-0 z-30' : ''}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        px: 2.5,
+        py: 2,
+        ...(sticky ? {
+          bgcolor: alpha(t.bg, 0.9),
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+        } : {}),
+        ...(borderBottom ? {
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        } : {}),
+      }}
+    >
       {showAvatar && (
-        <div style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, overflow: 'hidden', background: `${t.accent}26`, border: `1px solid ${t.accent}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {avatarUrl
-            ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <span style={{ fontSize: 14, fontWeight: 700, color: t.accent }}>{(initials ?? 'U').slice(0, 2).toUpperCase()}</span>}
-        </div>
+        <Avatar
+          src={avatarUrl ?? undefined}
+          sx={{
+            width: 40,
+            height: 40,
+            flexShrink: 0,
+            bgcolor: `${t.accent}26`,
+            border: `1px solid ${t.accent}40`,
+            color: t.accent,
+            fontWeight: 700,
+            fontSize: 14,
+          }}
+        >
+          {!avatarUrl && (initials ?? 'U').slice(0, 2).toUpperCase()}
+        </Avatar>
       )}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
         {greeting && (
-          <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: t.txtFaint, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+          <Typography
+            variant="caption"
+            sx={{ display: 'block', fontWeight: 600, color: 'text.secondary', letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: 11 }}
+          >
             {greeting}
-          </p>
+          </Typography>
         )}
-        <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: t.txt, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em', lineHeight: 1.2, fontSize: 18 }}
+        >
           {title}
-        </h1>
+        </Typography>
         {subtitle && (
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: t.txtFaint }}>{subtitle}</p>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: '2px', fontSize: 12 }}>
+            {subtitle}
+          </Typography>
         )}
-      </div>
-      {action && <div style={{ flexShrink: 0 }}>{action}</div>}
-    </div>
+      </Box>
+      {action && <Box sx={{ flexShrink: 0 }}>{action}</Box>}
+    </Box>
   );
 }

@@ -1,5 +1,8 @@
 'use client';
 
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Chip from '@mui/material/Chip';
 import { SlidersHorizontal } from 'lucide-react';
 import { t } from '@/theme/colors';
 import type { Category } from '@/lib/missionCategories';
@@ -31,95 +34,120 @@ export default function FilterBar({
   compact = false,
 }: FilterBarProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <Stack direction="column" spacing={1.25}>
       {/* Category chips */}
       {categories && (
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', padding: '0 0 2px', WebkitOverflowScrolling: 'touch' }}>
+        <Box sx={{
+          display: 'flex',
+          gap: 1,
+          overflowX: 'auto',
+          pb: 0.25,
+          '&::-webkit-scrollbar': { display: 'none' },
+          scrollbarWidth: 'none',
+          WebkitOverflowScrolling: 'touch',
+        }}>
           {categories.map((cat) => {
             const active = activeCategory === cat.id;
             return (
-              <button
+              <Chip
                 key={cat.id}
+                label={<><span>{cat.emoji}</span> {cat.label}</>}
                 onClick={() => onCategory?.(cat.id)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  padding: compact ? '5px 10px' : '7px 14px',
-                  borderRadius: 100,
-                  border: active ? `1.5px solid ${cat.color}` : `1px solid rgba(255,255,255,0.08)`,
-                  background: active ? `${cat.color}18` : t.card,
-                  color: active ? cat.color : t.txtDim,
-                  fontSize: 12,
-                  fontWeight: active ? 700 : 500,
-                  whiteSpace: 'nowrap',
-                  cursor: 'pointer',
+                size={compact ? 'small' : 'medium'}
+                sx={{
                   flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                  fontWeight: active ? 700 : 500,
+                  fontSize: 12,
+                  cursor: 'pointer',
                   transition: 'all 0.15s',
+                  ...(active ? {
+                    bgcolor: `${cat.color}18`,
+                    color: cat.color,
+                    border: `1.5px solid ${cat.color}`,
+                  } : {
+                    bgcolor: t.card,
+                    color: t.txtDim,
+                    border: `1px solid rgba(255,255,255,0.08)`,
+                  }),
+                  borderRadius: '100px',
+                  '&:hover': {
+                    bgcolor: active ? `${cat.color}28` : 'rgba(255,255,255,0.06)',
+                  },
                 }}
-              >
-                <span>{cat.emoji}</span>
-                {cat.label}
-              </button>
+              />
             );
           })}
-        </div>
+        </Box>
       )}
 
       {/* Sort row */}
       {(sortOptions || onFilterSheet) && (
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <Stack direction="row" alignItems="center" spacing={1}>
           {sortOptions && (
-            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', flex: 1 }}>
+            <Box sx={{
+              display: 'flex',
+              gap: 0.75,
+              overflowX: 'auto',
+              flex: 1,
+              '&::-webkit-scrollbar': { display: 'none' },
+              scrollbarWidth: 'none',
+            }}>
               {sortOptions.map((s) => {
                 const active = activeSort === s.id;
                 return (
-                  <button
+                  <Chip
                     key={s.id}
+                    label={s.label}
                     onClick={() => onSort?.(s.id)}
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: 10,
-                      border: active ? `1px solid ${t.accent}60` : `1px solid rgba(255,255,255,0.06)`,
-                      background: active ? `${t.accent}14` : 'rgba(255,255,255,0.03)',
-                      color: active ? t.accent : t.txtFaint,
-                      fontSize: 11,
-                      fontWeight: active ? 700 : 500,
-                      whiteSpace: 'nowrap',
-                      cursor: 'pointer',
+                    size="small"
+                    sx={{
                       flexShrink: 0,
+                      whiteSpace: 'nowrap',
+                      fontWeight: active ? 700 : 500,
+                      fontSize: 11,
+                      cursor: 'pointer',
+                      borderRadius: '10px',
+                      ...(active ? {
+                        bgcolor: `${t.accent}14`,
+                        color: t.accent,
+                        border: `1px solid ${t.accent}60`,
+                      } : {
+                        bgcolor: 'rgba(255,255,255,0.03)',
+                        color: t.txtFaint,
+                        border: `1px solid rgba(255,255,255,0.06)`,
+                      }),
+                      '&:hover': {
+                        bgcolor: active ? `${t.accent}20` : 'rgba(255,255,255,0.06)',
+                      },
                     }}
-                  >
-                    {s.label}
-                  </button>
+                  />
                 );
               })}
-            </div>
+            </Box>
           )}
           {onFilterSheet && (
-            <button
+            <Chip
+              icon={<SlidersHorizontal size={13} strokeWidth={2} />}
+              label="Filters"
               onClick={onFilterSheet}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 12px',
-                borderRadius: 10,
-                border: `1px solid rgba(255,255,255,0.10)`,
-                background: t.card,
-                color: t.txtDim,
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
+              size="small"
+              sx={{
                 flexShrink: 0,
+                fontWeight: 600,
+                fontSize: 12,
+                cursor: 'pointer',
+                borderRadius: '10px',
+                bgcolor: t.card,
+                color: t.txtDim,
+                border: `1px solid rgba(255,255,255,0.10)`,
+                '& .MuiChip-icon': { color: t.txtDim },
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
               }}
-            >
-              <SlidersHorizontal size={13} strokeWidth={2} />
-              Filters
-            </button>
+            />
           )}
-        </div>
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }

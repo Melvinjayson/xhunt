@@ -1,3 +1,4 @@
+import Box from '@mui/material/Box';
 import { t } from '@/theme/colors';
 
 interface MatchRingProps {
@@ -19,7 +20,7 @@ export default function MatchRing({ score, size = 48, strokeWidth = 4, showLabel
     t.txtFaint;
 
   return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+    <Box sx={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <circle
           cx={size / 2}
@@ -42,15 +43,15 @@ export default function MatchRing({ score, size = 48, strokeWidth = 4, showLabel
         />
       </svg>
       {showLabel && (
-        <div style={{
+        <Box sx={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexDirection: 'column',
         }}>
           <span style={{ fontSize: size < 44 ? 10 : 12, fontWeight: 800, color, lineHeight: 1 }}>{Math.round(pct)}</span>
           {size >= 44 && <span style={{ fontSize: 8, color: t.txtFaint, fontWeight: 600, letterSpacing: '0.03em' }}>%</span>}
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }

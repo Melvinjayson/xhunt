@@ -1,5 +1,6 @@
 'use client';
 
+import Box from '@mui/material/Box';
 import AIAssistant from '@/components/AIAssistant';
 import type { AIHuntContext } from '@/components/AIAssistant';
 
@@ -11,8 +12,8 @@ interface CopilotFabProps {
 // Place this in the root of consumer pages to make the copilot globally available.
 export default function CopilotFab({ context }: CopilotFabProps) {
   return (
-    <div style={{ position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', right: 16, zIndex: 90 }}>
+    <Box sx={{ position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', right: 16, zIndex: 90 }}>
       <AIAssistant context={context} />
-    </div>
+    </Box>
   );
 }

@@ -1,3 +1,5 @@
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import { t } from '@/theme/colors';
 import type { VerificationStatus } from '@/lib/types';
 
@@ -36,40 +38,45 @@ interface StatusPillProps {
 
 export default function StatusPill({ status, size = 'sm', className }: StatusPillProps) {
   const cfg = STATUS_CONFIG[status] ?? { label: status, color: t.txtFaint, bg: 'rgba(255,255,255,0.06)' };
-  const px = size === 'md' ? 10 : 7;
-  const py = size === 'md' ? 5 : 3;
-  const fs = size === 'md' ? 12 : 10;
+  const showDot = !!cfg.dot;
 
   return (
-    <span
-      className={className}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 5,
-        padding: `${py}px ${px}px`,
-        borderRadius: 100,
-        background: cfg.bg,
-        color: cfg.color,
-        fontSize: fs,
-        fontWeight: 600,
-        letterSpacing: '0.03em',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {cfg.dot && (
-        <span
+    <Chip
+      size="small"
+      icon={showDot ? (
+        <Box
           className={cfg.pulse ? 'breathe' : undefined}
-          style={{
+          sx={{
             width: size === 'md' ? 6 : 5,
             height: size === 'md' ? 6 : 5,
             borderRadius: '50%',
-            background: cfg.color,
+            bgcolor: cfg.color,
+            ml: 0.5,
             flexShrink: 0,
           }}
         />
-      )}
-      {cfg.label}
-    </span>
+      ) : undefined}
+      label={cfg.label}
+      className={className}
+      sx={{
+        height: size === 'sm' ? 20 : 24,
+        fontSize: size === 'sm' ? 10 : 12,
+        fontWeight: 600,
+        letterSpacing: '0.03em',
+        whiteSpace: 'nowrap',
+        color: cfg.color,
+        bgcolor: cfg.bg,
+        border: 'none',
+        borderRadius: '100px',
+        '& .MuiChip-label': {
+          px: size === 'sm' ? '7px' : '10px',
+        },
+        '& .MuiChip-icon': {
+          color: cfg.color,
+          ml: 0.75,
+          mr: -0.25,
+        },
+      }}
+    />
   );
 }

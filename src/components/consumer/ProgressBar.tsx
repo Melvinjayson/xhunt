@@ -1,7 +1,12 @@
+'use client';
+import Box from '@mui/material/Box';
+import LinearProgress from '@mui/material/LinearProgress';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import { t } from '@/theme/colors';
 
 interface ProgressBarProps {
-  value: number; // 0–100
+  value: number;
   color?: string;
   height?: number;
   label?: string;
@@ -9,28 +14,31 @@ interface ProgressBarProps {
   style?: React.CSSProperties;
 }
 
-export default function ProgressBar({ value, color = t.accent, height = 5, label, showPercent, style }: ProgressBarProps) {
-  const pct = Math.max(0, Math.min(100, value));
+export default function ProgressBar({ value, color, height = 6, label, showPercent, style }: ProgressBarProps) {
+  const clampedValue = Math.min(100, Math.max(0, value));
+  const barColor = color ?? t.accent;
+
   return (
-    <div style={style}>
+    <Box style={style}>
       {(label || showPercent) && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-          {label && <span style={{ fontSize: 11, color: t.txtFaint, fontWeight: 500 }}>{label}</span>}
-          {showPercent && <span style={{ fontSize: 11, color: color, fontWeight: 700 }}>{Math.round(pct)}%</span>}
-        </div>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+          {label && <Typography variant="caption" color="text.secondary">{label}</Typography>}
+          {showPercent && <Typography variant="caption" sx={{ color: barColor, fontWeight: 700 }}>{Math.round(clampedValue)}%</Typography>}
+        </Stack>
       )}
-      <div style={{ width: '100%', height, borderRadius: height, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-        <div style={{
-          height: '100%',
-          width: `${pct}%`,
-          borderRadius: height,
-          background: pct >= 100
-            ? `linear-gradient(90deg, ${color}, ${t.accent})`
-            : color,
-          transition: 'width 0.6s ease',
-          boxShadow: pct > 0 ? `0 0 8px ${color}66` : 'none',
-        }} />
-      </div>
-    </div>
+      <LinearProgress
+        variant="determinate"
+        value={clampedValue}
+        sx={{
+          height,
+          borderRadius: height / 2,
+          bgcolor: 'rgba(255,255,255,0.07)',
+          '& .MuiLinearProgress-bar': {
+            borderRadius: height / 2,
+            bgcolor: barColor,
+          },
+        }}
+      />
+    </Box>
   );
 }
