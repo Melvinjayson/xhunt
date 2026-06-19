@@ -355,6 +355,28 @@ export default function RewardsPage() {
           </button>
         </motion.div>
 
+        {/* ─── Community Exchange CTA ─── */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.40 }}>
+          <button
+            onClick={() => router.push('/community')}
+            style={{
+              width: '100%', marginBottom: 12, padding: '18px 20px', borderRadius: 20, cursor: 'pointer',
+              background: `linear-gradient(135deg, ${t.accent}10, ${t.info}0A)`,
+              border: `1px solid ${t.accent}28`,
+              display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left',
+            }}
+          >
+            <div style={{ width: 46, height: 46, borderRadius: 14, background: `${t.accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Star size={20} style={{ color: t.accent }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 700, color: t.txt }}>Community Exchange</p>
+              <p style={{ margin: 0, fontSize: 12, color: t.txtDim }}>Pool resources with other hunters, join crowd tasks, and earn recognition from the community.</p>
+            </div>
+            <ChevronRight size={18} style={{ color: t.accent, flexShrink: 0 }} />
+          </button>
+        </motion.div>
+
         {/* ─── Barter Exchange CTA ─── */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }}>
           <button

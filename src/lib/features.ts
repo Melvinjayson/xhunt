@@ -11,6 +11,7 @@ export interface NavFlags {
   rewards: boolean;
   marketplace: boolean;
   governance: boolean;
+  community: boolean;
   developers: boolean;
 }
 
@@ -53,6 +54,7 @@ const STARTER_NAV: NavFlags = {
   rewards: false,
   marketplace: false,
   governance: false,
+  community: false,
   developers: false,
 };
 
@@ -67,6 +69,7 @@ const GROWTH_NAV: NavFlags = {
   rewards: true,
   marketplace: true,
   governance: false,
+  community: true,
   developers: false,
 };
 
@@ -81,6 +84,7 @@ const ENTERPRISE_NAV: NavFlags = {
   rewards: true,
   marketplace: true,
   governance: true,
+  community: true,
   developers: true,
 };
 

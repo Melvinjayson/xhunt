@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Layers, Radar, TrendingUp,
   BarChart3, Bot, Cpu,
   Coins, Globe,
-  ShieldCheck, Plug,
+  ShieldCheck, Plug, Users,
   CreditCard, Settings,
   ChevronDown, Plus, Sparkles, Zap, Building2,
   Lock, Sun, Moon,
@@ -58,6 +58,7 @@ const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
   {
     group: 'PLATFORM',
     items: [
+      { href: '/workspace/community',    label: 'Community',   icon: Users,       flag: 'community',   minTier: 'growth' },
       { href: '/workspace/governance',   label: 'Governance',  icon: ShieldCheck, flag: 'governance',  minTier: 'enterprise' },
       { href: '/workspace/integrations', label: 'Integrations',icon: Plug,        flag: null },
     ],

@@ -96,6 +96,7 @@ const NAV_FEATURE_LABELS: Record<keyof NavFlags, string> = {
   rewards:       'Rewards',
   marketplace:   'Marketplace',
   governance:    'Governance',
+  community:     'Community Exchange',
   developers:    'Developer Portal',
 };
 
