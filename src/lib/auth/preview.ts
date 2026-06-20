@@ -4,7 +4,13 @@ const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? 'change-this-to-a-long-random-secret-at-least-64-chars',
 );
 
-export const PREVIEW_ENABLED = process.env.PREVIEW_MODE === 'true';
+/**
+ * Preview mode is ONLY active when PREVIEW_MODE=true is explicitly set.
+ * It is never active in production (NODE_ENV=production ignores this flag).
+ * Production auth runs through the Python backend (NEXT_PUBLIC_AUTH_URL).
+ */
+export const PREVIEW_ENABLED =
+  process.env.PREVIEW_MODE === 'true' && process.env.NODE_ENV !== 'production';
 
 // Fixed tenant ID used for all workspace preview sessions
 const PREVIEW_TENANT_ID = '00000000-0000-0000-0000-preview000001';

@@ -1,54 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PREVIEW_ENABLED, createPreviewSession } from '@/lib/auth/preview';
 
 const BACKEND = process.env.NEXT_PUBLIC_AUTH_URL ?? '';
 
-const SESSION_OPTS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
-  path: '/',
-};
-
-const AT_OPTS = {
-  httpOnly: false,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
-  path: '/',
-};
-
-function cookieResponse(data: Record<string, unknown>, token: { access_token: string; expires_in: number }) {
-  const res = NextResponse.json(data);
-  res.cookies.set('__xhunt_session', token.access_token, { ...SESSION_OPTS, maxAge: token.expires_in });
-  res.cookies.set('__xhunt_at', token.access_token, { ...AT_OPTS, maxAge: token.expires_in });
-  return res;
-}
-
-async function previewFallback(email: string, surface?: string) {
-  const opts = surface === 'workspace' || surface === 'admin'
-    ? { surface: 'workspace' as const }
-    : undefined;
-  const session = await createPreviewSession(email, email.split('@')[0], opts);
-  return cookieResponse(session, session.token);
-}
+const SECURE   = process.env.NODE_ENV === 'production';
+const BASE_COOKIE = { secure: SECURE, sameSite: 'lax' as const, path: '/' };
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const email = body.email as string;
-  const surface = body.surface as string | undefined;
-
-  // Explicit preview mode: accept any credentials
-  if (PREVIEW_ENABLED) {
-    return previewFallback(email, surface);
-  }
-
-  // No backend URL configured
   if (!BACKEND) {
-    console.warn('[login] NEXT_PUBLIC_AUTH_URL not set — using preview mode');
-    return previewFallback(email, surface);
+    console.error('[login] NEXT_PUBLIC_AUTH_URL is not set');
+    return NextResponse.json(
+      { detail: 'Authentication service is not configured' },
+      { status: 503 },
+    );
   }
 
-  let upstream: Response | null = null;
+  let upstream: Response;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10_000);
@@ -56,35 +22,47 @@ export async function POST(req: NextRequest) {
       upstream = await fetch(`${BACKEND}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(await req.json()),
         signal: controller.signal,
       });
     } finally {
       clearTimeout(timeout);
     }
-  } catch (e) {
-    console.warn('[login] backend unreachable, falling back to preview mode:', e);
-    return previewFallback(email, surface);
+  } catch (err) {
+    console.error('[login] backend unreachable:', err);
+    return NextResponse.json(
+      { detail: 'Authentication service temporarily unavailable. Please try again shortly.' },
+      { status: 503 },
+    );
   }
 
+  // Forward 401 (wrong credentials) and 409 (already exists) directly to client
   if (!upstream.ok) {
-    // Forward real credential errors (401 wrong password) to the user
-    // For 4xx server/config errors, fall back to preview mode
-    if (upstream.status === 401) {
-      const data = await upstream.json().catch(() => ({ detail: 'Invalid email or password' }));
-      return NextResponse.json(data, { status: 401 });
-    }
-    console.warn('[login] backend returned', upstream.status, '— using preview mode as fallback');
-    return previewFallback(email, surface);
+    const data = await upstream.json().catch(() => ({ detail: 'Login failed' }));
+    return NextResponse.json(data, { status: upstream.status });
   }
 
-  let data: Record<string, unknown>;
-  try {
-    data = await upstream.json();
-  } catch {
-    return previewFallback(email, surface);
-  }
+  const data = await upstream.json() as {
+    token: { access_token: string; expires_in: number; refresh_token?: string };
+    user: Record<string, unknown>;
+  };
+  const { access_token, expires_in, refresh_token } = data.token;
 
-  const token = data.token as { access_token: string; expires_in: number };
-  return cookieResponse(data, token);
+  const res = NextResponse.json(data);
+  // httpOnly session token — read by middleware / server components
+  res.cookies.set('__xhunt_session', access_token, {
+    ...BASE_COOKIE, httpOnly: true, maxAge: expires_in,
+  });
+  // Non-httpOnly copy — read by Supabase client for RLS authorization header
+  res.cookies.set('__xhunt_at', access_token, {
+    ...BASE_COOKIE, httpOnly: false, maxAge: expires_in,
+  });
+  // Refresh token — httpOnly, long-lived
+  if (refresh_token) {
+    res.cookies.set('__xhunt_refresh', refresh_token, {
+      ...BASE_COOKIE, httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+    });
+  }
+  return res;
 }
