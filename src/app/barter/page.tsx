@@ -826,7 +826,7 @@ export default function BarterPage() {
         </button>
       </div>
 
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '0 16px' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px' }}>
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar" style={{ padding: '14px 0 4px' }}>
           {TABS.map(({ id, label }) => {

@@ -38,15 +38,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Update user profile
+  // Update user profile — use update (not upsert) to avoid FK violation on auth.users
+  // when the session comes from preview mode (user.id won't exist in auth.users).
   const { error: profileErr } = await admin
     .from('user_profiles')
-    .upsert({
-      id: user.id,
+    .update({
       tenant_id: tenant.id,
       role: 'tenant_admin',
       onboarding_complete: true,
-    });
+    })
+    .eq('id', user.id);
 
   if (profileErr) {
     // Roll back tenant creation

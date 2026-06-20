@@ -97,6 +97,15 @@ function ImpactDNAReveal({ profile, onContinue }: { profile: ImpactProfile; onCo
         </motion.div>
       </div>
 
+      {profile.summary && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}
+          style={{ background: `linear-gradient(135deg, ${archetypeColor}08, ${t.ai}08)`, border: `1px solid ${archetypeColor}20`, borderRadius: 18, padding: '16px 20px', marginBottom: 14 }}>
+          <p style={{ fontSize: 13, color: t.txtDim, lineHeight: 1.65, margin: 0, fontStyle: 'italic' }}>
+            &ldquo;{profile.summary}&rdquo;
+          </p>
+        </motion.div>
+      )}
+
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
         style={{ background: t.card, border: `1px solid ${archetypeColor}18`, borderRadius: 18, padding: '18px 20px', marginBottom: 14 }}>
         <p style={{ fontSize: 10, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.09em', margin: '0 0 14px' }}>Strengths</p>
@@ -399,10 +408,10 @@ export default function GetStartedPage() {
 
   /* ─── chat screen ─── */
   return (
-    <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', flexDirection: 'column', maxWidth: 520, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', flexDirection: 'column', width: '100%' }}>
 
       {/* Top bar */}
-      <div style={{ padding: '20px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+      <div style={{ padding: '20px clamp(20px, 5vw, 80px) 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, maxWidth: 900, width: '100%', alignSelf: 'center' }}>
         <Image src="/xhunt-logo.png" alt="X-Hunt" width={160} height={120} style={{ height: 26, width: 'auto', objectFit: 'contain' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${t.accent}08`, border: `1px solid ${t.accent}18`, borderRadius: 999, padding: '4px 12px' }}>
           <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.8, repeat: Infinity }}
@@ -412,7 +421,7 @@ export default function GetStartedPage() {
       </div>
 
       {/* Progress section */}
-      <div style={{ margin: '14px 20px 0' }}>
+      <div style={{ margin: '14px auto 0', maxWidth: 900, width: '100%', padding: '0 clamp(20px, 5vw, 80px)' }}>
         {/* Stage labels */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: t.txtDim }}>
@@ -441,7 +450,7 @@ export default function GetStartedPage() {
       </div>
 
       {/* Messages */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 16px 6px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '18px clamp(16px, 5vw, 80px) 6px', display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 900, width: '100%', alignSelf: 'center' }}>
         <AnimatePresence initial={false}>
           {messages.map((msg, i) => (
             <motion.div key={i}
@@ -506,7 +515,7 @@ export default function GetStartedPage() {
       {/* Quick replies (next best actions) */}
       {quickReplies.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          style={{ padding: '4px 16px 6px', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+          style={{ padding: '4px clamp(16px, 5vw, 80px) 6px', display: 'flex', gap: 7, flexWrap: 'wrap', maxWidth: 900, width: '100%', alignSelf: 'center' }}>
           {quickReplies.map((r) => (
             <button key={r} onClick={() => handleSend(r)}
               style={{
@@ -524,7 +533,7 @@ export default function GetStartedPage() {
       {/* Generate profile button (after 5 messages) */}
       {userMsgCount >= 5 && phase === 'chat' && !isTyping && (
         <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-          style={{ padding: '6px 16px 4px' }}>
+          style={{ padding: '6px clamp(16px, 5vw, 80px) 4px', maxWidth: 900, width: '100%', alignSelf: 'center' }}>
           <button
             onClick={() => beginExtraction(messages)}
             style={{
@@ -542,7 +551,7 @@ export default function GetStartedPage() {
       )}
 
       {/* Input */}
-      <div style={{ padding: '10px 16px 28px', flexShrink: 0 }}>
+      <div style={{ padding: '10px clamp(16px, 5vw, 80px) 28px', flexShrink: 0, maxWidth: 900, width: '100%', alignSelf: 'center' }}>
         <div style={{ display: 'flex', gap: 10, background: t.card, border: '1px solid rgba(255,255,255,.08)',
           borderRadius: 18, padding: '8px 8px 8px 16px', alignItems: 'center' }}>
           <input

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
 import {
   Home, Compass, Target, MessageSquare, User,
-  LogOut, Sun, Moon,
+  LogOut, Sun, Moon, Wallet,
 } from 'lucide-react';
 import { useTotalUnread } from '@/hooks/useMessages';
 import { useState, useEffect } from 'react';
@@ -198,6 +198,32 @@ export default function BottomNav() {
             );
           })}
         </List>
+
+        {/* Secondary — Rewards & Earnings (desktop sidebar only) */}
+        <Box sx={{ px: 1, pb: 1, borderTop: '1px solid', borderColor: 'divider', pt: 1 }}>
+          <ListItemButton
+            component={Link}
+            href="/rewards"
+            selected={pathname === '/rewards' || pathname.startsWith('/rewards/')}
+            sx={{ borderRadius: '12px' }}
+          >
+            <ListItemIcon sx={{ minWidth: 36, color: pathname.startsWith('/rewards') ? 'primary.main' : 'text.secondary' }}>
+              <Wallet size={18} />
+            </ListItemIcon>
+            <ListItemText
+              primary="Rewards & Earnings"
+              slotProps={{
+                primary: {
+                  sx: {
+                    fontSize: 14,
+                    fontWeight: pathname.startsWith('/rewards') ? 700 : 500,
+                    color: pathname.startsWith('/rewards') ? 'text.primary' : 'text.secondary',
+                  },
+                },
+              }}
+            />
+          </ListItemButton>
+        </Box>
 
         {/* User + theme toggle + logout at bottom */}
         <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>

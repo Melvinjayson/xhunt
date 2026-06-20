@@ -131,6 +131,7 @@ export interface SkillScore {
 
 export interface ImpactProfile {
   archetype: string;           // e.g. "Systems Innovator"
+  summary: string;             // 2-3 sentence personalized description
   strengths: SkillScore[];     // top skills with scores
   causes: string[];            // e.g. ["Climate", "Education"]
   personality: string[];       // e.g. ["Builder", "Analyst"]
