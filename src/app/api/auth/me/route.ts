@@ -32,11 +32,14 @@ export async function GET(req: NextRequest) {
     catch { return NextResponse.json({ error: 'Not authenticated' }, { status: 401 }); }
   }
 
-  // Try backend first, fall back to local decode on any failure
+  // Try backend first (with timeout), fall back to local decode on any failure
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
   const upstream = await fetch(`${BACKEND}/auth/me`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
-  }).catch(() => null);
+    signal: controller.signal,
+  }).catch(() => null).finally(() => clearTimeout(timeout));
 
   if (upstream?.ok) return NextResponse.json(await upstream.json());
 

@@ -50,11 +50,18 @@ export async function POST(req: NextRequest) {
 
   let upstream: Response | null = null;
   try {
-    upstream = await fetch(`${BACKEND}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+    try {
+      upstream = await fetch(`${BACKEND}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
   } catch (e) {
     console.warn('[login] backend unreachable, falling back to preview mode:', e);
     return previewFallback(email, surface);
