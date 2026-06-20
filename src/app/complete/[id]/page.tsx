@@ -24,6 +24,7 @@ import StatusPill from '@/components/consumer/StatusPill';
 import MissionCard from '@/components/consumer/MissionCard';
 import Surface from '@/components/consumer/Surface';
 import type { Hunt, VerificationRecord, VerificationStatus } from '@/lib/types';
+import BottomNav from '@/components/BottomNav';
 
 // ── Verification pipeline ─────────────────────────────────────────────────
 
@@ -579,6 +580,7 @@ export default function CompletePage() {
 
   return (
     <Box className="consumer-app">
+      <BottomNav />
       <Box className="consumer-app-inner" sx={{ paddingBottom: '100px' }}>
         {/* Hero */}
         <HeroSection status={status} hunt={hunt} />

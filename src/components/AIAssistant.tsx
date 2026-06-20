@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Send, Loader2, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { t } from '@/theme/colors';
 
 export interface AIHuntContext {
   huntTitle?:       string;
@@ -28,17 +29,18 @@ interface TierStatus {
   hasUsedTrial: boolean;
 }
 
+// Token aliases for this component (mapped to t.* design tokens)
 const T = {
-  bg:     '#0e1719',
-  elev:   '#17262a',
-  line:   'rgba(255,255,255,.07)',
-  txt:    '#e9eff0',
-  muted:  '#7d8b8e',
-  dim:    '#54625f',
-  ai:     '#22d3ee',
-  aiBg:   '#001a22',
-  aiBord: 'rgba(34,211,238,.2)',
-  green:  '#27e07d',
+  bg:     t.surface,
+  elev:   t.card,
+  line:   t.border,
+  txt:    t.txt,
+  muted:  t.txtDim,
+  dim:    t.txtFaint,
+  ai:     t.info,
+  aiBg:   `${t.info}10`,
+  aiBord: `${t.info}30`,
+  green:  t.accent,
 } as const;
 
 const QUICK_PROMPTS = ['Give me a hint', "I'm stuck on this", 'Why does this step matter?'];
@@ -188,11 +190,11 @@ export default function AIAssistant({ context }: Props) {
                       whileTap={{ scale: 0.97 }}
                       onClick={() => { setOpen(false); router.push('/upgrade'); }}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 8, height: 50,
-                        padding: '0 26px', borderRadius: 999, border: 0, cursor: 'pointer',
-                        background: 'linear-gradient(180deg,#3ee888,#19c268)',
-                        color: '#04130b', fontSize: 14, fontWeight: 700,
-                        boxShadow: '0 4px 20px rgba(39,224,125,.35)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        width: '100%', height: 50, padding: '0 24px', borderRadius: 14, border: 0, cursor: 'pointer',
+                        background: `linear-gradient(135deg, ${T.green}, ${T.green}cc)`,
+                        color: t.bg, fontSize: 14, fontWeight: 700,
+                        boxShadow: `0 4px 20px ${T.green}44`,
                       }}
                     >
                       {tierStatus.hasUsedTrial ? 'Upgrade to Pro' : 'Start 14-Day Trial'}
@@ -235,8 +237,8 @@ export default function AIAssistant({ context }: Props) {
                             maxWidth: '86%',
                             padding: '10px 14px',
                             borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                            background: m.role === 'user' ? 'rgba(39,224,125,.1)' : T.elev,
-                            border: `1px solid ${m.role === 'user' ? 'rgba(39,224,125,.2)' : T.line}`,
+                            background: m.role === 'user' ? `${T.green}14` : T.elev,
+                            border: `1px solid ${m.role === 'user' ? `${T.green}28` : T.line}`,
                             fontSize: 13, lineHeight: 1.55,
                             color: m.role === 'user' ? T.green : T.txt,
                           }}
@@ -280,7 +282,7 @@ export default function AIAssistant({ context }: Props) {
                         disabled={!input.trim() || loading}
                         style={{
                           width: 44, height: 44, borderRadius: '50%', border: `1px solid ${T.line}`,
-                          background: input.trim() && !loading ? 'linear-gradient(180deg,#3ee888,#19c268)' : T.elev,
+                          background: input.trim() && !loading ? `linear-gradient(135deg, ${T.green}, ${T.green}cc)` : T.elev,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: input.trim() && !loading ? 'pointer' : 'default',
                           transition: 'background 0.2s',

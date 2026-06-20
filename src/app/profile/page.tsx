@@ -24,6 +24,7 @@ import type { CompletedHunt, ImpactProfile } from '@/lib/types';
 import { t } from '@/theme/colors';
 import Surface from '@/components/consumer/Surface';
 import ProgressBar from '@/components/consumer/ProgressBar';
+import BottomNav from '@/components/BottomNav';
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 interface SkillData {
@@ -233,9 +234,9 @@ export default function ProfilePage() {
 
   return (
     <div className="consumer-app" style={{ minHeight: '100vh', paddingBottom: 'max(100px, calc(72px + env(safe-area-inset-bottom, 0px)))', color: t.txt }}>
-      <div className="consumer-app-inner">
+      <BottomNav />
 
-        {/* ── Hero ── */}
+        {/* ── Hero — full-width, outside consumer-app-inner ── */}
         <Box
           sx={{
             padding: '72px 20px 32px',
@@ -341,8 +342,6 @@ export default function ProfilePage() {
             ))}
           </Grid>
         </Box>
-
-      </div>{/* end consumer-app-inner */}
 
       <Box sx={{ display: { xs: 'block', lg: 'flex' }, gap: 3, alignItems: 'flex-start', px: 2.5, py: 2.5 }}>
 
