@@ -246,9 +246,14 @@ export default function ProfilePage() {
         >
           {/* Title bar */}
           <Stack direction="row" sx={{ mb: 2.5, alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: t.txt, letterSpacing: '-0.02em' }}>
-              Impact Portfolio
-            </Typography>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: t.txt, letterSpacing: '-0.02em' }}>
+                Participation Passport
+              </Typography>
+              <Typography sx={{ fontSize: 11, color: t.txtFaint, lineHeight: 1.4 }}>
+                Your verified record of contributions &amp; impact
+              </Typography>
+            </Box>
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               {loading && <Loader2 size={14} color={t.txtFaint} style={{ animation: 'spin 1s linear infinite' }} />}
               <IconButton
@@ -322,10 +327,10 @@ export default function ProfilePage() {
           {/* Stats row */}
           <Grid container spacing={1}>
             {[
-              { label: 'MMS',      value: mms,                   color: t.accent,  Icon: TrendingUp },
-              { label: 'Missions', value: completedHunts.length, color: t.accent,  Icon: Trophy     },
-              { label: 'Skills',   value: skills.length,         color: t.ai,      Icon: Brain      },
-              { label: 'Impact',   value: impactScore,           color: t.warning, Icon: Star       },
+              { label: 'XP Score',  value: mms,                   color: t.accent,  Icon: TrendingUp },
+              { label: 'Completed', value: completedHunts.length, color: t.accent,  Icon: Trophy     },
+              { label: 'Skills',    value: skills.length,         color: t.ai,      Icon: Brain      },
+              { label: 'Impact',    value: impactScore,           color: t.warning, Icon: Star       },
             ].map(({ label, value, color, Icon }) => (
               <Grid key={label} size={{ xs: 6, sm: 3 }}>
                 <Box
@@ -733,7 +738,7 @@ export default function ProfilePage() {
           <section>
             <Stack direction="row" sx={{ mb: 1.75, alignItems: 'center', justifyContent: 'space-between' }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt }}>
-                Mission History {completedHunts.length > 0 && `(${completedHunts.length})`}
+                Participation Record {completedHunts.length > 0 && `(${completedHunts.length})`}
               </Typography>
               {completedHunts.length > 0 && (
                 <Link href="/missions" style={{ fontSize: 11, fontWeight: 600, color: t.accent, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>

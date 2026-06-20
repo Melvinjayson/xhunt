@@ -281,14 +281,14 @@ export default function HomePage() {
   const quickActions: QuickAction[] = [
     {
       icon: Compass,
-      label: 'Find Mission',
+      label: 'Find Opportunities',
       href: '/explore',
       color: t.accent,
       description: 'Discover new opportunities',
     },
     {
       icon: Play,
-      label: 'Continue',
+      label: 'My Progress',
       href: '/missions',
       color: t.ai,
       description: 'Resume your active missions',
@@ -299,13 +299,6 @@ export default function HomePage() {
       href: '/missions?tab=active',
       color: t.warning,
       description: 'Upload proof for review',
-    },
-    {
-      icon: Gift,
-      label: 'My Rewards',
-      href: '/rewards',
-      color: t.info,
-      description: 'View earnings and badges',
     },
   ];
 
@@ -364,124 +357,56 @@ export default function HomePage() {
 
         <div style={{ padding: '0 16px' }}>
 
-          {/* 2. Participation Wallet — Revolut-style hero */}
+          {/* 2. Featured Opportunity — opportunity-first hero */}
           <section style={{ marginTop: 16 }}>
-            <Box
-              onClick={() => router.push('/rewards')}
-              sx={{
-                borderRadius: '20px',
-                background: `linear-gradient(135deg, ${t.ai}28 0%, ${t.accent}12 100%)`,
-                border: `1px solid ${t.ai}35`,
-                p: 2.5,
-                cursor: 'pointer',
-                transition: 'opacity 0.15s',
-                '&:hover': { opacity: 0.9 },
-              }}
-            >
-              {/* wallet icon + label */}
-              <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center' }}>
-                <Wallet size={16} color={t.aiLight} />
-                <Typography variant="caption" sx={{ fontWeight: 600, color: t.aiLight, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: 11 }}>
-                  Participation Wallet
-                </Typography>
-              </Stack>
-
-              {/* main balance */}
-              <Typography sx={{ fontSize: 38, fontWeight: 800, color: 'text.primary', letterSpacing: '-1px', lineHeight: 1 }}>
-                ${rewardsBalance.toFixed(2)}
+            <Stack direction="row" sx={{ mb: 1.25, alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Ready for you
               </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
-                earned · {completedHunts.length} mission{completedHunts.length !== 1 ? 's' : ''} completed
-              </Typography>
-
-              {/* 4 wallet stats */}
-              <Grid container spacing={1} sx={{ mt: 2.5 }}>
-                {[
-                  { label: 'Available', value: `$${Math.max(0, rewardsBalance - rewardsBalance * 0.3).toFixed(0)}`, color: t.accent },
-                  { label: 'Pending', value: `$${(rewardsBalance * 0.3).toFixed(0)}`, color: t.warning },
-                  { label: 'Score', value: Math.round(reputationScore), color: t.aiLight },
-                  { label: 'Streak', value: `${streak}d`, color: t.info },
-                ].map(({ label, value, color }) => (
-                  <Grid key={label} size={{ xs: 3 }}>
-                    <Box sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: '12px', p: '10px 8px', textAlign: 'center' }}>
-                      <Typography sx={{ fontSize: 17, fontWeight: 800, color, lineHeight: 1 }}>{value}</Typography>
-                      <Typography variant="caption" sx={{ fontSize: 10, color: 'text.disabled', mt: 0.5, display: 'block' }}>{label}</Typography>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
+              <Box
+                component="button"
+                onClick={() => router.push('/explore')}
+                sx={{ background: 'none', border: 0, cursor: 'pointer', fontSize: 11, fontWeight: 600, color: t.accent, p: 0 }}
+              >
+                See all
+              </Box>
+            </Stack>
+            {loadingRecs ? (
+              <SkeletonCards count={1} />
+            ) : recommendations.length > 0 ? (
+              <MissionCard hunt={recommendations[0]} />
+            ) : (
+              <Surface variant="card" padding={0}>
+                <Box
+                  sx={{ p: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                  onClick={() => router.push('/explore')}
+                >
+                  <Box>
+                    <Typography sx={{ fontSize: 15, fontWeight: 700, color: t.txt, mb: 0.5 }}>
+                      Ready to participate?
+                    </Typography>
+                    <Typography sx={{ fontSize: 12, color: t.txtDim }}>
+                      Discover opportunities to earn, contribute, and create impact.
+                    </Typography>
+                  </Box>
+                  <ArrowRight size={18} color={t.accent} />
+                </Box>
+              </Surface>
+            )}
           </section>
 
-          {/* 3. Quick Actions — right after wallet */}
+          {/* 3. Quick Actions */}
           <section style={{ marginTop: 20 }}>
-            <QuickActionGrid actions={quickActions} columns={4} />
+            <QuickActionGrid actions={quickActions} columns={3} />
           </section>
 
-          {/* 4. Active Missions — compact continuation strip */}
-          {(huntsResolved && inProgressHunts.length > 0) && (
-            <section style={{ marginTop: 28 }}>
-              <SectionHeader
-                title="Continue"
-                count={inProgressHunts.length}
-                seeAllHref="/missions"
-              />
-              <Stack spacing={1} sx={{ mt: 1.25 }}>
-                {inProgressHunts.slice(0, 3).map(({ hunt, progress }) => {
-                  const stepsDone = progress.completedSteps.length;
-                  const stepsTotal = hunt.steps.length;
-                  const pct = stepsTotal > 0 ? (stepsDone / stepsTotal) * 100 : 0;
-                  return (
-                    <Surface
-                      key={hunt.id}
-                      variant="card"
-                      padding={0}
-                      hover
-                      onClick={() => router.push(`/active/${hunt.id}`)}
-                    >
-                      <Box sx={{ p: '12px 14px' }}>
-                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                          {/* progress ring placeholder */}
-                          <Box sx={{ width: 36, height: 36, borderRadius: '50%', border: `3px solid ${t.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative' }}>
-                            <svg width="36" height="36" style={{ position: 'absolute', top: -3, left: -3, transform: 'rotate(-90deg)' }}>
-                              <circle cx="18" cy="18" r="15" fill="none" stroke={t.accent} strokeWidth="3"
-                                strokeDasharray={`${2 * Math.PI * 15}`}
-                                strokeDashoffset={`${2 * Math.PI * 15 * (1 - pct / 100)}`}
-                                strokeLinecap="round"
-                              />
-                            </svg>
-                            <Typography sx={{ fontSize: 9, fontWeight: 800, color: 'primary.main', zIndex: 1 }}>
-                              {Math.round(pct)}%
-                            </Typography>
-                          </Box>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13 }} noWrap>
-                              {hunt.title}
-                            </Typography>
-                            <Typography variant="caption" color="text.disabled">
-                              Step {stepsDone}/{stepsTotal} · {hunt.reward}
-                            </Typography>
-                          </Box>
-                          <ArrowRight size={14} color={t.accent} />
-                        </Stack>
-                      </Box>
-                    </Surface>
-                  );
-                })}
-              </Stack>
-            </section>
-          )}
-
-          {/* 5. Opportunity Feed — Revolut-style cards */}
+          {/* 4. Ready for you — recommendation feed */}
           <section style={{ marginTop: 28 }}>
-            <SectionHeader
-              title={inProgressHunts.length === 0 ? 'Get Started' : 'Opportunities For You'}
-              seeAllHref="/explore"
-            />
+            <SectionHeader title="Ready for you" seeAllHref="/explore" />
             <Stack spacing={1.25} sx={{ mt: 1.25 }}>
               {loadingRecs ? (
                 <SkeletonCards count={3} />
-              ) : recommendations.length === 0 ? (
+              ) : recommendations.length <= 1 ? (
                 <EmptyState
                   icon={Compass}
                   title="No opportunities yet"
@@ -490,7 +415,7 @@ export default function HomePage() {
                   compact
                 />
               ) : (
-                recommendations.map((hunt) => (
+                recommendations.slice(1).map((hunt) => (
                   <Surface
                     key={hunt.id}
                     variant="card"
@@ -501,7 +426,6 @@ export default function HomePage() {
                     <Box sx={{ p: '14px 16px' }}>
                       <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start', justifyContent: 'space-between' }}>
                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                          {/* earn amount — prominent, like Revolut card */}
                           <Typography sx={{ fontSize: 20, fontWeight: 800, color: 'primary.main', lineHeight: 1, mb: 0.5 }}>
                             {hunt.reward}
                           </Typography>
@@ -542,9 +466,96 @@ export default function HomePage() {
             </Stack>
           </section>
 
-          {/* 6. Reputation + Streak — compact side-by-side */}
+          {/* 5. Continue where you left off — active opportunities */}
+          {(huntsResolved && inProgressHunts.length > 0) && (
+            <section style={{ marginTop: 28 }}>
+              <SectionHeader
+                title="Continue where you left off"
+                count={inProgressHunts.length}
+                seeAllHref="/missions"
+              />
+              <Stack spacing={1} sx={{ mt: 1.25 }}>
+                {inProgressHunts.slice(0, 3).map(({ hunt, progress }) => {
+                  const stepsDone = progress.completedSteps.length;
+                  const stepsTotal = hunt.steps.length;
+                  const pct = stepsTotal > 0 ? (stepsDone / stepsTotal) * 100 : 0;
+                  return (
+                    <Surface
+                      key={hunt.id}
+                      variant="card"
+                      padding={0}
+                      hover
+                      onClick={() => router.push(`/active/${hunt.id}`)}
+                    >
+                      <Box sx={{ p: '12px 14px' }}>
+                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                          <Box sx={{ width: 36, height: 36, borderRadius: '50%', border: `3px solid ${t.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative' }}>
+                            <svg width="36" height="36" style={{ position: 'absolute', top: -3, left: -3, transform: 'rotate(-90deg)' }}>
+                              <circle cx="18" cy="18" r="15" fill="none" stroke={t.accent} strokeWidth="3"
+                                strokeDasharray={`${2 * Math.PI * 15}`}
+                                strokeDashoffset={`${2 * Math.PI * 15 * (1 - pct / 100)}`}
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                            <Typography sx={{ fontSize: 9, fontWeight: 800, color: 'primary.main', zIndex: 1 }}>
+                              {Math.round(pct)}%
+                            </Typography>
+                          </Box>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontSize: 13 }} noWrap>
+                              {hunt.title}
+                            </Typography>
+                            <Typography variant="caption" color="text.disabled">
+                              Step {stepsDone}/{stepsTotal} · {hunt.reward}
+                            </Typography>
+                          </Box>
+                          <ArrowRight size={14} color={t.accent} />
+                        </Stack>
+                      </Box>
+                    </Surface>
+                  );
+                })}
+              </Stack>
+            </section>
+          )}
+
+          {/* 6. Wallet — compact card below fold */}
+          <Surface
+            variant="card"
+            padding={0}
+            hover
+            style={{ marginTop: 28, cursor: 'pointer' }}
+            onClick={() => router.push('/profile')}
+          >
+            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box>
+                <Typography sx={{ fontSize: 11, color: t.txtFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.25 }}>
+                  Wallet
+                </Typography>
+                <Typography sx={{ fontSize: 20, fontWeight: 900, color: t.txt }}>
+                  ${rewardsBalance.toFixed(2)}
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={2.5} sx={{ pr: 1 }}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: 14, fontWeight: 800, color: t.warning }}>🔥 {streak}</Typography>
+                  <Typography sx={{ fontSize: 9, color: t.txtFaint, textTransform: 'uppercase' }}>Streak</Typography>
+                </Box>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: 14, fontWeight: 800, color: t.ai }}>{completedHunts.length}</Typography>
+                  <Typography sx={{ fontSize: 9, color: t.txtFaint, textTransform: 'uppercase' }}>Done</Typography>
+                </Box>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: 14, fontWeight: 800, color: t.accent }}>{Math.round(reputationScore)}</Typography>
+                  <Typography sx={{ fontSize: 9, color: t.txtFaint, textTransform: 'uppercase' }}>Impact</Typography>
+                </Box>
+              </Stack>
+            </Box>
+          </Surface>
+
+          {/* 7. Your Reputation — compact side-by-side */}
           <section style={{ marginTop: 28 }}>
-            <SectionHeader title="Your Standing" seeAllHref="/profile" />
+            <SectionHeader title="Your Reputation" seeAllHref="/profile" />
             <Grid container spacing={1.5} sx={{ mt: 1.25 }}>
               {/* Streak */}
               <Grid size={{ xs: 6 }}>

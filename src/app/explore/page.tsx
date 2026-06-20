@@ -22,6 +22,17 @@ const SORT_OPTIONS = [
   { id: 'spots',       label: 'Most Spots' },
 ];
 
+const INTENT_FILTERS = [
+  { id: 'all',          label: 'All',          emoji: '✦' },
+  { id: 'paid',         label: 'Paid',         emoji: '💰' },
+  { id: 'community',    label: 'Community',    emoji: '🤝' },
+  { id: 'learning',     label: 'Learning',     emoji: '📚' },
+  { id: 'events',       label: 'Events',       emoji: '🎟️' },
+  { id: 'research',     label: 'Research',     emoji: '🔬' },
+  { id: 'volunteering', label: 'Volunteering', emoji: '🌱' },
+  { id: 'challenges',   label: 'Challenges',   emoji: '⚡' },
+];
+
 const LOCATION_OPTS = ['All', 'Remote', 'Local', 'Hybrid'];
 const DIFFICULTY_OPTS = ['All', 'Entry Level', 'Professional', 'Expert'];
 const DIFF_MAP: Record<string, Hunt['difficulty']> = { 'Entry Level': 'easy', 'Professional': 'medium', 'Expert': 'hard' };
@@ -35,6 +46,23 @@ function sortMissions(missions: Hunt[], sort: string): Hunt[] {
     case 'spots':    return copy.sort((a, b) => (b.spotsRemaining ?? 99) - (a.spotsRemaining ?? 99));
     default:         return copy;
   }
+}
+
+function applyIntentFilter(missions: Hunt[], intent: string): Hunt[] {
+  if (intent === 'all') return missions;
+  return missions.filter((h) => {
+    const cat = resolveCategory(h.tags ?? [], h.category).id;
+    switch (intent) {
+      case 'paid':        return estimateCashReward(h.cashReward, h.difficulty, h.missionType) > 0;
+      case 'community':   return ['community', 'civic-tech', 'social-equity', 'urban'].includes(cat);
+      case 'learning':    return ['education', 'future-of-work', 'arts'].includes(cat);
+      case 'events':      return (h.tags ?? []).some(tag => ['event', 'events', 'live-event'].includes(tag));
+      case 'research':    return h.missionType === 'research' || cat === 'health';
+      case 'volunteering':return ['climate', 'water', 'food-systems', 'circular'].includes(cat);
+      case 'challenges':  return h.difficulty === 'hard' || h.missionType === 'challenge';
+      default:            return true;
+    }
+  });
 }
 
 function filterMissions(missions: Hunt[], opts: { category: string; location: string; difficulty: string; query: string }): Hunt[] {
@@ -86,6 +114,7 @@ export default function ExplorePage() {
   const [filterOpen, setFilter]   = useState(false);
   const [locDraft, setLocDraft]   = useState('All');
   const [diffDraft, setDiffDraft] = useState('All');
+  const [intent, setIntent]       = useState('all');
 
   useEffect(() => {
     const base = loadState().hunts ?? [];
@@ -103,15 +132,16 @@ export default function ExplorePage() {
   }, []);
 
   const filtered = useCallback(
-    () => sortMissions(filterMissions(allMissions, { category, location, difficulty, query }), sort),
-    [allMissions, category, location, difficulty, query, sort]
+    () => applyIntentFilter(sortMissions(filterMissions(allMissions, { category, location, difficulty, query }), sort), intent),
+    [allMissions, category, location, difficulty, query, sort, intent]
   )();
 
-  const isFiltering = query.length > 0 || category !== 'all';
-  const trending    = sortMissions(allMissions.filter(h => (h.applicationCount ?? 0) >= 5), 'recommended').slice(0, 8);
-  const newest      = sortMissions(allMissions, 'newest').slice(0, 8);
-  const highReward  = sortMissions(allMissions, 'reward').slice(0, 8);
-  const urgent      = allMissions.filter(h => { const dl = deadlineLabel(h.deadline); return dl && dl.label.includes('d left') && parseInt(dl.label) <= 7; }).slice(0, 8);
+  const isFiltering = query.length > 0 || category !== 'all' || intent !== 'all';
+  const intentBase  = applyIntentFilter(allMissions, intent);
+  const trending    = sortMissions(intentBase.filter(h => (h.applicationCount ?? 0) >= 5), 'recommended').slice(0, 8);
+  const newest      = sortMissions(intentBase, 'newest').slice(0, 8);
+  const highReward  = sortMissions(intentBase, 'reward').slice(0, 8);
+  const urgent      = intentBase.filter(h => { const dl = deadlineLabel(h.deadline); return dl && dl.label.includes('d left') && parseInt(dl.label) <= 7; }).slice(0, 8);
 
   return (
     <div className="consumer-app" style={{ background: t.bg, minHeight: '100vh' }}>
@@ -124,7 +154,7 @@ export default function ExplorePage() {
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="Search missions, organizations, causes..."
+              placeholder="Search opportunities, organizations, causes..."
               style={{ width: '100%', height: 48, paddingLeft: 42, paddingRight: query ? 40 : 16, borderRadius: 14, border: `1px solid ${t.border}`, background: t.card, color: t.txt, fontSize: 14, fontFamily: 'var(--font-onest, system-ui)', outline: 'none', boxSizing: 'border-box' }}
             />
             {query && (
@@ -136,9 +166,34 @@ export default function ExplorePage() {
         </div>
 
         <div style={{ padding: '16px 20px 0' }}>
-          <div style={{ marginBottom: 20 }}>
-            <FilterBar categories={IMPACT_CATEGORIES} activeCategory={category} onCategory={setCategory} sortOptions={SORT_OPTIONS} activeSort={sort} onSort={setSort} onFilterSheet={() => setFilter(true)} />
+          {/* Intent filter — primary row */}
+          <div style={{ marginBottom: 12, overflowX: 'auto', scrollbarWidth: 'none', display: 'flex', gap: 8, paddingBottom: 2 }}>
+            {INTENT_FILTERS.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setIntent(f.id)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: '7px 14px', borderRadius: 100, flexShrink: 0,
+                  border: `1.5px solid ${intent === f.id ? t.accent : t.border}`,
+                  background: intent === f.id ? `${t.accent}18` : t.card,
+                  color: intent === f.id ? t.accent : t.txtDim,
+                  fontSize: 13, fontWeight: intent === f.id ? 700 : 500,
+                  cursor: 'pointer',
+                }}
+              >
+                <span>{f.emoji}</span>
+                <span>{f.label}</span>
+              </button>
+            ))}
           </div>
+
+          {/* Category / sort filter — secondary row, hidden when intent is active */}
+          {intent === 'all' && (
+            <div style={{ marginBottom: 20 }}>
+              <FilterBar categories={IMPACT_CATEGORIES} activeCategory={category} onCategory={setCategory} sortOptions={SORT_OPTIONS} activeSort={sort} onSort={setSort} onFilterSheet={() => setFilter(true)} />
+            </div>
+          )}
 
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -148,11 +203,11 @@ export default function ExplorePage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {filtered.length > 0 ? (
                 <>
-                  <p style={{ margin: '0 0 4px', fontSize: 12, color: t.txtFaint }}>{filtered.length} mission{filtered.length !== 1 ? 's' : ''} found</p>
+                  <p style={{ margin: '0 0 4px', fontSize: 12, color: t.txtFaint }}>{filtered.length} opportunit{filtered.length !== 1 ? 'ies' : 'y'} found</p>
                   {filtered.map(h => <MissionCard key={h.id} hunt={h} />)}
                 </>
               ) : (
-                <EmptyState emoji="🔍" title="No missions found" description="Try adjusting your search or filters." action={{ label: 'Clear filters', onClick: () => { setQuery(''); setCategory('all'); } }} />
+                <EmptyState emoji="🔍" title="No opportunities found" description="Try adjusting your search or filters." action={{ label: 'Clear filters', onClick: () => { setQuery(''); setCategory('all'); setIntent('all'); } }} />
               )}
             </div>
           ) : (
@@ -176,7 +231,7 @@ export default function ExplorePage() {
                 if (ms.length < 2) return null;
                 return <SectionRail key={catId} title={`${cat.emoji} ${cat.label}`} missions={ms} onSeeAll={() => setCategory(catId)} />;
               })}
-              {allMissions.length === 0 && <EmptyState emoji="🌍" title="No missions yet" description="Missions from organizations will appear here. Check back soon!" />}
+              {allMissions.length === 0 && <EmptyState emoji="🌍" title="No opportunities yet" description="Opportunities from organizations will appear here. Check back soon!" />}
             </>
           )}
         </div>
