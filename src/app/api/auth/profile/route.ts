@@ -31,8 +31,8 @@ export async function PATCH(req: NextRequest) {
       avatar_url: body.avatar_url ?? null,
       role: payload['app_role'] ?? 'explorer',
       default_surface: body.default_surface ?? payload['surface'] ?? 'home',
-      onboarding_complete: false,
-      tenant_id: null,
+      onboarding_complete: (payload['onboarding_complete'] as boolean) ?? false,
+      tenant_id: (payload['tenant_id'] as string | null) ?? null,
     });
   } catch {
     return NextResponse.json({ error: 'Update failed' }, { status: 500 });

@@ -25,7 +25,7 @@ const CARD: React.CSSProperties = { background: t.card, border: '1px solid rgba(
 
 export default function OnboardPage() {
   const router  = useRouter();
-  const { user: authUser, isLoaded } = useAuth();
+  const { user: authUser, isLoaded, refresh } = useAuth();
   const [step, setStep]     = useState<1 | 2>(1);
   const [orgName, setOrgName] = useState('');
   const [orgType, setOrgType] = useState('');
@@ -62,6 +62,7 @@ export default function OnboardPage() {
       });
       const data = await res.json() as { error?: string };
       if (!res.ok) throw new Error(data.error ?? 'Something went wrong');
+      await refresh();
       router.push('/workspace');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');

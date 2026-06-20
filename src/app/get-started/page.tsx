@@ -190,7 +190,7 @@ function ImpactDNAReveal({ profile, onContinue }: { profile: ImpactProfile; onCo
 /* ─── Main page ─── */
 export default function GetStartedPage() {
   const router = useRouter();
-  const { user: authUser, isLoaded } = useAuth();
+  const { user: authUser, isLoaded, refresh } = useAuth();
   const [authChecked, setAuthChecked] = useState(false);
   const [userId, setUserId]           = useState<string | null>(null);
   const [messages, setMessages]       = useState<Message[]>([]);
@@ -401,7 +401,7 @@ export default function GetStartedPage() {
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <Image src="/xhunt-logo.png" alt="X-Hunt" width={160} height={120} style={{ height: 30, width: 'auto', objectFit: 'contain' }} />
         </div>
-        <ImpactDNAReveal profile={profile} onContinue={() => router.push('/home')} />
+        <ImpactDNAReveal profile={profile} onContinue={async () => { await refresh(); router.push('/home'); }} />
       </div>
     );
   }

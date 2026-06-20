@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
       tenant_id: tenant.id,
       role: 'tenant_admin',
       onboarding_complete: true,
+      default_surface: 'workspace',
     })
     .eq('id', user.id);
 
