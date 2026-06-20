@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionUser } from '@/lib/auth/session';
 
 export async function GET(req: Request) {
   const sb  = await createClient();
@@ -31,10 +32,10 @@ export async function GET(req: Request) {
   return NextResponse.json({ comments });
 }
 
-export async function POST(req: Request) {
-  const sb = await createClient();
-  const { data: { user } } = await sb.auth.getUser();
+export async function POST(req: NextRequest) {
+  const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const sb = await createClient();
 
   const { post_id, content } = await req.json() as { post_id?: string; content?: string };
   if (!post_id || !content?.trim()) {
@@ -55,10 +56,10 @@ export async function POST(req: Request) {
   return NextResponse.json({ comment: data });
 }
 
-export async function DELETE(req: Request) {
-  const sb = await createClient();
-  const { data: { user } } = await sb.auth.getUser();
+export async function DELETE(req: NextRequest) {
+  const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const sb = await createClient();
 
   const { comment_id } = await req.json() as { comment_id?: string };
   if (!comment_id) return NextResponse.json({ error: 'comment_id required' }, { status: 400 });

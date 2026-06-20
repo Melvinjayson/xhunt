@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionUser } from '@/lib/auth/session';
 
-export async function GET(req: Request) {
-  const sb = await createClient();
-  const { data: { user } } = await sb.auth.getUser();
+export async function GET(req: NextRequest) {
+  const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const sb = await createClient();
 
   const url   = new URL(req.url);
   const tab   = url.searchParams.get('tab') ?? 'discover';

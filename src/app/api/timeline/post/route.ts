@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionUser } from '@/lib/auth/session';
 import type { PostType } from '@/lib/supabase/types';
 
 interface CreatePostBody {
@@ -10,9 +11,9 @@ interface CreatePostBody {
 }
 
 export async function POST(req: NextRequest) {
-  const sb = await createClient();
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const sb = await createClient();
 
   let body: CreatePostBody;
   try {

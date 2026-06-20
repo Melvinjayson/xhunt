@@ -1,16 +1,18 @@
+import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getSessionUser } from '@/lib/auth/session';
 import { TRIAL_DAYS } from '@/lib/freemium';
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    const sb = await createClient();
-    const { data: { user } } = await sb.auth.getUser();
+    const user = await getSessionUser(req);
 
     if (!user) {
       return Response.json({ error: 'Authentication required' }, { status: 401 });
     }
 
+    const sb = await createClient();
     let { data: profile } = await sb
       .from('user_profiles')
       .select('subscription_tier, trial_started_at')
@@ -21,9 +23,7 @@ export async function POST() {
     // Create a default profile via admin client so trial can proceed.
     if (!profile) {
       const admin = createAdminClient();
-      const display = user.user_metadata?.full_name
-        ?? user.email?.split('@')[0]
-        ?? 'User';
+      const display = user.email?.split('@')[0] ?? 'User';
       const { data: created, error: createErr } = await admin
         .from('user_profiles')
         .upsert({ id: user.id, display_name: display, subscription_tier: 'free' })

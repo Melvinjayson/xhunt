@@ -1,17 +1,19 @@
 import Stripe from 'stripe';
+import { NextRequest } from 'next/server';
 import { env } from '@/lib/env';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionUser } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   if (!env.stripeSecretKey || env.stripeSecretKey.includes('REPLACE_ME')) {
     return Response.json({ error: 'Payment system not yet configured' }, { status: 503 });
   }
 
-  const sb = await createClient();
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await getSessionUser(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const sb = await createClient();
 
   const { priceId } = await request.json().catch(() => ({} as { priceId?: string }));
   const price = priceId ?? env.stripeProPriceId;

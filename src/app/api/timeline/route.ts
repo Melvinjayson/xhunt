@@ -1,14 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionUser } from '@/lib/auth/session';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const sb  = await createClient();
   const url = new URL(req.url);
   const tab    = url.searchParams.get('tab') ?? 'for_you';
   const filter = url.searchParams.get('filter') ?? '';
 
   try {
-    const { data: { user } } = await sb.auth.getUser();
+    const user = await getSessionUser(req);
 
     const [sessionsResult, postsResult] = await Promise.all([
       // Live sessions always shown (except missions tab)

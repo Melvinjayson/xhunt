@@ -357,8 +357,57 @@ export default function HomePage() {
 
         <div style={{ padding: '0 16px' }}>
 
-          {/* 2. Featured Opportunity — opportunity-first hero */}
+          {/* 2. Participation Wallet — hero card */}
           <section style={{ marginTop: 16 }}>
+            <Box
+              onClick={() => router.push('/rewards')}
+              sx={{
+                borderRadius: '20px',
+                background: `linear-gradient(135deg, ${t.ai}28 0%, ${t.accent}12 100%)`,
+                border: `1px solid ${t.ai}35`,
+                p: 2.5,
+                cursor: 'pointer',
+                transition: 'opacity 0.15s',
+                '&:hover': { opacity: 0.9 },
+              }}
+            >
+              <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center' }}>
+                <Wallet size={16} color={t.aiLight} />
+                <Typography variant="caption" sx={{ fontWeight: 600, color: t.aiLight, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: 11 }}>
+                  Participation Wallet
+                </Typography>
+              </Stack>
+              <Typography sx={{ fontSize: 38, fontWeight: 800, color: 'text.primary', letterSpacing: '-1px', lineHeight: 1 }}>
+                ${rewardsBalance.toFixed(2)}
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
+                earned · {completedHunts.length} mission{completedHunts.length !== 1 ? 's' : ''} completed
+              </Typography>
+              <Grid container spacing={1} sx={{ mt: 2.5 }}>
+                {[
+                  { label: 'Available', value: `$${Math.max(0, rewardsBalance - rewardsBalance * 0.3).toFixed(0)}`, color: t.accent },
+                  { label: 'Pending',   value: `$${(rewardsBalance * 0.3).toFixed(0)}`,                             color: t.warning },
+                  { label: 'Score',     value: Math.round(reputationScore),                                          color: t.aiLight },
+                  { label: 'Streak',    value: `${streak}d`,                                                         color: t.info },
+                ].map(({ label, value, color }) => (
+                  <Grid key={label} size={{ xs: 3 }}>
+                    <Box sx={{ bgcolor: 'rgba(0,0,0,0.2)', borderRadius: '12px', p: '10px 8px', textAlign: 'center' }}>
+                      <Typography sx={{ fontSize: 17, fontWeight: 800, color, lineHeight: 1 }}>{value}</Typography>
+                      <Typography variant="caption" sx={{ fontSize: 10, color: 'text.disabled', mt: 0.5, display: 'block' }}>{label}</Typography>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          </section>
+
+          {/* 3. Quick Actions */}
+          <section style={{ marginTop: 20 }}>
+            <QuickActionGrid actions={quickActions} columns={3} />
+          </section>
+
+          {/* 4. Featured Opportunity — "Ready for you" hero */}
+          <section style={{ marginTop: 20 }}>
             <Stack direction="row" sx={{ mb: 1.25, alignItems: 'center', justifyContent: 'space-between' }}>
               <Typography sx={{ fontSize: 11, fontWeight: 700, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Ready for you
@@ -395,12 +444,7 @@ export default function HomePage() {
             )}
           </section>
 
-          {/* 3. Quick Actions */}
-          <section style={{ marginTop: 20 }}>
-            <QuickActionGrid actions={quickActions} columns={3} />
-          </section>
-
-          {/* 4. Ready for you — recommendation feed */}
+          {/* 5. Ready for you — recommendation feed */}
           <section style={{ marginTop: 28 }}>
             <SectionHeader title="Ready for you" seeAllHref="/explore" />
             <Stack spacing={1.25} sx={{ mt: 1.25 }}>
@@ -518,40 +562,6 @@ export default function HomePage() {
               </Stack>
             </section>
           )}
-
-          {/* 6. Wallet — compact card below fold */}
-          <Surface
-            variant="card"
-            padding={0}
-            hover
-            style={{ marginTop: 28, cursor: 'pointer' }}
-            onClick={() => router.push('/profile')}
-          >
-            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography sx={{ fontSize: 11, color: t.txtFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.25 }}>
-                  Wallet
-                </Typography>
-                <Typography sx={{ fontSize: 20, fontWeight: 900, color: t.txt }}>
-                  ${rewardsBalance.toFixed(2)}
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={2.5} sx={{ pr: 1 }}>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography sx={{ fontSize: 14, fontWeight: 800, color: t.warning }}>🔥 {streak}</Typography>
-                  <Typography sx={{ fontSize: 9, color: t.txtFaint, textTransform: 'uppercase' }}>Streak</Typography>
-                </Box>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography sx={{ fontSize: 14, fontWeight: 800, color: t.ai }}>{completedHunts.length}</Typography>
-                  <Typography sx={{ fontSize: 9, color: t.txtFaint, textTransform: 'uppercase' }}>Done</Typography>
-                </Box>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography sx={{ fontSize: 14, fontWeight: 800, color: t.accent }}>{Math.round(reputationScore)}</Typography>
-                  <Typography sx={{ fontSize: 9, color: t.txtFaint, textTransform: 'uppercase' }}>Impact</Typography>
-                </Box>
-              </Stack>
-            </Box>
-          </Surface>
 
           {/* 7. Your Reputation — compact side-by-side */}
           <section style={{ marginTop: 28 }}>

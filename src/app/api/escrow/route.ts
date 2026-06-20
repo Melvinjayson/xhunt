@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import type { EscrowReleaseCondition } from '@/lib/supabase/types';
+import { getSessionUser } from '@/lib/auth/session';
 
 export async function GET(req: NextRequest) {
-  const sb = await createClient();
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const sb = await createClient();
 
   const { data: profile } = await sb.from('user_profiles').select('tenant_id').eq('id', user.id).single();
   if (!profile?.tenant_id) return NextResponse.json({ error: 'No tenant' }, { status: 403 });
@@ -30,9 +31,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const sb = await createClient();
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const sb = await createClient();
 
   const { data: profile } = await sb.from('user_profiles').select('tenant_id, role').eq('id', user.id).single();
   if (!profile?.tenant_id) return NextResponse.json({ error: 'No tenant' }, { status: 403 });
