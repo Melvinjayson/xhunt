@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
 import { Menu, X } from 'lucide-react';
 import WorkspaceSidebar from '@/components/workspace/WorkspaceSidebar';
+import WorkspaceTour from '@/components/workspace/WorkspaceTour';
 import { createClient } from '@/lib/supabase/client';
 import { t } from '@/theme/colors';
 
@@ -24,6 +25,10 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   const { user, isLoaded } = useAuth();
   const [workspaceUser, setWorkspaceUser] = useState<WorkspaceUser | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [wsTourDone, setWsTourDone] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return !!localStorage.getItem('xhunt_workspace_tour_done');
+  });
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
@@ -100,6 +105,12 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         <main className="flex-1 min-w-0 overflow-auto">
           {children}
         </main>
+        {!wsTourDone && (
+          <WorkspaceTour onDone={() => {
+            localStorage.setItem('xhunt_workspace_tour_done', '1');
+            setWsTourDone(true);
+          }} />
+        )}
       </div>
     </div>
   );

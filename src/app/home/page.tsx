@@ -48,6 +48,7 @@ import type { QuickAction } from '@/components/consumer/QuickActionGrid';
 import CopilotFab from '@/components/consumer/CopilotFab';
 import Surface from '@/components/consumer/Surface';
 import BottomNav from '@/components/BottomNav';
+import OnboardingTour from '@/components/OnboardingTour';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -162,6 +163,11 @@ export default function HomePage() {
   const [loadingRecs, setLoadingRecs] = useState(true);
   const [loadingTrust, setLoadingTrust] = useState(true);
   const [huntsResolved, setHuntsResolved] = useState(false);
+
+  const [tourDone, setTourDone] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return !!localStorage.getItem('xhunt_tour_done');
+  });
 
   // ── auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -622,6 +628,12 @@ export default function HomePage() {
 
       </div>
 
+      {!tourDone && (
+        <OnboardingTour onDone={() => {
+          localStorage.setItem('xhunt_tour_done', '1');
+          setTourDone(true);
+        }} />
+      )}
       <BottomNav />
       <CopilotFab />
     </div>
