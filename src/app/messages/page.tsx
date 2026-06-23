@@ -56,14 +56,33 @@ export default function MessagesPage() {
     setLoading(true);
     fetch('/api/messages/conversations')
       .then(r => r.ok ? r.json() : null)
-      .then(data => {
+      .then((data: {
+        conversations?: Array<{
+          id: string; type: string; name: string; avatar_url?: string;
+          last_message?: string; unread_count?: number; last_message_at?: string;
+        }>;
+      } | null) => {
         if (data?.conversations?.length) {
-          setConversations(data.conversations);
-        } else {
-          setConversations(MOCK_CONVERSATIONS);
+          const TYPE_COLORS: Record<string, string> = {
+            mission: '#6D5DFD', team: '#22FFAA', community: '#FFB84D',
+          };
+          setConversations(data.conversations.map((c) => ({
+            id:             c.id,
+            name:           c.name,
+            type:           c.type as Conversation['type'],
+            lastMessage:    c.last_message ?? '',
+            unreadCount:    c.unread_count ?? 0,
+            timestamp:      c.last_message_at
+              ? new Date(c.last_message_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              : '',
+            avatarUrl:      c.avatar_url,
+            avatarInitials: c.name.slice(0, 2).toUpperCase(),
+            avatarColor:    TYPE_COLORS[c.type] ?? undefined,
+          })));
         }
+        // If no conversations, show empty state (no mock data in production)
       })
-      .catch(() => setConversations(MOCK_CONVERSATIONS))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 

@@ -2,6 +2,59 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/auth/session';
 
+// GET /api/messages/conversations — list conversations the user is a member of
+export async function GET(req: NextRequest) {
+  const user = await getSessionUser(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const admin = createAdminClient();
+
+  const { data: memberships, error } = await admin
+    .from('conversation_members')
+    .select(`
+      last_read_at,
+      conversations:conversation_id (
+        id, type, name, avatar_url, last_message_at, created_at, mission_id,
+        messages (
+          id, content, sender_id, message_type, created_at
+        )
+      )
+    `)
+    .eq('user_id', user.id)
+    .order('conversations(last_message_at)', { ascending: false, nullsFirst: false })
+    .limit(40);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  type ConvRow = {
+    id: string; type: string; name: string | null; avatar_url: string | null;
+    last_message_at: string | null; created_at: string; mission_id: string | null;
+    messages: Array<{ id: string; content: string; created_at: string }> | null;
+  };
+
+  const conversations = (memberships ?? []).map((m) => {
+    const conv = (m.conversations as unknown) as ConvRow;
+    const msgs = conv.messages ?? [];
+    const last = msgs.sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+    const lastReadAt = m.last_read_at ? new Date(m.last_read_at).getTime() : 0;
+    const unreadCount = msgs.filter(
+      (msg) => new Date(msg.created_at).getTime() > lastReadAt
+    ).length;
+
+    return {
+      id:            conv.id,
+      type:          conv.type,
+      name:          conv.name ?? (conv.mission_id ? 'Mission Chat' : 'Direct Message'),
+      avatar_url:    conv.avatar_url ?? null,
+      last_message:  last?.content ?? '',
+      last_message_at: conv.last_message_at ?? conv.created_at,
+      unread_count:  unreadCount,
+    };
+  });
+
+  return NextResponse.json({ conversations });
+}
+
 // POST /api/messages/conversations
 // Find or create a conversation.
 // Body: { type: 'direct' | 'mission' | 'team', mission_id?, participant_ids?, name? }
