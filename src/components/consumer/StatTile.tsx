@@ -77,6 +77,11 @@ export default function StatTile({
         flex: 1,
         minWidth: 0,
         boxShadow: 'none',
+        transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+        '&:hover': {
+          transform: 'translateY(-1px)',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.45)',
+        },
       }}
     >
       {(href || onClick) ? (

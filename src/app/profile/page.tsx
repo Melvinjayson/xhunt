@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Flame, CheckCircle, Settings, ArrowRight, Trophy, Loader2, Sparkles,
-  Shield, Zap, Star, TrendingUp, Brain, Globe, Copy, Check, ChevronRight,
-  Users, BarChart2, Clock, Link2,
+  Flame, CheckCircle, ArrowRight, Trophy, Loader2, Sparkles,
+  Shield, Zap, TrendingUp, Brain, Copy, Check,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import Box from '@mui/material/Box';
@@ -53,10 +53,6 @@ const ARCHETYPE_COLORS: Record<string, string> = {
   Mentor: t.warning, Creator: t.error, Analyst: t.info, Activist: t.accent,
 };
 
-const INTEREST_LABELS: Record<string, string> = {
-  adventure: '🌍 Adventure', food: '🍴 Food', art: '🎨 Art', tech: '💻 Tech',
-  fitness: '💪 Fitness', mindfulness: '🧘 Mindfulness', social: '👥 Social', learning: '📚 Learning',
-};
 
 function getInitials(name: string | null): string {
   if (!name) return 'XP';
@@ -132,8 +128,6 @@ export default function ProfilePage() {
   const [skills, setSkills]             = useState<SkillData[]>([]);
   const [categories, setCategories]     = useState<CategoryData[]>([]);
   const [copied, setCopied]             = useState(false);
-  const [completionRate, setCompletionRate]     = useState(0);
-  const [verificationRate, setVerificationRate] = useState(0);
   const [trustScore, setTrustScore]             = useState(0);
 
   useEffect(() => {
@@ -152,8 +146,6 @@ export default function ProfilePage() {
     const approvedCount  = Object.values(vMap).filter(v => v.status === 'approved').length;
     const cr = Math.round((completedCount / Math.max(totalStarted, 1)) * 100);
     const vr = Math.round((approvedCount  / Math.max(submittedCount, 1)) * 100);
-    setCompletionRate(cr);
-    setVerificationRate(vr);
     setTrustScore(Math.round((cr * 0.5) + (vr * 0.3) + (((loadProfile()?.impactScore) ?? 0) * 0.2)));
 
     void fetch('/api/subscription/status')
@@ -327,16 +319,18 @@ export default function ProfilePage() {
           {/* Stats row */}
           <Grid container spacing={1}>
             {[
-              { label: 'XP Score',  value: mms,                   color: t.accent,  Icon: TrendingUp },
-              { label: 'Completed', value: completedHunts.length, color: t.accent,  Icon: Trophy     },
-              { label: 'Skills',    value: skills.length,         color: t.ai,      Icon: Brain      },
-              { label: 'Impact',    value: impactScore,           color: t.warning, Icon: Star       },
+              { label: 'XP Score',    value: mms,                   color: t.accent,  Icon: TrendingUp },
+              { label: 'Completed',   value: completedHunts.length, color: t.accent,  Icon: Trophy     },
+              { label: 'Trust Score', value: trustScore,            color: t.ai,      Icon: Shield     },
+              { label: 'Streak',      value: streak,                color: t.warning, Icon: Flame      },
             ].map(({ label, value, color, Icon }) => (
               <Grid key={label} size={{ xs: 6, sm: 3 }}>
                 <Box
                   sx={{
                     borderRadius: '14px', padding: '11px 6px', textAlign: 'center',
                     background: t.card, border: `1px solid ${t.border}`,
+                    transition: 'border-color 0.15s ease',
+                    '&:hover': { borderColor: `${color}40` },
                   }}
                 >
                   <Icon size={12} color={color} style={{ marginBottom: 4 }} />
@@ -352,27 +346,6 @@ export default function ProfilePage() {
 
           {/* Left column */}
           <Box className="lg:flex-1 lg:min-w-0">
-
-          {/* ── Participation Passport Metrics ── */}
-          <Grid container spacing={1.25} sx={{ mb: 2.5 }}>
-            {[
-              { label: 'Completion Rate', value: `${completionRate}%`,   color: t.accent  },
-              { label: 'Verification',    value: `${verificationRate}%`, color: t.ai      },
-              { label: 'Trust Score',     value: String(trustScore),     color: t.warning },
-            ].map(({ label, value, color }) => (
-              <Grid key={label} size={{ xs: 12, sm: 4 }}>
-                <Box
-                  sx={{
-                    padding: '12px', borderRadius: '14px', textAlign: 'center',
-                    background: t.surface, border: `1px solid ${t.border}`,
-                  }}
-                >
-                  <Typography sx={{ fontSize: 20, fontWeight: 900, color, letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</Typography>
-                  <Typography sx={{ mt: '4px', fontSize: 9.5, color: t.txtFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</Typography>
-                </Box>
-              </Grid>
-            ))}
-          </Grid>
 
           {/* ── Skills Intelligence ── */}
           {skills.length > 0 && (
@@ -422,43 +395,6 @@ export default function ProfilePage() {
                   })}
                 </Stack>
               </Surface>
-            </motion.section>
-          )}
-
-          {/* ── Impact Areas ── */}
-          {categories.length > 0 && (
-            <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} style={{ marginBottom: 22 }}>
-              <Stack direction="row" sx={{ mb: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt }}>Impact Areas</Typography>
-                <Globe size={13} color={t.txtFaint} />
-              </Stack>
-              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                {categories.map((cat) => (
-                  <Chip
-                    key={cat.catId}
-                    label={
-                      <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
-                        <span style={{ fontSize: 13 }}>{cat.emoji}</span>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: cat.color }}>{cat.label}</span>
-                        <Chip
-                          label={cat.count}
-                          size="small"
-                          sx={{
-                            fontSize: 9.5, fontWeight: 700, color: cat.color,
-                            background: `${cat.color}18`, height: 18,
-                            '& .MuiChip-label': { px: '5px' },
-                          }}
-                        />
-                      </Stack>
-                    }
-                    sx={{
-                      background: `${cat.color}10`, border: `1px solid ${cat.color}28`,
-                      borderRadius: '999px', height: 'auto', py: '6px',
-                      '& .MuiChip-label': { px: '13px' },
-                    }}
-                  />
-                ))}
-              </Stack>
             </motion.section>
           )}
 
@@ -561,26 +497,6 @@ export default function ProfilePage() {
             </section>
           )}
 
-          {/* ── Interests ── */}
-          {interests.length > 0 && (
-            <section style={{ marginBottom: 22 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: t.txt, mb: 1.5 }}>Interests</Typography>
-              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                {interests.map((id) => (
-                  <Chip
-                    key={id}
-                    label={INTEREST_LABELS[id] ?? id}
-                    sx={{
-                      borderRadius: '999px', fontSize: 13, fontWeight: 500,
-                      color: t.txt, background: t.card, border: `1px solid ${t.border}`,
-                      height: 'auto', py: '6px',
-                    }}
-                  />
-                ))}
-              </Stack>
-            </section>
-          )}
-
           {/* ── Streak ── */}
           {streak > 0 && (
             <motion.div
@@ -665,68 +581,6 @@ export default function ProfilePage() {
               </Stack>
             </motion.div>
           )}
-
-          {/* ── Rewards CTA ── */}
-          <Box
-            component="a"
-            href="/rewards"
-            sx={{
-              display: 'flex', alignItems: 'center', gap: '14px',
-              padding: '14px 16px', borderRadius: '18px', mb: 1.75,
-              background: `linear-gradient(135deg, ${t.accent}08, ${t.ai}06)`,
-              border: `1px solid ${t.accent}20`, textDecoration: 'none',
-            }}
-          >
-            <Box
-              sx={{
-                width: 40, height: 40, borderRadius: '12px', flexShrink: 0, fontSize: 18,
-                background: `linear-gradient(135deg, ${t.accent}, ${t.ai})`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              🏆
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontSize: 14, fontWeight: 700, color: t.txt, mb: '2px' }}>Rewards & Earnings</Typography>
-              <Typography sx={{ fontSize: 12, color: t.txtDim }}>Badges, payouts, Hunter Score progress</Typography>
-            </Box>
-            <ArrowRight size={16} color={t.accent} />
-          </Box>
-
-          {/* ── More links ── */}
-          <Surface variant="card" style={{ marginBottom: 20 }}>
-            <Box sx={{ py: '4px' }}>
-              {[
-                { label: 'People', icon: <Users size={16} />, href: '/people', color: t.info },
-                { label: 'Activity Timeline', icon: <BarChart2 size={16} />, href: '/timeline', color: t.ai },
-                { label: 'Community', icon: <Globe size={16} />, href: '/community', color: t.accent },
-                { label: 'Settings', icon: <Settings size={16} />, href: '/upgrade', color: t.txtDim },
-              ].map(({ label, icon, href, color }, i) => (
-                <Link
-                  key={href}
-                  href={href}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '13px 16px',
-                    borderBottom: i < 3 ? `1px solid ${t.border}` : 'none',
-                    textDecoration: 'none',
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 32, height: 32, borderRadius: '10px', flexShrink: 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: `${color}12`, color,
-                    }}
-                  >
-                    {icon}
-                  </Box>
-                  <Typography sx={{ fontSize: 14, fontWeight: 500, color: t.txt, flex: 1 }}>{label}</Typography>
-                  <ChevronRight size={16} color={t.txtFaint} />
-                </Link>
-              ))}
-            </Box>
-          </Surface>
 
           </Box>{/* end left column */}
 

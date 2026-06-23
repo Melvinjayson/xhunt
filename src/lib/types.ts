@@ -48,6 +48,7 @@ export interface Hunt {
   reward: string;
   tags: string[];
   createdAt?: string;
+  image_url?: string | null;
 
   /* ── organisation ── */
   tenantName?: string;

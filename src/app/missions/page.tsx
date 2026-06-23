@@ -633,7 +633,7 @@ export default function MyMissionsPage() {
       <div style={{ position: 'fixed', top: -80, right: -80, width: 300, height: 300, borderRadius: '50%', background: `radial-gradient(circle,${t.accent}07 0%,transparent 65%)`, pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', bottom: 120, left: -60, width: 200, height: 200, borderRadius: '50%', background: `radial-gradient(circle,${t.ai}06 0%,transparent 65%)`, pointerEvents: 'none', zIndex: 0 }} />
 
-      <div className="consumer-app-inner" style={{ maxWidth: 430, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+      <div className="consumer-app-inner" style={{ maxWidth: 600, margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
         {/* ── PAGE HEADER ── */}
         <motion.div

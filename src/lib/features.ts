@@ -45,16 +45,16 @@ export interface TenantFeatureConfig {
 
 const STARTER_NAV: NavFlags = {
   outcomes: true,
-  analytics: false,
-  agents: false,
+  analytics: true,
+  agents: true,
   knowledgeGraph: false,
   xilHub: false,
   economy: false,
-  audience: false,
-  rewards: false,
+  audience: true,
+  rewards: true,
   marketplace: false,
   governance: false,
-  community: false,
+  community: true,
   developers: false,
 };
 

@@ -30,9 +30,10 @@ function ActionItem({ icon: Icon, label, href, onClick, color = t.accent, badge,
         borderRadius: '16px',
         overflow: 'hidden',
         boxShadow: 'none',
-        transition: 'transform 0.18s ease',
+        transition: 'transform 0.18s ease, box-shadow 0.18s ease',
         '&:hover': {
           transform: 'translateY(-2px)',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.45)',
         },
       }}
     >

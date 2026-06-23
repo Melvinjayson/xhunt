@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   // Load all active missions + their scores (include location fields)
   const [missionsRes, scoresRes, progressRes] = await Promise.all([
     supabase.from('missions')
-      .select('id, title, difficulty, estimated_time, tags, story_context, reward, location_type, lat, lng')
+      .select('id, title, difficulty, estimated_time, tags, story_context, reward, location_type, lat, lng, image_url')
       .eq('tenant_id', tid)
       .in('status', ['active', 'published']),
     supabase.from('mission_scores')

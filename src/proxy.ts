@@ -22,7 +22,7 @@ const PROTECTED_PATTERNS = [
   /^\/workspace/, /^\/admin/,
   /^\/home/, /^\/explore/, /^\/missions/, /^\/messages/, /^\/profile/,
   /^\/hunt/, /^\/active/, /^\/complete/, /^\/live/, /^\/people/, /^\/rewards/,
-  /^\/barter/, /^\/community/,
+  /^\/barter/, /^\/community/, /^\/timeline/, /^\/notifications/,
 ];
 
 function isPublic(pathname: string) {
@@ -78,9 +78,10 @@ export async function proxy(req: NextRequest) {
   // Forward user identity as request headers so API routes can read them
   const reqHeaders = new Headers(req.headers);
   if (session) {
-    reqHeaders.set('x-user-id', session['sub'] as string);
+    reqHeaders.set('x-user-id',    session['sub'] as string);
     reqHeaders.set('x-user-email', (session['email'] as string) ?? '');
-    reqHeaders.set('x-user-role', (session['app_role'] ?? session['role']) as string ?? 'explorer');
+    reqHeaders.set('x-user-role',  (session['app_role'] ?? session['role']) as string ?? 'explorer');
+    reqHeaders.set('x-tenant-id',  (session['tenant_id'] as string) ?? '');
   }
   return NextResponse.next({ request: { headers: reqHeaders } });
 }

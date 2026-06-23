@@ -160,7 +160,7 @@ export default function AnalyticsPage() {
   const maxActivity = Math.max(...data!.recentActivity.map((d) => Math.max(d.completions, d.starts)), 1);
 
   return (
-    <div className="p-8 space-y-6 max-w-[1400px]">
+    <div className="p-8 space-y-6 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

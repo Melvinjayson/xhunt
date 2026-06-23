@@ -22,6 +22,31 @@ import StatusPill from './StatusPill';
 import type { MissionStatus } from './StatusPill';
 import type { VerificationStatus } from '@/lib/types';
 
+const CATEGORY_IMAGES: Record<string, string> = {
+  fitness:   'photo-1571019613454-1cb2f99b2d8b',
+  adventure: 'photo-1476514525535-07fb3b4ae5f1',
+  food:      'photo-1504674900247-0877df9cc836',
+  tech:      'photo-1518770660439-4636190af475',
+  learning:  'photo-1456513080510-7bf3a84b82f8',
+  social:    'photo-1529156069898-49953e39b3ac',
+  art:       'photo-1513364776144-60967b0f800f',
+  travel:    'photo-1488085061387-422e29b40080',
+  mindful:   'photo-1506126613408-eca07ce68773',
+  civic:     'photo-1554224155-6726b3ff858f',
+  nature:    'photo-1441974231531-c6227db76b6e',
+  finance:   'photo-1611974789855-9c2a0a7236a3',
+  default:   'photo-1519389950473-47ba0277781c',
+};
+
+function getCategoryImage(tags: string[], category?: string): string {
+  const keys = [category, ...tags].filter(Boolean).map((s) => s!.toLowerCase());
+  for (const key of keys) {
+    const id = CATEGORY_IMAGES[key];
+    if (id) return `https://images.unsplash.com/${id}?w=600&h=200&fit=crop&q=75&auto=format`;
+  }
+  return `https://images.unsplash.com/${CATEGORY_IMAGES.default}?w=600&h=200&fit=crop&q=75&auto=format`;
+}
+
 interface MissionCardProps {
   hunt: Hunt;
   matchScore?: number;
@@ -62,6 +87,9 @@ export default function MissionCard({
     setSaving(false);
   }
 
+  const [imgError, setImgError] = useState(false);
+  const imgSrc = hunt.image_url ?? getCategoryImage(hunt.tags ?? [], hunt.category);
+
   const inner = (
     <Card
       onClick={onClick}
@@ -71,19 +99,41 @@ export default function MissionCard({
         borderRadius: compact ? '16px' : '20px',
         overflow: 'hidden',
         cursor: 'pointer',
-        transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+        transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
         position: 'relative',
         boxShadow: 'none',
         '&:hover': {
           transform: 'translateY(-2px)',
-          boxShadow: '0 6px 24px rgba(0,0,0,0.5)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          borderColor: `${category.color}44`,
         },
       }}
     >
-      {/* Category accent bar */}
-      <Box sx={{ height: 3, background: `linear-gradient(90deg, ${category.color}, ${category.color}44)` }} />
+      {/* Image banner */}
+      <Box sx={{
+        height: compact ? 80 : 128,
+        overflow: 'hidden',
+        position: 'relative',
+        flexShrink: 0,
+        background: imgError ? `linear-gradient(135deg, ${category.color}22, ${category.color}08)` : undefined,
+      }}>
+        {!imgError && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imgSrc}
+            alt=""
+            onError={() => setImgError(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: 0.75 }}
+          />
+        )}
+        {/* Category accent overlay at bottom */}
+        <Box sx={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: 32,
+          background: `linear-gradient(to top, ${t.card}, transparent)`,
+        }} />
+      </Box>
 
-      <Box sx={{ p: compact ? '12px 14px' : '16px 18px' }}>
+      <Box sx={{ p: compact ? '10px 14px' : '14px 18px' }}>
         {/* Header row: org + save */}
         <Stack direction="row" sx={{ mb: 1.25, alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <Stack direction="row" spacing={1} sx={{ minWidth: 0, flex: 1, alignItems: 'center' }}>
@@ -158,7 +208,7 @@ export default function MissionCard({
         </Typography>
 
         {/* Description */}
-        {!compact && hunt.story_context && (
+        {hunt.story_context && (
           <Typography
             variant="body2"
             sx={{
@@ -167,7 +217,7 @@ export default function MissionCard({
               color: 'text.secondary',
               lineHeight: 1.55,
               display: '-webkit-box',
-              WebkitLineClamp: 2,
+              WebkitLineClamp: compact ? 1 : 2,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
             }}

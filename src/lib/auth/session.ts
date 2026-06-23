@@ -9,6 +9,7 @@ export interface SessionUser {
   id: string;
   email: string;
   role: string;
+  tenantId: string | null;
 }
 
 /** Read authenticated user from request — uses header set by middleware, falls back to JWT. */
@@ -19,6 +20,7 @@ export async function getSessionUser(req: NextRequest): Promise<SessionUser | nu
       id: userId,
       email: req.headers.get('x-user-email') ?? '',
       role: req.headers.get('x-user-role') ?? 'explorer',
+      tenantId: req.headers.get('x-tenant-id') || null,
     };
   }
   const token = req.cookies.get('__xhunt_session')?.value;
@@ -30,6 +32,7 @@ export async function getSessionUser(req: NextRequest): Promise<SessionUser | nu
       id: payload['sub'] as string,
       email: payload['email'] as string ?? '',
       role: (payload['app_role'] as string) ?? 'explorer',
+      tenantId: (payload['tenant_id'] as string) || null,
     };
   } catch {
     return null;

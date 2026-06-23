@@ -381,6 +381,7 @@ export async function fetchSupabaseMissions(): Promise<import('../types').Hunt[]
         lat:             m.lat ?? null,
         lng:             m.lng ?? null,
         radiusKm:        m.radius_km ?? 50,
+        image_url:       m.image_url ?? null,
       };
     });
   } catch {
