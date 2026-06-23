@@ -2,8 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND = process.env.NEXT_PUBLIC_AUTH_URL ?? '';
 
-const SECURE   = process.env.NODE_ENV === 'production';
+const SECURE    = process.env.NODE_ENV === 'production';
 const BASE_COOKIE = { secure: SECURE, sameSite: 'lax' as const, path: '/' };
+
+// Render.com free/starter services cold-start in 30–60s. Give 35s per attempt
+// and retry once after a 3s pause so a cold start doesn't surface as a user error.
+async function fetchWithRetry(url: string, opts: RequestInit): Promise<Response> {
+  const attempt = async () => {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 35_000);
+    try {
+      return await fetch(url, { ...opts, signal: ac.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  try {
+    return await attempt();
+  } catch {
+    await new Promise<void>((r) => setTimeout(r, 3_000));
+    return await attempt();
+  }
+}
 
 export async function POST(req: NextRequest) {
   if (!BACKEND) {
@@ -16,22 +36,15 @@ export async function POST(req: NextRequest) {
 
   let upstream: Response;
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
-    try {
-      upstream = await fetch(`${BACKEND}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(await req.json()),
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
+    upstream = await fetchWithRetry(`${BACKEND}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(await req.json()),
+    });
   } catch (err) {
-    console.error('[login] backend unreachable:', err);
+    console.error('[login] backend unreachable after retry:', err);
     return NextResponse.json(
-      { detail: 'Authentication service temporarily unavailable. Please try again shortly.' },
+      { detail: 'Service is warming up — please wait a moment and try again.' },
       { status: 503 },
     );
   }

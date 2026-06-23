@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, Suspense } from 'react';
+import { useState, useEffect, FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -34,7 +34,21 @@ function SignInForm() {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]   = useState(false);
   const [loading, setLoading] = useState(false);
+  const [slowLoad, setSlowLoad] = useState(false);
   const [error, setError]     = useState('');
+
+  // Ping the backend as soon as the page loads so Render starts warming up
+  // before the user finishes typing credentials.
+  useEffect(() => {
+    fetch('/api/auth/warmup').catch(() => {});
+  }, []);
+
+  // Show a "warming up" message after 8s so users don't abandon during cold start
+  useEffect(() => {
+    if (!loading) { setSlowLoad(false); return; }
+    const t = setTimeout(() => setSlowLoad(true), 8_000);
+    return () => clearTimeout(t);
+  }, [loading]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -162,6 +176,11 @@ function SignInForm() {
               {loading && <Loader2 size={16} className="animate-spin" />}
               {loading ? 'Signing in…' : 'Sign in →'}
             </button>
+            {slowLoad && (
+              <p style={{ fontSize: 11, color: t.txtFaint, textAlign: 'center', margin: '6px 0 0' }}>
+                Service is warming up — this may take up to 30 seconds on first load.
+              </p>
+            )}
           </form>
 
           <p style={{ fontSize: 13, color: t.txtDim, textAlign: 'center', marginTop: 20 }}>
