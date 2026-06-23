@@ -3,7 +3,10 @@ import { Onest } from 'next/font/google';
 import { AuthProvider } from '@/lib/auth/context';
 import { GlassFilter } from '@/components/LiquidGlass';
 import { MuiProvider } from '@/components/MuiProvider';
+import { assertProductionEnv } from '@/lib/env';
 import './globals.css';
+
+assertProductionEnv();
 
 const onest = Onest({
   subsets: ['latin'],

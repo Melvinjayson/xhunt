@@ -13,7 +13,7 @@ const cspDirectives = [
   "default-src 'self'",
   // 'unsafe-eval' required in dev for HMR; kept in prod only because Spline
   // WebGL shader compilation needs it at runtime.
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : " 'unsafe-eval'"} https://js.stripe.com`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://js.stripe.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://prod.spline.design https://images.unsplash.com",
   "font-src 'self'",
