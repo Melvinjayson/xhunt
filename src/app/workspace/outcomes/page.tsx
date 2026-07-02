@@ -178,7 +178,7 @@ export default function OutcomesPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/admin/outcomes/validation">
+          <Link href="/workspace/outcomes/validation">
             <button className="flex items-center gap-2 h-9 px-4 bg-[var(--t-card)] border border-[var(--t-elev)] rounded-xl font-medium text-[13px] hover:border-[var(--t-ai)]/40 transition-colors" style={{ color: t.txt }}>
               <FileCheck size={14} strokeWidth={2} />
               Validation Queue
@@ -520,7 +520,7 @@ export default function OutcomesPage() {
                 >{s.replace('_', ' ')}</button>
               ))}
             </div>
-            <Link href="/admin/outcomes/validation">
+            <Link href="/workspace/outcomes/validation">
               <button className="text-[11px] font-semibold text-accent flex items-center gap-1 hover:opacity-80 transition-opacity">
                 Manage <ChevronRight size={11} strokeWidth={2} />
               </button>

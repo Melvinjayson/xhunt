@@ -185,7 +185,7 @@ export default function OnboardingSplash({ open, onClose }: OnboardingSplashProp
               {/* CTAs */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <Link
-                  href="/auth/signup?next=/get-started"
+                  href="/sign-up?redirect_url=/get-started"
                   style={{
                     width: '100%', height: 50,
                     background: ACCENT, color: BG,
@@ -200,7 +200,7 @@ export default function OnboardingSplash({ open, onClose }: OnboardingSplashProp
                   Create Free Account <ArrowRight size={16} strokeWidth={2.8} />
                 </Link>
                 <Link
-                  href="/auth/login?next=/get-started"
+                  href="/sign-in?redirect_url=/get-started"
                   style={{
                     width: '100%', height: 44,
                     background: 'rgba(255,255,255,0.04)',

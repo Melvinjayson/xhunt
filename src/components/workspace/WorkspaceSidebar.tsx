@@ -11,7 +11,7 @@ import {
   ShieldCheck, Plug, Users,
   CreditCard, Settings,
   ChevronDown, Plus, Sparkles, Zap, Building2,
-  Lock, Sun, Moon,
+  Sun, Moon,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { getDefaultConfig, mergeFeatureConfig } from '@/lib/features';
@@ -29,47 +29,27 @@ interface NavItem {
   minTier?: 'growth' | 'enterprise';
 }
 
-// Consolidated: 12 items max (starter sees 5, growth 8, enterprise 12)
-const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
-  {
-    group: 'MISSIONS',
-    items: [
-      { href: '/workspace',                label: 'Dashboard',      icon: LayoutDashboard, exact: true, flag: null },
-      { href: '/workspace/missions',        label: 'Mission Studio', icon: Layers,          flag: null },
-      { href: '/workspace/mission-control', label: 'Mission Control',icon: Radar,           flag: null },
-      { href: '/workspace/outcomes',        label: 'Outcomes',       icon: TrendingUp,      flag: 'outcomes' },
-    ],
-  },
-  {
-    group: 'INTELLIGENCE',
-    items: [
-      { href: '/workspace/analytics',    label: 'Analytics',  icon: BarChart3, flag: 'analytics',    minTier: 'growth' },
-      { href: '/workspace/agents',       label: 'AI Agents',  icon: Bot,       flag: 'agents',       minTier: 'growth' },
-      { href: '/workspace/intelligence', label: 'XIL Hub',    icon: Cpu,       flag: 'xilHub',       minTier: 'enterprise' },
-    ],
-  },
-  {
-    group: 'ECONOMY',
-    items: [
-      { href: '/workspace/economy',      label: 'Economy',     icon: Coins,  flag: 'economy',      minTier: 'enterprise' },
-      { href: '/workspace/marketplace',  label: 'Marketplace', icon: Globe,  flag: 'marketplace',  minTier: 'growth' },
-    ],
-  },
-  {
-    group: 'PLATFORM',
-    items: [
-      { href: '/workspace/community',    label: 'Community',   icon: Users,       flag: 'community',   minTier: 'growth' },
-      { href: '/workspace/governance',   label: 'Governance',  icon: ShieldCheck, flag: 'governance',  minTier: 'enterprise' },
-      { href: '/workspace/integrations', label: 'Integrations',icon: Plug,        flag: null },
-    ],
-  },
-  {
-    group: 'WORKSPACE',
-    items: [
-      { href: '/workspace/billing',  label: 'Billing',  icon: CreditCard, flag: null },
-      { href: '/workspace/settings', label: 'Settings', icon: Settings,   flag: null },
-    ],
-  },
+// Single priority-ordered nav list. AGENTS.md caps the workspace sidebar at 8
+// visible items per tier; because the enterprise tier unlocks every flag, we show
+// the top 8 enabled items and fold any remainder into a collapsible "More" section
+// (nothing is removed — every page stays reachable). Order = priority.
+const MAX_VISIBLE = 8;
+
+const NAV_ITEMS: NavItem[] = [
+  { href: '/workspace',                 label: 'Dashboard',       icon: LayoutDashboard, exact: true, flag: null },
+  { href: '/workspace/missions',        label: 'Mission Studio',  icon: Layers,          flag: null },
+  { href: '/workspace/mission-control', label: 'Mission Control', icon: Radar,           flag: null },
+  { href: '/workspace/outcomes',        label: 'Outcomes',        icon: TrendingUp,      flag: 'outcomes' },
+  { href: '/workspace/analytics',       label: 'Analytics',       icon: BarChart3,       flag: 'analytics',   minTier: 'growth' },
+  { href: '/workspace/agents',          label: 'AI Agents',       icon: Bot,             flag: 'agents',      minTier: 'growth' },
+  { href: '/workspace/marketplace',     label: 'Marketplace',     icon: Globe,           flag: 'marketplace', minTier: 'growth' },
+  { href: '/workspace/community',       label: 'Community',       icon: Users,           flag: 'community',   minTier: 'growth' },
+  { href: '/workspace/intelligence',    label: 'XIL Hub',         icon: Cpu,             flag: 'xilHub',      minTier: 'enterprise' },
+  { href: '/workspace/economy',         label: 'Economy',         icon: Coins,           flag: 'economy',     minTier: 'enterprise' },
+  { href: '/workspace/governance',      label: 'Governance',      icon: ShieldCheck,     flag: 'governance',  minTier: 'enterprise' },
+  { href: '/workspace/integrations',    label: 'Integrations',    icon: Plug,            flag: null },
+  { href: '/workspace/billing',         label: 'Billing',         icon: CreditCard,      flag: null },
+  { href: '/workspace/settings',        label: 'Settings',        icon: Settings,        flag: null },
 ];
 
 const PLAN_BADGE: Record<string, { label: string; cls: string; style?: React.CSSProperties }> = {
@@ -107,9 +87,43 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
       .catch(() => { setConfig(mergeFeatureConfig(getDefaultConfig(plan), {})); });
   }, [plan]);
 
+  const [showMore, setShowMore] = useState(false);
+
   function isNavEnabled(flag: NavFlag): boolean {
     if (flag === null) return true;
     return config.nav[flag] === true;
+  }
+
+  const enabledItems = NAV_ITEMS.filter((i) => isNavEnabled(i.flag));
+  const primaryItems = enabledItems.slice(0, MAX_VISIBLE);
+  const overflowItems = enabledItems.slice(MAX_VISIBLE);
+
+  function renderNavItem({ href, label, icon: Icon, exact }: NavItem) {
+    const active = exact ? pathname === href : pathname.startsWith(href);
+    return (
+      <Link key={href} href={href}
+        className={cn(
+          'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-100',
+          active ? 'bg-accent/10 text-accent' : 'hover:bg-card'
+        )}
+        style={
+          active && config.branding.primaryColor
+            ? { backgroundColor: `${config.branding.primaryColor}18`, color: config.branding.primaryColor }
+            : (!active ? { color: t.txtDim } : {})
+        }
+      >
+        <Icon size={15} strokeWidth={active ? 2.2 : 1.8}
+          className={active ? 'text-accent' : ''}
+          style={
+            active && config.branding.primaryColor
+              ? { color: config.branding.primaryColor }
+              : (!active ? { color: t.txtFaint } : {})
+          } />
+        {label}
+        {active && <div className="ml-auto w-1 h-1 rounded-full bg-accent flex-shrink-0"
+          style={config.branding.primaryColor ? { backgroundColor: config.branding.primaryColor } : {}} />}
+      </Link>
+    );
   }
 
   function toggleTheme() {
@@ -167,58 +181,24 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
           </Link>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-4">
-          {NAV_GROUPS.map(({ group, items }) => {
-            const enabled = items.filter((i) => isNavEnabled(i.flag));
-            const locked  = items.filter((i) => !isNavEnabled(i.flag) && i.flag !== null);
-            if (enabled.length === 0 && locked.length === 0) return null;
+        {/* Navigation — top 8 items visible; the rest fold into "More". */}
+        <nav className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-0.5">
+          {primaryItems.map(renderNavItem)}
 
-            return (
-              <div key={group}>
-                <p className="px-2 mb-1 text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: t.txtFaint }}>{group}</p>
-                <div className="flex flex-col gap-0.5">
-                  {enabled.map(({ href, label, icon: Icon, exact }) => {
-                    const active = exact ? pathname === href : pathname.startsWith(href);
-                    return (
-                      <Link key={href} href={href}
-                        className={cn(
-                          'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-100',
-                          active ? 'bg-accent/10 text-accent' : 'hover:bg-card'
-                        )}
-                        style={
-                          active && config.branding.primaryColor
-                            ? { backgroundColor: `${config.branding.primaryColor}18`, color: config.branding.primaryColor }
-                            : (!active ? { color: t.txtDim } : {})
-                        }
-                      >
-                        <Icon size={15} strokeWidth={active ? 2.2 : 1.8}
-                          className={active ? 'text-accent' : ''}
-                          style={
-                            active && config.branding.primaryColor
-                              ? { color: config.branding.primaryColor }
-                              : (!active ? { color: t.txtFaint } : {})
-                          } />
-                        {label}
-                        {active && <div className="ml-auto w-1 h-1 rounded-full bg-accent flex-shrink-0"
-                          style={config.branding.primaryColor ? { backgroundColor: config.branding.primaryColor } : {}} />}
-                      </Link>
-                    );
-                  })}
-                  {locked.map(({ label, icon: Icon, minTier }) => (
-                    <div key={label}
-                      title={`Upgrade to ${minTier ?? 'higher'} tier to unlock`}
-                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium opacity-35 cursor-not-allowed select-none"
-                      style={{ color: t.txtFaint }}>
-                      <Icon size={15} strokeWidth={1.8} style={{ color: t.txtFaint }} />
-                      {label}
-                      <Lock size={10} className="ml-auto flex-shrink-0" strokeWidth={2} style={{ color: t.txtFaint }} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+          {overflowItems.length > 0 && (
+            <>
+              <button
+                onClick={() => setShowMore((v) => !v)}
+                className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-100 hover:bg-card"
+                style={{ color: t.txtFaint }}
+              >
+                <ChevronDown size={15} strokeWidth={1.8}
+                  style={{ color: t.txtFaint, transform: showMore ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                {showMore ? 'Less' : `More (${overflowItems.length})`}
+              </button>
+              {showMore && overflowItems.map(renderNavItem)}
+            </>
+          )}
         </nav>
 
         {/* AI Status + Theme */}

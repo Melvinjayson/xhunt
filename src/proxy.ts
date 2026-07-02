@@ -23,7 +23,7 @@ const AUTH_PAGE_PATTERNS = [/^\/sign-in/, /^\/sign-up/];
 const PROTECTED_PATTERNS = [
   /^\/workspace/, /^\/admin/,
   /^\/home/, /^\/explore/, /^\/missions/, /^\/messages/, /^\/profile/,
-  /^\/hunt/, /^\/active/, /^\/complete/, /^\/live/, /^\/people/, /^\/rewards/,
+  /^\/hunt/, /^\/active/, /^\/complete/, /^\/live/, /^\/rewards/,
   /^\/barter/, /^\/community/, /^\/timeline/, /^\/notifications/,
 ];
 

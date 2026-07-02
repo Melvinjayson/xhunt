@@ -20,7 +20,7 @@ const NAV_GROUPS = [
   {
     label: 'Configure',
     items: [
-      { href: '/admin/missions', icon: Building2,    label: 'Tenants',  exact: false },
+      { href: '/admin/tenants',  icon: Building2,    label: 'Tenants',  exact: false },
       { href: '/admin/settings', icon: Settings,     label: 'Settings', exact: false },
     ],
   },

@@ -34,7 +34,8 @@ const PRIMARY_NAV = [
   { href: '/profile',  icon: User,          label: 'Profile'     },
 ];
 
-// People → consolidated into /explore; Rewards → consolidated into /profile
+// People was consolidated into /explore (page removed). Rewards remains a
+// standalone destination, reachable from Home, the FAB, and the desktop sidebar.
 
 function ThemeToggleBtn() {
   const [light, setLight] = useState(false);

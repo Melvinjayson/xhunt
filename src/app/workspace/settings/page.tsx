@@ -89,15 +89,11 @@ const NAV_FEATURE_LABELS: Record<keyof NavFlags, string> = {
   outcomes:      'Outcomes',
   analytics:     'Analytics',
   agents:        'AI Agents',
-  knowledgeGraph:'Knowledge Graph',
   xilHub:        'XIL Hub',
   economy:       'Economy Protocol',
-  audience:      'Audience',
-  rewards:       'Rewards',
   marketplace:   'Marketplace',
   governance:    'Governance',
   community:     'Community Exchange',
-  developers:    'Developer Portal',
 };
 
 const FEATURE_LABELS: Record<keyof FeatureToggles, { label: string; desc: string; tier: MaturityTier }> = {

@@ -275,7 +275,7 @@ export default function WorkspaceDashboard() {
               Participants
             </button>
           </Link>
-          <Link href="/workspace/missions/create">
+          <Link href="/workspace/missions/new">
             <button className="flex items-center gap-2 h-9 px-4 rounded-xl font-semibold text-[13px] shadow-[0_4px_16px_rgba(34,255,170,0.3)] transition-opacity hover:opacity-90" style={{ background: t.accent, color: t.bg }}>
               <Plus size={14} strokeWidth={2.5} />
               Create Mission
@@ -344,7 +344,7 @@ export default function WorkspaceDashboard() {
               </div>
               <p className="text-[14px] font-semibold mb-1" style={{ color: t.txt }}>No activity yet</p>
               <p className="text-[12px] mb-5" style={{ color: t.txtFaint }}>Create a mission and invite participants to see live activity.</p>
-              <Link href="/workspace/missions/create">
+              <Link href="/workspace/missions/new">
                 <button className="inline-flex items-center gap-2 h-9 px-5 rounded-xl font-semibold text-[13px]" style={{ background: t.accent, color: t.bg }}>
                   <Plus size={13} strokeWidth={2.5} />
                   Create your first mission
