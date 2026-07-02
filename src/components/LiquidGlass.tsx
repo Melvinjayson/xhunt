@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { t } from '@/theme/colors';
 
 // ── SVG Distortion Filter ── must render once in the document root ──────────
 export function GlassFilter() {
@@ -149,7 +150,7 @@ export function GlassButton({
   onClick,
   disabled,
   type = 'button',
-  accent = '#22FFAA',
+  accent = t.accent,
 }: GlassButtonProps) {
   const outer: React.CSSProperties = {
     position: 'relative',
@@ -187,7 +188,7 @@ export function GlassButton({
 // Use this for the outermost div when you can't restructure HTML.
 // It provides the glass look without pseudo-element layers.
 export const LIQUID_GLASS_STYLE: React.CSSProperties = {
-  background: '#0A1226',
+  background: t.card,
   border: '1px solid rgba(255, 255, 255, 0.08)',
   boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2)',
 };

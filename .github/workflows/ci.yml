@@ -27,3 +27,6 @@ jobs:
 
       - name: Block new hardcoded hex (ratchet)
         run: npm run check:hex
+
+      - name: Unit tests
+        run: npm run test

@@ -9,14 +9,15 @@ import { useConversations } from '@/hooks/useMessages';
 import { useAuth } from '@/lib/auth/context';
 import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import type { ConversationWithDetails } from '@/lib/supabase/types';
+import { t } from '@/theme/colors';
 
 /* ─── design tokens ─── */
-const BG    = '#050816';
-const CARD  = '#0A1226';
-const ACCENT = '#22FFAA';
-const DIM   = '#8B9CC0';
-const FAINT = '#4A5578';
-const TXT   = '#F0F4FF';
+const BG    = t.bg;
+const CARD  = t.card;
+const ACCENT = t.accent;
+const DIM   = t.txtDim;
+const FAINT = t.txtFaint;
+const TXT   = t.txt;
 
 const XGLASS: React.CSSProperties = LIQUID_GLASS_STYLE;
 

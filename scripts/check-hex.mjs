@@ -22,7 +22,7 @@ import { dirname } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIRS = ['src/app', 'src/components'];
-const BASELINE = 1327; // ratchet — only ever lower this, never raise it.
+const BASELINE = 1299; // ratchet — only ever lower this, never raise it.
 const HEX = /#[0-9a-fA-F]{3,8}\b/g;
 
 function walk(dir) {

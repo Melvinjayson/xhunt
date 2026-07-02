@@ -33,15 +33,6 @@ interface Conversation {
   isOnline?: boolean;
 }
 
-const MOCK_CONVERSATIONS: Conversation[] = [
-  { id: 'c1', name: 'Mission: Beach Cleanup Drive', type: 'mission', lastMessage: 'Great work everyone! 🌊', unreadCount: 3, timestamp: '2m ago', avatarInitials: 'BC', avatarColor: t.accent },
-  { id: 'c2', name: 'Alex Chen', type: 'direct', lastMessage: 'Can you share your proof photo?', unreadCount: 0, timestamp: '18m ago', avatarInitials: 'AC', isOnline: true },
-  { id: 'c3', name: 'Community Hub', type: 'community', lastMessage: 'New mission: Food Bank Volunteer 🍎', unreadCount: 7, timestamp: '1h ago', avatarInitials: 'CH', avatarColor: t.ai },
-  { id: 'c4', name: 'Research Team Alpha', type: 'team', lastMessage: 'Meeting tomorrow at 3pm', unreadCount: 0, timestamp: '3h ago', avatarInitials: 'RT' },
-  { id: 'c5', name: 'Sarah Kim', type: 'direct', lastMessage: 'Thanks for the tip! 🙌', unreadCount: 0, timestamp: 'Yesterday', avatarInitials: 'SK', isOnline: false },
-  { id: 'c6', name: 'Mission: City Art Trail', type: 'mission', lastMessage: 'Proof submitted, waiting review', unreadCount: 1, timestamp: 'Yesterday', avatarInitials: 'CA', avatarColor: t.warning },
-];
-
 const TYPE_LABELS: Record<string, string> = {
   mission: 'Mission', team: 'Team', community: 'Community', direct: '',
 };

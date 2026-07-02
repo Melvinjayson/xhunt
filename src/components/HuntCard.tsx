@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { Clock, Zap, Trophy, ShieldCheck, Building2, ArrowUpRight } from 'lucide-react';
 import { getTagEmoji } from '@/lib/mockHunts';
 import type { Hunt } from '@/lib/types';
+import { t } from '@/theme/colors';
 
 interface HuntCardProps { hunt: Hunt; isCompleted?: boolean; }
 
 const DIFF = {
-  easy:   { label: 'Easy',   color: '#22FFAA', bg: 'rgba(34,255,170,.1)'  },
-  medium: { label: 'Medium', color: '#FFB84D', bg: 'rgba(255,184,77,.1)'  },
-  hard:   { label: 'Hard',   color: '#FF5C7A', bg: 'rgba(255,92,122,.1)'  },
+  easy:   { label: 'Easy',   color: t.accent,  bg: 'rgba(34,255,170,.1)'  },
+  medium: { label: 'Medium', color: t.warning, bg: 'rgba(255,184,77,.1)'  },
+  hard:   { label: 'Hard',   color: t.error,   bg: 'rgba(255,92,122,.1)'  },
 } as const;
 
 export default function HuntCard({ hunt, isCompleted = false }: HuntCardProps) {
@@ -30,7 +31,7 @@ export default function HuntCard({ hunt, isCompleted = false }: HuntCardProps) {
           opacity: isCompleted ? 0.6 : 1,
         }}>
           {/* accent bar */}
-          <div style={{ height: 2, background: isCompleted ? 'linear-gradient(90deg,#00E696,#22FFAA)' : 'linear-gradient(90deg,#22FFAA,rgba(34,255,170,0))' }} />
+          <div style={{ height: 2, background: isCompleted ? `linear-gradient(90deg,#00E696,${t.accent})` : `linear-gradient(90deg,${t.accent},rgba(34,255,170,0))` }} />
 
           <div style={{ padding: '14px 16px 0' }}>
             {/* title row */}
@@ -40,25 +41,25 @@ export default function HuntCard({ hunt, isCompleted = false }: HuntCardProps) {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 {isCompleted && (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: '#22FFAA', background: 'rgba(34,255,170,.1)', padding: '2px 8px', borderRadius: 999, marginBottom: 4 }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: t.accent, background: 'rgba(34,255,170,.1)', padding: '2px 8px', borderRadius: 999, marginBottom: 4 }}>
                     ✓ Completed
                   </div>
                 )}
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, lineHeight: 1.3, color: '#F0F4FF', letterSpacing: '-.01em' }}>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, lineHeight: 1.3, color: t.txt, letterSpacing: '-.01em' }}>
                   {hunt.title}
                 </h3>
               </div>
-              <ArrowUpRight size={14} strokeWidth={2} style={{ color: '#4A5578', flexShrink: 0, marginTop: 2 }} />
+              <ArrowUpRight size={14} strokeWidth={2} style={{ color: t.txtFaint, flexShrink: 0, marginTop: 2 }} />
             </div>
 
-            <p style={{ margin: '0 0 10px', fontSize: 13, lineHeight: 1.5, color: '#8B9CC0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            <p style={{ margin: '0 0 10px', fontSize: 13, lineHeight: 1.5, color: t.txtDim, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {hunt.story_context}
             </p>
 
             {/* tags */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               {hunt.tags.slice(0, 3).map((tag) => (
-                <span key={tag} style={{ fontSize: 10.5, fontWeight: 500, color: '#8B9CC0', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', padding: '2px 10px', borderRadius: 999 }}>
+                <span key={tag} style={{ fontSize: 10.5, fontWeight: 500, color: t.txtDim, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', padding: '2px 10px', borderRadius: 999 }}>
                   {tag}
                 </span>
               ))}
@@ -71,14 +72,14 @@ export default function HuntCard({ hunt, isCompleted = false }: HuntCardProps) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     {hunt.tenantLogo
                       ? <img src={hunt.tenantLogo} alt={hunt.tenantName} style={{ width: 16, height: 16, borderRadius: 4, objectFit: 'cover' }} />
-                      : <Building2 size={12} strokeWidth={2} style={{ color: '#4A5578' }} />}
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#4A5578' }}>{hunt.tenantName}</span>
+                      : <Building2 size={12} strokeWidth={2} style={{ color: t.txtFaint }} />}
+                    <span style={{ fontSize: 11, fontWeight: 600, color: t.txtFaint }}>{hunt.tenantName}</span>
                   </div>
                 )}
                 {hunt.isVerified && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <ShieldCheck size={11} strokeWidth={2.5} style={{ color: '#22FFAA' }} />
-                    <span style={{ fontSize: 10.5, fontWeight: 700, color: '#22FFAA', letterSpacing: '.04em', textTransform: 'uppercase' }}>Verified</span>
+                    <ShieldCheck size={11} strokeWidth={2.5} style={{ color: t.accent }} />
+                    <span style={{ fontSize: 10.5, fontWeight: 700, color: t.accent, letterSpacing: '.04em', textTransform: 'uppercase' }}>Verified</span>
                   </div>
                 )}
               </div>
@@ -87,16 +88,16 @@ export default function HuntCard({ hunt, isCompleted = false }: HuntCardProps) {
             {/* stats bar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.06)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <Clock size={12} strokeWidth={2} style={{ color: '#4A5578' }} />
-                <span style={{ fontSize: 12, fontWeight: 500, color: '#8B9CC0' }}>{hunt.estimated_time}</span>
+                <Clock size={12} strokeWidth={2} style={{ color: t.txtFaint }} />
+                <span style={{ fontSize: 12, fontWeight: 500, color: t.txtDim }}>{hunt.estimated_time}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, background: diff.bg }}>
                 <Zap size={10} strokeWidth={2.5} style={{ color: diff.color }} />
                 <span style={{ fontSize: 10.5, fontWeight: 700, color: diff.color }}>{diff.label}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginLeft: 'auto' }}>
-                <Trophy size={12} strokeWidth={2} style={{ color: '#22FFAA' }} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#22FFAA', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <Trophy size={12} strokeWidth={2} style={{ color: t.accent }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: t.accent, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {hunt.reward.split('+')[0].trim()}
                 </span>
               </div>
@@ -105,7 +106,7 @@ export default function HuntCard({ hunt, isCompleted = false }: HuntCardProps) {
 
           {!isCompleted ? (
             <div style={{ padding: '12px 16px 16px' }}>
-              <div style={{ width: '100%', height: 46, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: '#22FFAA', boxShadow: '0 0 24px rgba(34,255,170,.35)', color: '#050816', fontSize: 14, fontWeight: 800 }}>
+              <div style={{ width: '100%', height: 46, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: t.accent, boxShadow: '0 0 24px rgba(34,255,170,.35)', color: t.bg, fontSize: 14, fontWeight: 800 }}>
                 Start Mission
               </div>
             </div>
