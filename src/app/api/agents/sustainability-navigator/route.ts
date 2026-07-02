@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-import { AGENT_SYSTEM_PROMPTS } from '@/lib/agents/prompts';
 import type { SustainabilityNavigatorInput, SustainabilityNavigatorOutput } from '@/lib/agents/types';
 import { requireTenantAgent } from '@/lib/agents/auth';
-
-const client = new Anthropic();
+import { runGovernedAgent } from '@/lib/xil/agent-runner';
 
 export async function POST(req: NextRequest) {
   const agentAuth = await requireTenantAgent();
@@ -49,18 +46,20 @@ Surface circular economy opportunities that are genuinely actionable.
 Return a JSON object matching the SustainabilityNavigatorOutput schema exactly. No markdown, no code fences — raw JSON only.`;
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 2048,
-      system: AGENT_SYSTEM_PROMPTS['sustainability-navigator'],
-      messages: [{ role: 'user', content: userPrompt }],
+    const result = await runGovernedAgent({
+      agentId: 'sustainability-navigator',
+      objective: `Assess sustainability: ${activityType}`,
+      userPrompt,
+      context: { missionContext, activityType, participantCount, geographicalContext },
+      userId: agentAuth.userId,
     });
-
-    const raw = (message.content[0] as { type: string; text: string }).text.trim();
-    const jsonStart = raw.indexOf('{');
-    const jsonEnd = raw.lastIndexOf('}');
-    const output: SustainabilityNavigatorOutput = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
-    return NextResponse.json(output);
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: 'Request rejected by constitutional alignment check', redFlags: result.redFlags, conditions: result.conditions },
+        { status: 422 },
+      );
+    }
+    return NextResponse.json(result.data as SustainabilityNavigatorOutput);
   } catch (err) {
     console.error('[sustainability-navigator]', err);
     return NextResponse.json({ error: 'Sustainability Navigator agent failed' }, { status: 500 });

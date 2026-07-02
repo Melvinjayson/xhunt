@@ -1,9 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'change-this-to-a-long-random-secret-at-least-64-chars',
-);
+import { getJwtSecretKey } from '@/lib/env';
 
 export interface SessionUser {
   id: string;
@@ -12,26 +9,25 @@ export interface SessionUser {
   tenantId: string | null;
 }
 
-/** Read authenticated user from request — uses header set by middleware, falls back to JWT. */
+/**
+ * Read the authenticated user from the request by verifying the session JWT.
+ *
+ * SECURITY: this must NOT trust the `x-user-*` request headers. Those headers are
+ * injected by the proxy only for a verified session, but a client can also send
+ * them directly; trusting them would be an authentication bypass. We always verify
+ * the httpOnly `__xhunt_session` cookie's signature here.
+ */
 export async function getSessionUser(req: NextRequest): Promise<SessionUser | null> {
-  const userId = req.headers.get('x-user-id');
-  if (userId) {
-    return {
-      id: userId,
-      email: req.headers.get('x-user-email') ?? '',
-      role: req.headers.get('x-user-role') ?? 'explorer',
-      tenantId: req.headers.get('x-tenant-id') || null,
-    };
-  }
-  const token = req.cookies.get('__xhunt_session')?.value;
+  const token = req.cookies.get('__xhunt_session')?.value
+    ?? req.headers.get('authorization')?.replace('Bearer ', '');
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, SECRET, { algorithms: ['HS256'] });
+    const { payload } = await jwtVerify(token, getJwtSecretKey(), { algorithms: ['HS256'] });
     if (payload['type'] !== 'access') return null;
     return {
       id: payload['sub'] as string,
       email: payload['email'] as string ?? '',
-      role: (payload['app_role'] as string) ?? 'explorer',
+      role: (payload['app_role'] as string) ?? (payload['role'] as string) ?? 'explorer',
       tenantId: (payload['tenant_id'] as string) || null,
     };
   } catch {

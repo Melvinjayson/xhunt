@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-import { AGENT_SYSTEM_PROMPTS } from '@/lib/agents/prompts';
 import type { BehavioralAnalystInput, BehavioralAnalystOutput } from '@/lib/agents/types';
 import { requireTenantAgent } from '@/lib/agents/auth';
-
-const client = new Anthropic();
+import { runGovernedAgent } from '@/lib/xil/agent-runner';
 
 export async function POST(req: NextRequest) {
   const auth = await requireTenantAgent();
@@ -45,19 +42,20 @@ ${step_drop_offs.length > 0
 Return a JSON object matching the BehavioralAnalystOutput schema exactly. Raw JSON only.`;
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 2048,
-      system: AGENT_SYSTEM_PROMPTS['behavioral-analyst'],
-      messages: [{ role: 'user', content: userPrompt }],
+    const result = await runGovernedAgent({
+      agentId: 'behavioral-analyst',
+      objective: `Analyse behaviour for mission: ${mission_title}`,
+      userPrompt,
+      context: { mission_title, total_attempts, total_completions, avg_time_minutes },
+      userId: auth.userId,
     });
-
-    const raw = (message.content[0] as { type: string; text: string }).text.trim();
-    const jsonStart = raw.indexOf('{');
-    const jsonEnd = raw.lastIndexOf('}');
-    const output: BehavioralAnalystOutput = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
-
-    return NextResponse.json(output);
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: 'Request rejected by constitutional alignment check', redFlags: result.redFlags, conditions: result.conditions },
+        { status: 422 },
+      );
+    }
+    return NextResponse.json(result.data as BehavioralAnalystOutput);
   } catch (err) {
     console.error('[behavioral-analyst]', err);
     return NextResponse.json({ error: 'Agent failed to analyse behaviour' }, { status: 500 });

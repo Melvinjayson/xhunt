@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail, EmailTemplate } from '@/lib/email/resend';
 import { getSession } from '@/lib/auth/server';
+import { env } from '@/lib/env';
 
 // Internal-only endpoint: caller must be authenticated as platform_admin
 // or call from server-side with the CRON_SECRET header (for worker tasks).
 export async function POST(req: NextRequest) {
   const cronSecret = req.headers.get('x-cron-secret');
-  const isInternalCron = cronSecret && cronSecret === process.env.CRON_SECRET;
+  const isInternalCron = Boolean(cronSecret && env.cronSecret && cronSecret === env.cronSecret);
 
   if (!isInternalCron) {
     const session = await getSession(req as never);

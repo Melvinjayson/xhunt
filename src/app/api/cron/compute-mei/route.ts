@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { env } from '@/lib/env';
 
 /**
  * Protected cron endpoint that refreshes MEI scores for all active missions.
@@ -16,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   // Auth check — Vercel Cron sends Authorization: Bearer <CRON_SECRET>
-  const secret = process.env.CRON_SECRET;
+  const secret = env.cronSecret;
   if (!secret && process.env.NODE_ENV === 'production') {
     return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 });
   }

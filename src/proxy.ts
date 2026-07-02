@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'change-this-to-a-long-random-secret-at-least-64-chars'
-);
+import { getJwtSecretKey } from '@/lib/env';
 
 const COOKIE = '__xhunt_session';
+
+// Identity headers this proxy injects for downstream API routes. They are
+// forged-input if they arrive from the client, so they are always stripped
+// from the inbound request before we (maybe) set our own trusted values.
+const IDENTITY_HEADERS = ['x-user-id', 'x-user-email', 'x-user-role', 'x-tenant-id'];
 
 const PUBLIC_PATTERNS = [
   /^\/$/, /^\/about/, /^\/blog/, /^\/careers/, /^\/contact/,
@@ -42,7 +44,7 @@ async function getSession(req: NextRequest) {
     ?? req.headers.get('authorization')?.replace('Bearer ', '');
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, SECRET, { algorithms: ['HS256'] });
+    const { payload } = await jwtVerify(token, getJwtSecretKey(), { algorithms: ['HS256'] });
     if (payload['type'] !== 'access') return null;
     return payload;
   } catch {
@@ -75,8 +77,12 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  // Forward user identity as request headers so API routes can read them
+  // Forward user identity as request headers so API routes can read them.
+  // CRITICAL: strip any client-supplied identity headers first — otherwise an
+  // unauthenticated request could set `x-user-id` itself and be trusted as that
+  // user by getSessionUser(). We only set these from a verified session.
   const reqHeaders = new Headers(req.headers);
+  for (const h of IDENTITY_HEADERS) reqHeaders.delete(h);
   if (session) {
     reqHeaders.set('x-user-id',    session['sub'] as string);
     reqHeaders.set('x-user-email', (session['email'] as string) ?? '');

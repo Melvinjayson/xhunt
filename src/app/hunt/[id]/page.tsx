@@ -37,7 +37,7 @@ export default function HuntDetailPage() {
 
   useEffect(() => {
     const state = loadState();
-    let found = state.hunts.find(h => h.id === huntId) ?? null;
+    const found = state.hunts.find(h => h.id === huntId) ?? null;
     setSaved((state.savedHunts ?? []).includes(huntId));
     setProgress(state.progress[huntId] ?? null);
     const vr = getVerificationStatus(huntId);

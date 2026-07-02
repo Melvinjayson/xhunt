@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-import { AGENT_SYSTEM_PROMPTS } from '@/lib/agents/prompts';
 import type { KnowledgeAgentInput, KnowledgeAgentOutput } from '@/lib/agents/types';
 import { requireTenantAgent } from '@/lib/agents/auth';
-
-const client = new Anthropic();
+import { runGovernedAgent } from '@/lib/xil/agent-runner';
 
 export async function POST(req: NextRequest) {
   const auth = await requireTenantAgent();
@@ -36,16 +33,20 @@ Max Recommendations: ${max_recommendations}
 Return a JSON object matching the KnowledgeAgentOutput schema exactly. Raw JSON only.`;
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 2048,
-      system: AGENT_SYSTEM_PROMPTS['knowledge-agent'],
-      messages: [{ role: 'user', content: userPrompt }],
+    const result = await runGovernedAgent({
+      agentId: 'knowledge-agent',
+      objective: `Knowledge query: ${query}`,
+      userPrompt,
+      context: { query, node_types, max_recommendations },
+      userId: auth.userId,
     });
-
-    const raw = (message.content[0] as { type: string; text: string }).text.trim();
-    const output: KnowledgeAgentOutput = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
-    return NextResponse.json(output);
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: 'Request rejected by constitutional alignment check', redFlags: result.redFlags, conditions: result.conditions },
+        { status: 422 },
+      );
+    }
+    return NextResponse.json(result.data as KnowledgeAgentOutput);
   } catch (err) {
     console.error('[knowledge-agent]', err);
     return NextResponse.json({ error: 'Knowledge Agent failed to respond' }, { status: 500 });

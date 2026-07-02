@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "check:hex": "node scripts/check-hex.mjs",
+    "ci": "npm run typecheck && npm run lint && npm run check:hex"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",

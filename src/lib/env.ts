@@ -27,8 +27,32 @@ export const env = {
   stripeWebhookSecret:    process.env.STRIPE_WEBHOOK_SECRET ?? '',
   stripeProPriceId:       process.env.STRIPE_PRO_PRICE_ID ?? '',
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
-  jwtSecret:              process.env.JWT_SECRET ?? 'change-this-to-a-long-random-secret-at-least-64-chars',
+  cronSecret:             process.env.CRON_SECRET ?? '',
 } as const;
+
+/**
+ * The single source of truth for the JWT signing/verification key.
+ *
+ * There is deliberately NO fallback default: signing or verifying tokens with a
+ * publicly known secret would let anyone forge admin JWTs. This throws — in every
+ * environment, not just production — if `JWT_SECRET` is missing or too short.
+ *
+ * Called lazily (at request time, inside auth handlers) rather than at module load
+ * so it never breaks `next build`, which does not exercise auth.
+ */
+let cachedJwtKey: Uint8Array | null = null;
+export function getJwtSecretKey(): Uint8Array {
+  if (cachedJwtKey) return cachedJwtKey;
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error(
+      'JWT_SECRET is missing or shorter than 32 characters. Refusing to sign or ' +
+      'verify tokens with an insecure secret — set a strong JWT_SECRET.',
+    );
+  }
+  cachedJwtKey = new TextEncoder().encode(secret);
+  return cachedJwtKey;
+}
 
 export const publicEnv = {
   supabaseUrl:     process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',

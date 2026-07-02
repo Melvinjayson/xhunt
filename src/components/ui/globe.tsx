@@ -111,7 +111,7 @@ export function Globe({ className }: { className?: string }) {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', updateSize);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 
   return (
     <div className={cn('absolute inset-0 mx-auto aspect-square w-full', className)}>

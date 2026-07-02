@@ -56,9 +56,27 @@ export async function apiRegister(payload: RegisterPayload): Promise<AuthUser> {
   return mapUser(data.user);
 }
 
+/**
+ * Exchange the httpOnly refresh token for a fresh access token.
+ * Returns true if the session was renewed. Safe to call speculatively.
+ */
+export async function apiRefresh(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/auth/refresh', { method: 'POST' });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function apiMe(): Promise<AuthUser | null> {
   try {
-    const res = await fetch('/api/auth/me', { cache: 'no-store' });
+    let res = await fetch('/api/auth/me', { cache: 'no-store' });
+    // Access token expired → attempt a one-shot refresh, then retry once.
+    // Without this, an expired (but refreshable) session silently logs the user out.
+    if (res.status === 401 && (await apiRefresh())) {
+      res = await fetch('/api/auth/me', { cache: 'no-store' });
+    }
     if (!res.ok) return null;
     const data = await res.json();
     return mapUser(data);

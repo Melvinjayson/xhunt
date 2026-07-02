@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-import { AGENT_SYSTEM_PROMPTS } from '@/lib/agents/prompts';
 import type { OutcomePlannerInput, OutcomePlannerOutput } from '@/lib/agents/types';
 import { requireTenantAgent } from '@/lib/agents/auth';
-
-const client = new Anthropic();
+import { runGovernedAgent } from '@/lib/xil/agent-runner';
 
 export async function POST(req: NextRequest) {
   const auth = await requireTenantAgent();
@@ -39,16 +36,21 @@ Work backwards from the outcome. Define the milestones, mission sequence, risks,
 Return a JSON object matching the OutcomePlannerOutput schema exactly. Raw JSON only.`;
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 3000,
-      system: AGENT_SYSTEM_PROMPTS['outcome-planner'],
-      messages: [{ role: 'user', content: userPrompt }],
+    const result = await runGovernedAgent({
+      agentId: 'outcome-planner',
+      objective: `Plan outcome: ${desired_outcome}`,
+      userPrompt,
+      context: { desired_outcome, audience, industry, timeline_weeks, constraints },
+      userId: auth.userId,
+      maxTokens: 3000,
     });
-
-    const raw = (message.content[0] as { type: string; text: string }).text.trim();
-    const output: OutcomePlannerOutput = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
-    return NextResponse.json(output);
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: 'Request rejected by constitutional alignment check', redFlags: result.redFlags, conditions: result.conditions },
+        { status: 422 },
+      );
+    }
+    return NextResponse.json(result.data as OutcomePlannerOutput);
   } catch (err) {
     console.error('[outcome-planner]', err);
     return NextResponse.json({ error: 'Outcome Planner failed to generate roadmap' }, { status: 500 });

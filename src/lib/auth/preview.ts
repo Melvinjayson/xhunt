@@ -1,8 +1,5 @@
 import { SignJWT } from 'jose';
-
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'change-this-to-a-long-random-secret-at-least-64-chars',
-);
+import { getJwtSecretKey } from '@/lib/env';
 
 /**
  * Preview mode is ONLY active when PREVIEW_MODE=true is explicitly set.
@@ -53,7 +50,7 @@ export async function createPreviewSession(
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('15m')
-    .sign(SECRET);
+    .sign(getJwtSecretKey());
 
   return {
     token: { access_token, expires_in: expiresIn },

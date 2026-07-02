@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { PREVIEW_ENABLED } from '@/lib/auth/preview';
+import { getJwtSecretKey } from '@/lib/env';
 
 const BACKEND = process.env.NEXT_PUBLIC_AUTH_URL ?? '';
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'change-this-to-a-long-random-secret-at-least-64-chars',
-);
 
 async function decodeLocalJwt(token: string) {
-  const { payload } = await jwtVerify(token, SECRET, { algorithms: ['HS256'] });
+  const { payload } = await jwtVerify(token, getJwtSecretKey(), { algorithms: ['HS256'] });
   if (payload['type'] !== 'access') throw new Error('not an access token');
   return NextResponse.json({
     id: payload['sub'],

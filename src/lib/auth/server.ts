@@ -1,9 +1,6 @@
 import { jwtVerify } from 'jose';
 import type { NextRequest } from 'next/server';
-
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'change-this-to-a-long-random-secret-at-least-64-chars'
-);
+import { getJwtSecretKey } from '@/lib/env';
 
 const COOKIE = '__xhunt_session';
 
@@ -21,7 +18,7 @@ export async function getSession(req: NextRequest): Promise<SessionPayload | nul
   if (!token) return null;
 
   try {
-    const { payload } = await jwtVerify(token, SECRET, {
+    const { payload } = await jwtVerify(token, getJwtSecretKey(), {
       algorithms: ['HS256'],
     });
     if (payload['type'] !== 'access') return null;
