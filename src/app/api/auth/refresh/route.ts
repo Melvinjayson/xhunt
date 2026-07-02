@@ -29,10 +29,11 @@ export async function POST(req: NextRequest) {
 
   const maxAge = data.expires_in;
   const isSecure = process.env.NODE_ENV === 'production';
-  const cookieOpts = { httpOnly: false, secure: isSecure, sameSite: 'lax' as const, path: '/', maxAge };
 
   const res = NextResponse.json(data);
-  res.cookies.set('__xhunt_session', data.access_token, { ...cookieOpts, httpOnly: true });
-  res.cookies.set('__xhunt_at', data.access_token, cookieOpts);
+  // httpOnly session token only (H1) — no JS-readable copy.
+  res.cookies.set('__xhunt_session', data.access_token, {
+    httpOnly: true, secure: isSecure, sameSite: 'lax', path: '/', maxAge,
+  });
   return res;
 }

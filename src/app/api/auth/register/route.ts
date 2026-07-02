@@ -70,11 +70,10 @@ export async function POST(req: NextRequest) {
   }
 
   const res = NextResponse.json(data, { status: 201 });
+  // httpOnly session token only — the browser gets its Supabase RLS token from
+  // /api/auth/supabase-token, never a JS-readable cookie (H1).
   res.cookies.set('__xhunt_session', access_token, {
     ...BASE_COOKIE, httpOnly: true, maxAge: expires_in,
-  });
-  res.cookies.set('__xhunt_at', access_token, {
-    ...BASE_COOKIE, httpOnly: false, maxAge: expires_in,
   });
   if (refresh_token) {
     res.cookies.set('__xhunt_refresh', refresh_token, {

@@ -62,13 +62,11 @@ export async function POST(req: NextRequest) {
   const { access_token, expires_in, refresh_token } = data.token;
 
   const res = NextResponse.json(data);
-  // httpOnly session token — read by middleware / server components
+  // httpOnly session token — the single source of truth. Read by the proxy,
+  // server components, and API routes. The browser gets a short-lived Supabase
+  // RLS token from /api/auth/supabase-token instead of a JS-readable cookie (H1).
   res.cookies.set('__xhunt_session', access_token, {
     ...BASE_COOKIE, httpOnly: true, maxAge: expires_in,
-  });
-  // Non-httpOnly copy — read by Supabase client for RLS authorization header
-  res.cookies.set('__xhunt_at', access_token, {
-    ...BASE_COOKIE, httpOnly: false, maxAge: expires_in,
   });
   // Refresh token — httpOnly, long-lived
   if (refresh_token) {
