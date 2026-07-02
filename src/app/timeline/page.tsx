@@ -10,12 +10,13 @@ import {
   Image, Video, Music, Paperclip, Send, UserPlus, Users,
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
+import { t } from '@/theme/colors';
 
 const T = {
-  bg: '#050816', panel: '#07101F', card: '#0A1226', elev: '#0D1530',
+  bg: t.bg, panel: t.surface, card: t.card, elev: '#0D1530',
   line: 'rgba(255,255,255,.07)', line2: 'rgba(255,255,255,.12)',
-  txt: '#F0F4FF', muted: '#8B9CC0', dim: '#4A5578', faint: '#2A3550',
-  green: '#22FFAA', red: '#FF5C7A', amber: '#FFB84D', live: '#ff3b30', ai: '#6D5DFD',
+  txt: t.txt, muted: t.txtDim, dim: t.txtFaint, faint: '#2A3550',
+  green: t.accent, red: t.error, amber: t.warning, live: '#ff3b30', ai: t.ai,
 } as const;
 
 /* ─── Types ─── */
@@ -292,7 +293,7 @@ function PostCard({ post, onReact, onRepost }: {
                     transition: 'background .15s', flexShrink: 0,
                   }}
                 >
-                  <Send size={15} style={{ color: commentText.trim() ? '#050816' : T.faint }} />
+                  <Send size={15} style={{ color: commentText.trim() ? t.bg : T.faint }} />
                 </button>
               </div>
             </div>
@@ -513,7 +514,7 @@ function ComposeSheet({ onClose, onCreated }: { onClose: () => void; onCreated: 
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.dim }}><X size={20} /></button>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: T.txt, margin: 0, flex: 1 }}>Share to Timeline</h2>
           <button onClick={handleShare} disabled={loading || !caption.trim()}
-            style={{ padding: '8px 18px', borderRadius: 20, border: 'none', background: (caption.trim() && !loading) ? T.green : T.elev, color: (caption.trim() && !loading) ? '#050816' : T.dim, fontWeight: 700, fontSize: 13, cursor: (caption.trim() && !loading) ? 'pointer' : 'not-allowed', fontFamily: 'inherit', transition: 'background .2s' }}>
+            style={{ padding: '8px 18px', borderRadius: 20, border: 'none', background: (caption.trim() && !loading) ? T.green : T.elev, color: (caption.trim() && !loading) ? t.bg : T.dim, fontWeight: 700, fontSize: 13, cursor: (caption.trim() && !loading) ? 'pointer' : 'not-allowed', fontFamily: 'inherit', transition: 'background .2s' }}>
             {loading ? '…' : 'Post'}
           </button>
         </div>
@@ -768,12 +769,12 @@ export default function TimelinePage() {
                 </p>
                 {tab === 'Following' ? (
                   <button onClick={() => setTab('For You')}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', background: T.green, color: '#050816', fontWeight: 700, fontSize: 14, fontFamily: 'inherit' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', background: T.green, color: t.bg, fontWeight: 700, fontSize: 14, fontFamily: 'inherit' }}>
                     <Users size={15} /> Discover People
                   </button>
                 ) : (
                   <button onClick={() => setCompose(true)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', background: T.green, color: '#050816', fontWeight: 700, fontSize: 14, fontFamily: 'inherit' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', background: T.green, color: t.bg, fontWeight: 700, fontSize: 14, fontFamily: 'inherit' }}>
                     <Sparkles size={15} /> Share a moment
                   </button>
                 )}
@@ -793,7 +794,7 @@ export default function TimelinePage() {
       {/* Desktop compose */}
       <motion.button whileTap={{ scale: 0.93 }} onClick={() => setCompose(true)}
         className="hidden md:flex"
-        style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 50, padding: '12px 22px', borderRadius: 28, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${T.green},${T.ai})`, boxShadow: `0 4px 24px rgba(34,255,170,.3)`, alignItems: 'center', gap: 8, color: '#050816', fontWeight: 700, fontSize: 14, fontFamily: 'inherit' }}>
+        style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 50, padding: '12px 22px', borderRadius: 28, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${T.green},${T.ai})`, boxShadow: `0 4px 24px rgba(34,255,170,.3)`, alignItems: 'center', gap: 8, color: t.bg, fontWeight: 700, fontSize: 14, fontFamily: 'inherit' }}>
         <Zap size={16} /> Post to Timeline
       </motion.button>
 

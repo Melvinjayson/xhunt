@@ -5,6 +5,7 @@ import { GlassFilter } from '@/components/LiquidGlass';
 import { MuiProvider } from '@/components/MuiProvider';
 import { assertProductionEnv } from '@/lib/env';
 import './globals.css';
+import { t } from '@/theme/colors';
 
 assertProductionEnv();
 
@@ -56,7 +57,7 @@ export const viewport: Viewport = {
   width:           'device-width',
   initialScale:    1,
   maximumScale:    5,
-  themeColor:      '#22FFAA',
+  themeColor:      t.accent,
   colorScheme:     'dark',
 };
 

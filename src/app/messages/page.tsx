@@ -55,7 +55,7 @@ export default function MessagesPage() {
       } | null) => {
         if (data?.conversations?.length) {
           const TYPE_COLORS: Record<string, string> = {
-            mission: '#6D5DFD', team: '#22FFAA', community: '#FFB84D',
+            mission: t.ai, team: t.accent, community: t.warning,
           };
           setConversations(data.conversations.map((c) => ({
             id:             c.id,

@@ -152,7 +152,7 @@ function StepRow({ step, meta, idx }: {
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: idx * 0.05 }}
       className="rounded-xl p-4"
-      style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,0.06)' }}
+      style={{ background: t.card, border: '1px solid rgba(255,255,255,0.06)' }}
     >
       <div className="flex items-start gap-3 mb-3">
         <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-[12px] font-bold"
@@ -295,7 +295,7 @@ export default function MissionAnalyticsPage() {
       <div className="flex items-start gap-4">
         <Link href="/workspace/analytics"
           className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-          style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,0.07)' }}>
+          style={{ background: t.card, border: '1px solid rgba(255,255,255,0.07)' }}>
           <ArrowLeft size={16} strokeWidth={2} style={{ color: t.txtDim }} />
         </Link>
         <div className="flex-1 min-w-0">
@@ -317,7 +317,7 @@ export default function MissionAnalyticsPage() {
         <div className="flex items-center gap-2 flex-shrink-0">
           <button onClick={triggerMeiCompute} disabled={refreshing}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold"
-            style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,0.07)', color: t.txtDim }}>
+            style={{ background: t.card, border: '1px solid rgba(255,255,255,0.07)', color: t.txtDim }}>
             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} strokeWidth={2} />
             Refresh MEI
           </button>
@@ -335,7 +335,7 @@ export default function MissionAnalyticsPage() {
 
         {/* MEI card */}
         <div className="rounded-2xl p-6 flex flex-col items-center gap-4 min-w-[200px]"
-          style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
+          style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
           <p className="text-[12px] font-bold uppercase tracking-widest" style={{ color: t.txtFaint }}>
             Mission Effectiveness
           </p>
@@ -363,7 +363,7 @@ export default function MissionAnalyticsPage() {
 
         {/* Funnel card */}
         <div className="rounded-2xl p-6 space-y-4"
-          style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
+          style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
           <div className="flex items-center justify-between mb-2">
             <p className="text-[13px] font-bold" style={{ color: t.txt }}>Participant Funnel</p>
             {funnel && (
@@ -400,7 +400,7 @@ export default function MissionAnalyticsPage() {
       </div>
 
       {/* Step Drop-off */}
-      <div className="rounded-2xl p-6" style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
+      <div className="rounded-2xl p-6" style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <BarChart3 size={16} strokeWidth={2} style={{ color: t.ai }} />
@@ -438,7 +438,7 @@ export default function MissionAnalyticsPage() {
       <div className="grid grid-cols-2 gap-6">
 
         {/* Event type breakdown */}
-        <div className="rounded-2xl p-6" style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="rounded-2xl p-6" style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
           <div className="flex items-center gap-2 mb-4">
             <Activity size={15} strokeWidth={2} style={{ color: t.accent }} />
             <h2 className="text-[14px] font-bold" style={{ color: t.txt }}>Event Breakdown</h2>
@@ -463,7 +463,7 @@ export default function MissionAnalyticsPage() {
         </div>
 
         {/* AI recommendations */}
-        <div className="rounded-2xl p-6" style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="rounded-2xl p-6" style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
           <div className="flex items-center gap-2 mb-4">
             <Sparkles size={15} strokeWidth={2} style={{ color: t.ai }} />
             <h2 className="text-[14px] font-bold" style={{ color: t.txt }}>Health Insights</h2>

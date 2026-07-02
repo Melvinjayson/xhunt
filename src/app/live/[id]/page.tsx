@@ -23,17 +23,17 @@ import { useAuth } from '@/lib/auth/context';
 import { t } from '@/theme/colors';
 
 const T = {
-  bg:       '#050816',
-  panel:    '#07101F',
+  bg:       t.bg,
+  panel:    t.surface,
   elev:     '#17262a',
   line:     'rgba(255,255,255,.07)',
   line2:    'rgba(255,255,255,.12)',
   txt:      '#e9eff0',
   muted:    '#7d8b8e',
   dim:      '#54625f',
-  green:    '#22FFAA',
-  red:      '#FF5C7A',
-  amber:    '#FFB84D',
+  green:    t.accent,
+  red:      t.error,
+  amber:    t.warning,
   live:     '#ff3b30',
   liveGlow: 'rgba(255,59,48,.18)',
 } as const;
@@ -71,9 +71,9 @@ interface SessionData {
 }
 
 const STEP_TYPE_META = {
-  action:      { icon: <Play size={14} fill="currentColor" />,        color: '#22FFAA', label: 'Action'      },
-  reflection:  { icon: <Lightbulb size={14} />,                        color: '#6D5DFD', label: 'Reflection'  },
-  discovery:   { icon: <CheckSquare size={14} />,                      color: '#FFB84D', label: 'Discovery'   },
+  action:      { icon: <Play size={14} fill="currentColor" />,        color: t.accent, label: 'Action'      },
+  reflection:  { icon: <Lightbulb size={14} />,                        color: t.ai, label: 'Reflection'  },
+  discovery:   { icon: <CheckSquare size={14} />,                      color: t.warning, label: 'Discovery'   },
 } as const;
 
 export default function LiveSessionPage() {
@@ -213,7 +213,7 @@ export default function LiveSessionPage() {
             borderRadius: '14px',
             textDecoration: 'none',
             background: 'linear-gradient(135deg,#22FFAA,#6D5DFD)',
-            color: '#050816',
+            color: t.bg,
             fontWeight: 700,
             fontSize: 15,
             mb: 1.5,
@@ -418,7 +418,7 @@ export default function LiveSessionPage() {
                 borderRadius: '12px',
                 border: 'none',
                 bgcolor: (hostBusy || session.current_step_index + 1 >= session.total_steps) ? T.elev : T.green,
-                color: (hostBusy || session.current_step_index + 1 >= session.total_steps) ? T.dim : '#050816',
+                color: (hostBusy || session.current_step_index + 1 >= session.total_steps) ? T.dim : t.bg,
                 fontWeight: 700,
                 fontSize: 14,
                 textTransform: 'none',
@@ -466,7 +466,7 @@ export default function LiveSessionPage() {
               borderRadius: '14px',
               textDecoration: 'none',
               bgcolor: T.green,
-              color: '#050816',
+              color: t.bg,
               fontWeight: 700,
               fontSize: 15,
               mb: 1.25,

@@ -5,19 +5,20 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Brain, Shield, Zap, CheckCircle2, X, Clock, Lock } from 'lucide-react';
 import Link from 'next/link';
+import { t } from '@/theme/colors';
 
-const BG    = '#050816';
-const CARD  = '#0A1226';
-const ACCENT = '#22FFAA';
-const AI_CLR = '#6D5DFD';
-const TXT   = '#F0F4FF';
-const DIM   = '#8B9CC0';
-const FAINT = '#4A5578';
+const BG    = t.bg;
+const CARD  = t.card;
+const ACCENT = t.accent;
+const AI_CLR = t.ai;
+const TXT   = t.txt;
+const DIM   = t.txtDim;
+const FAINT = t.txtFaint;
 
 const STEPS = [
   { icon: CheckCircle2, label: 'Create Account',      desc: '30 seconds',  color: ACCENT  },
   { icon: Brain,        label: 'Build Your Profile',  desc: '~2 minutes',  color: AI_CLR  },
-  { icon: Zap,          label: 'Start Earning',        desc: 'Immediately', color: '#FFB84D' },
+  { icon: Zap,          label: 'Start Earning',        desc: 'Immediately', color: t.warning },
 ];
 
 const FEATURES = [
