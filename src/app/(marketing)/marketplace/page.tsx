@@ -9,8 +9,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/cn';
 import { IMPACT_CATEGORIES, SDG_META, estimateCashReward } from '@/lib/missionCategories';
+import { t } from '@/theme/colors';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -54,15 +56,15 @@ const SORT_OPTIONS = [
 ] as const;
 
 const DIFF_COLORS: Record<string, string> = {
-  easy:   '#22FFAA',
-  medium: '#FFB84D',
-  hard:   '#FF5C7A',
+  easy:   t.accent,
+  medium: t.warning,
+  hard:   t.error,
 };
 
 function ListingCard({ listing, onApply }: { listing: ListingRow; onApply: (id: string) => void }) {
   const m = listing.mission;
   const catMeta = IMPACT_CATEGORIES.find((c) => c.id === listing.category);
-  const diffColor = DIFF_COLORS[m.difficulty] ?? '#8B9CC0';
+  const diffColor = DIFF_COLORS[m.difficulty] ?? t.txtDim;
   const cashEst = estimateCashReward(undefined, m.difficulty as 'easy' | 'medium' | 'hard', undefined);
 
   return (
@@ -70,7 +72,7 @@ function ListingCard({ listing, onApply }: { listing: ListingRow; onApply: (id: 
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       className="group rounded-2xl overflow-hidden transition-all hover:scale-[1.01] cursor-pointer"
-      style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}
+      style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}
       onClick={() => onApply(listing.id)}
     >
       {/* Category stripe */}
@@ -85,13 +87,13 @@ function ListingCard({ listing, onApply }: { listing: ListingRow; onApply: (id: 
             <div className="flex items-center gap-2 flex-wrap mb-1.5">
               {listing.is_featured && (
                 <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(255,184,77,0.12)', color: '#FFB84D', border: '1px solid rgba(255,184,77,0.2)' }}>
+                  style={{ background: 'rgba(255,184,77,0.12)', color: t.warning, border: '1px solid rgba(255,184,77,0.2)' }}>
                   ⭐ Featured
                 </span>
               )}
               {listing.listing_type === 'paid' && (
                 <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(34,255,170,0.08)', color: '#22FFAA', border: '1px solid rgba(34,255,170,0.2)' }}>
+                  style={{ background: 'rgba(34,255,170,0.08)', color: t.accent, border: '1px solid rgba(34,255,170,0.2)' }}>
                   💰 Paid
                 </span>
               )}
@@ -102,21 +104,21 @@ function ListingCard({ listing, onApply }: { listing: ListingRow; onApply: (id: 
                 </span>
               )}
             </div>
-            <h3 className="text-[15px] font-bold leading-snug" style={{ color: '#F0F4FF' }}>{m.title}</h3>
+            <h3 className="text-[15px] font-bold leading-snug" style={{ color: t.txt }}>{m.title}</h3>
             {listing.tagline && (
-              <p className="text-[12px] mt-1 leading-relaxed line-clamp-2" style={{ color: '#8B9CC0' }}>{listing.tagline}</p>
+              <p className="text-[12px] mt-1 leading-relaxed line-clamp-2" style={{ color: t.txtDim }}>{listing.tagline}</p>
             )}
           </div>
           {listing.listing_type === 'paid' && listing.price_cents > 0 ? (
             <div className="text-right flex-shrink-0">
-              <p className="text-[18px] font-black" style={{ color: '#22FFAA' }}>
+              <p className="text-[18px] font-black" style={{ color: t.accent }}>
                 ${(listing.price_cents / 100).toFixed(0)}
               </p>
               <p className="text-[10px] text-[#4A5578]">to join</p>
             </div>
           ) : cashEst ? (
             <div className="text-right flex-shrink-0">
-              <p className="text-[16px] font-black" style={{ color: '#22FFAA' }}>{cashEst}</p>
+              <p className="text-[16px] font-black" style={{ color: t.accent }}>{cashEst}</p>
               <p className="text-[10px] text-[#4A5578]">reward</p>
             </div>
           ) : null}
@@ -126,17 +128,17 @@ function ListingCard({ listing, onApply }: { listing: ListingRow; onApply: (id: 
         {m.tenant && (
           <div className="flex items-center gap-2 mb-3">
             <div className="w-5 h-5 rounded-md overflow-hidden flex-shrink-0"
-              style={{ background: '#0A1226' }}>
+              style={{ background: t.card }}>
               {m.tenant.logo_url
                 ? <img src={m.tenant.logo_url} alt="" className="w-full h-full object-cover" />
-                : <Building2 size={12} strokeWidth={1.5} style={{ color: '#4A5578', margin: 'auto' }} />}
+                : <Building2 size={12} strokeWidth={1.5} style={{ color: t.txtFaint, margin: 'auto' }} />}
             </div>
-            <span className="text-[11px] font-semibold" style={{ color: '#8B9CC0' }}>{m.tenant.name}</span>
+            <span className="text-[11px] font-semibold" style={{ color: t.txtDim }}>{m.tenant.name}</span>
           </div>
         )}
 
         {/* Stats row */}
-        <div className="flex items-center gap-4 mb-3 text-[11px]" style={{ color: '#4A5578' }}>
+        <div className="flex items-center gap-4 mb-3 text-[11px]" style={{ color: t.txtFaint }}>
           <span className="flex items-center gap-1">
             <Users size={11} strokeWidth={2} />
             {listing.apply_count.toLocaleString()} applied
@@ -172,7 +174,7 @@ function ListingCard({ listing, onApply }: { listing: ListingRow; onApply: (id: 
           style={{
             background: 'rgba(34,255,170,0.08)',
             border: '1px solid rgba(34,255,170,0.2)',
-            color: '#22FFAA',
+            color: t.accent,
           }}
           onClick={(e) => { e.stopPropagation(); onApply(listing.id); }}
         >
@@ -190,11 +192,11 @@ function ApplyModal({ listingId, onClose }: { listingId: string; onClose: () => 
   const [applying,  setApplying]  = useState(false);
   const [applied,   setApplied]   = useState(false);
   const supabase = createClient();
+  const { user } = useAuth();
 
   async function submit() {
     setApplying(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { window.location.href = '/auth/login'; return; }
+    if (!user) { window.location.href = '/sign-in'; return; }
 
     // Get listing's mission_id
     const { data: listing } = await supabase.from('marketplace_listings').select('mission_id,tenant_id').eq('id', listingId).single();
@@ -226,29 +228,29 @@ function ApplyModal({ listingId, onClose }: { listingId: string; onClose: () => 
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-full max-w-md rounded-3xl p-6" style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="w-full max-w-md rounded-3xl p-6" style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.1)' }}>
           {applied ? (
             <div className="text-center py-4">
               <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
                 style={{ background: 'rgba(34,255,170,0.1)', border: '1px solid rgba(34,255,170,0.3)' }}>
-                <CheckCircle2 size={28} strokeWidth={2} style={{ color: '#22FFAA' }} />
+                <CheckCircle2 size={28} strokeWidth={2} style={{ color: t.accent }} />
               </div>
-              <h3 className="text-xl font-bold mb-2" style={{ color: '#F0F4FF' }}>Application Sent!</h3>
-              <p className="text-[13px] mb-5" style={{ color: '#8B9CC0' }}>
+              <h3 className="text-xl font-bold mb-2" style={{ color: t.txt }}>Application Sent!</h3>
+              <p className="text-[13px] mb-5" style={{ color: t.txtDim }}>
                 The organization will review your application and get back to you.
               </p>
               <button onClick={onClose} className="w-full h-11 rounded-2xl font-bold text-[14px]"
-                style={{ background: '#22FFAA', color: '#050816' }}>
+                style={{ background: t.accent, color: t.bg }}>
                 Done
               </button>
             </div>
           ) : (
             <>
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-[16px] font-bold" style={{ color: '#F0F4FF' }}>Apply for Mission</h3>
+                <h3 className="text-[16px] font-bold" style={{ color: t.txt }}>Apply for Mission</h3>
                 <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center"
-                  style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,0.07)' }}>
-                  <X size={15} strokeWidth={2} style={{ color: '#8B9CC0' }} />
+                  style={{ background: t.card, border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <X size={15} strokeWidth={2} style={{ color: t.txtDim }} />
                 </button>
               </div>
               <div className="mb-4">
@@ -258,11 +260,11 @@ function ApplyModal({ listingId, onClose }: { listingId: string; onClose: () => 
                 <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={4}
                   placeholder="Tell the organization why you're the right person for this mission…"
                   className="w-full px-3 py-2.5 rounded-xl text-[13px] resize-none focus:outline-none"
-                  style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F4FF' }} />
+                  style={{ background: t.card, border: '1px solid rgba(255,255,255,0.08)', color: t.txt }} />
               </div>
               <button onClick={submit} disabled={applying}
                 className="w-full h-11 rounded-2xl font-bold text-[14px] flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{ background: '#22FFAA', color: '#050816' }}>
+                style={{ background: t.accent, color: t.bg }}>
                 {applying ? 'Sending…' : 'Submit Application'}
                 <ArrowRight size={15} strokeWidth={2.5} />
               </button>
@@ -333,21 +335,21 @@ export default function MarketplacePage() {
   const totalApplied  = listings.reduce((sum, l) => sum + l.apply_count, 0);
 
   return (
-    <div className="min-h-screen" style={{ background: '#050816' }}>
+    <div className="min-h-screen" style={{ background: t.bg }}>
       {/* Hero */}
       <div className="max-w-6xl mx-auto px-6 pt-20 pb-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4"
             style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)' }}>
-            <Globe size={13} strokeWidth={2} style={{ color: '#22FFAA' }} />
-            <span className="text-[12px] font-semibold" style={{ color: '#22FFAA' }}>Impact Marketplace</span>
+            <Globe size={13} strokeWidth={2} style={{ color: t.accent }} />
+            <span className="text-[12px] font-semibold" style={{ color: t.accent }}>Impact Marketplace</span>
           </div>
           <h1 className="text-[42px] md:text-[56px] font-black leading-none mb-4"
-            style={{ color: '#F0F4FF' }}>
+            style={{ color: t.txt }}>
             Find missions that<br />
-            <span style={{ color: '#22FFAA' }}>match your impact</span>
+            <span style={{ color: t.accent }}>match your impact</span>
           </h1>
-          <p className="text-[16px] max-w-2xl mx-auto" style={{ color: '#8B9CC0' }}>
+          <p className="text-[16px] max-w-2xl mx-auto" style={{ color: t.txtDim }}>
             Discover paid and pro-bono missions from NGOs, startups, universities, and governments.
             Get rewarded for real-world impact.
           </p>
@@ -362,9 +364,9 @@ export default function MarketplacePage() {
             { label: 'Total Applied', value: totalApplied > 1000 ? `${(totalApplied/1000).toFixed(1)}K` : totalApplied.toString(), icon: Users },
           ].map(({ label, value, icon: Icon }) => (
             <div key={label} className="flex items-center gap-2">
-              <Icon size={14} strokeWidth={2} style={{ color: '#22FFAA' }} />
-              <span className="text-[18px] font-black" style={{ color: '#F0F4FF' }}>{value}</span>
-              <span className="text-[12px]" style={{ color: '#4A5578' }}>{label}</span>
+              <Icon size={14} strokeWidth={2} style={{ color: t.accent }} />
+              <span className="text-[18px] font-black" style={{ color: t.txt }}>{value}</span>
+              <span className="text-[12px]" style={{ color: t.txtFaint }}>{label}</span>
             </div>
           ))}
         </motion.div>
@@ -373,17 +375,17 @@ export default function MarketplacePage() {
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="flex gap-3 mb-6">
           <div className="flex-1 relative">
-            <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2" strokeWidth={2} style={{ color: '#4A5578' }} />
+            <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2" strokeWidth={2} style={{ color: t.txtFaint }} />
             <input value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Search missions, organizations, skills…"
               className="w-full h-11 pl-10 pr-4 rounded-2xl text-[14px] focus:outline-none transition-all"
-              style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F4FF' }} />
+              style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.08)', color: t.txt }} />
           </div>
           <button onClick={() => setShowFilters(!showFilters)}
             className={cn('flex items-center gap-2 h-11 px-4 rounded-2xl text-[13px] font-semibold transition-all',
               showFilters ? 'bg-[rgba(34,255,170,0.1)] text-[#22FFAA] border border-[rgba(34,255,170,0.25)]'
                           : 'text-[#8B9CC0] border border-[rgba(255,255,255,0.08)]')}
-            style={!showFilters ? { background: '#07101F' } : {}}>
+            style={!showFilters ? { background: t.surface } : {}}>
             <Filter size={14} strokeWidth={2} />Filters
           </button>
         </motion.div>
@@ -393,7 +395,7 @@ export default function MarketplacePage() {
           {showFilters && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-6">
-              <div className="rounded-2xl p-5 space-y-4" style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="rounded-2xl p-5 space-y-4" style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div>
                   <p className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider mb-2">Sort By</p>
                   <div className="flex gap-2 flex-wrap">
@@ -422,7 +424,7 @@ export default function MarketplacePage() {
                         className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold border transition-all')}
                         style={{
                           background:  category === c.id ? `${c.color}15` : 'transparent',
-                          color:       category === c.id ? c.color : '#8B9CC0',
+                          color:       category === c.id ? c.color : t.txtDim,
                           borderColor: category === c.id ? `${c.color}30` : 'rgba(255,255,255,0.06)',
                         }}>
                         {c.emoji} {c.label}
@@ -439,15 +441,15 @@ export default function MarketplacePage() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-64 rounded-2xl animate-pulse" style={{ background: '#07101F' }} />
+              <div key={i} className="h-64 rounded-2xl animate-pulse" style={{ background: t.surface }} />
             ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-[18px] font-bold mb-2" style={{ color: '#F0F4FF' }}>
+            <p className="text-[18px] font-bold mb-2" style={{ color: t.txt }}>
               {listings.length === 0 ? 'No missions listed yet' : 'No results found'}
             </p>
-            <p className="text-[14px]" style={{ color: '#4A5578' }}>
+            <p className="text-[14px]" style={{ color: t.txtFaint }}>
               {listings.length === 0
                 ? 'Organizations will start listing missions here soon.'
                 : 'Try a different search or category filter.'}
@@ -465,14 +467,14 @@ export default function MarketplacePage() {
         <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
           className="mt-20 rounded-3xl p-10 text-center"
           style={{ background: 'linear-gradient(135deg,rgba(109,93,253,0.12),rgba(34,255,170,0.08))', border: '1px solid rgba(34,255,170,0.15)' }}>
-          <Sparkles size={28} strokeWidth={1.5} style={{ color: '#22FFAA' }} className="mx-auto mb-4" />
-          <h2 className="text-[28px] font-black mb-3" style={{ color: '#F0F4FF' }}>List your missions here</h2>
-          <p className="text-[15px] mb-6 max-w-lg mx-auto" style={{ color: '#8B9CC0' }}>
+          <Sparkles size={28} strokeWidth={1.5} style={{ color: t.accent }} className="mx-auto mb-4" />
+          <h2 className="text-[28px] font-black mb-3" style={{ color: t.txt }}>List your missions here</h2>
+          <p className="text-[15px] mb-6 max-w-lg mx-auto" style={{ color: t.txtDim }}>
             Reach thousands of skilled contributors. Post your challenge and get applications from people who want to make an impact.
           </p>
           <Link href="/workspace"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-[14px]"
-            style={{ background: '#22FFAA', color: '#050816' }}>
+            style={{ background: t.accent, color: t.bg }}>
             Go to Workspace <ChevronRight size={15} strokeWidth={2.5} />
           </Link>
         </motion.div>

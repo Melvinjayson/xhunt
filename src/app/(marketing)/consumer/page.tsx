@@ -12,6 +12,7 @@ import {
   MapPin, Zap, Dumbbell, UtensilsCrossed, Trees, Laptop,
 } from 'lucide-react';
 import { Radar, IconContainer } from '@/components/ui/radar';
+import { t } from '@/theme/colors';
 
 /* ─── animation helpers ─── */
 const fadeUp = {
@@ -35,7 +36,7 @@ const LAYERS = [
     num: '01',
     id: 'social',
     label: 'Social Intelligence Layer',
-    accentColor: '#6D5DFD',
+    accentColor: t.ai,
     headline: 'A performance feed, not a content feed.',
     body: 'Every post on X-hunt is a verified real-world achievement. Share mission completions, broadcast live hunts, and build a public performance record that other hunters and brands can see — not vanity metrics.',
     specs: [
@@ -49,7 +50,7 @@ const LAYERS = [
     num: '02',
     id: 'hunt',
     label: 'Location-Based Mission Engine',
-    accentColor: '#22FFAA',
+    accentColor: t.accent,
     headline: 'AI-generated, real-world, context-aware.',
     body: 'The Mission Architect AI builds unique multi-stage hunts based on your city, interests, and current capability level. Every checkpoint is a real location. Every clue is grounded in the physical world around you.',
     specs: [
@@ -63,7 +64,7 @@ const LAYERS = [
     num: '03',
     id: 'marketplace',
     label: 'Brand Mission Marketplace',
-    accentColor: '#FFB84D',
+    accentColor: t.warning,
     headline: 'Real gigs. Real escrow. Real pay.',
     body: 'Brands fund missions upfront into escrow. You accept, execute, and submit proof. The AI validation engine confirms your delivery, and escrow releases automatically. No invoicing. No chasing payments.',
     specs: [
@@ -91,7 +92,7 @@ const LAYERS = [
     num: '05',
     id: 'deliver',
     label: 'Verified Delivery & Escrow',
-    accentColor: '#22FFAA',
+    accentColor: t.accent,
     headline: 'Outcomes you can prove. Payments you can trust.',
     body: 'Every brand gig runs on a tamper-resistant outcome pipeline. AI validates evidence, escrow releases on confirmation, and your Hunter Score updates — building a portable, verifiable performance record.',
     specs: [
@@ -108,7 +109,7 @@ const LIVE_MISSIONS = [
   {
     brand: 'FitLife Pro',
     brandInitials: 'FL',
-    brandColor: '#22FFAA',
+    brandColor: t.accent,
     category: 'Fitness',
     title: '30-Day Progressive Training Challenge',
     description: 'Complete 30 structured training sessions with daily photo evidence, nutrition logs, and a final performance assessment.',
@@ -125,7 +126,7 @@ const LIVE_MISSIONS = [
   {
     brand: 'VisitLagos Tourism',
     brandInitials: 'VL',
-    brandColor: '#FFB84D',
+    brandColor: t.warning,
     category: 'Travel',
     title: 'Hidden Lagos: 12 Undocumented Spots',
     description: 'Locate, photograph, and write a 150-word review of 12 lesser-known Lagos locations using GPS check-ins.',
@@ -142,7 +143,7 @@ const LIVE_MISSIONS = [
   {
     brand: 'TechHub Events',
     brandInitials: 'TH',
-    brandColor: '#6D5DFD',
+    brandColor: t.ai,
     category: 'Tech',
     title: 'Attend, Review & Amplify: Quarterly Meetup',
     description: 'Attend the TechHub Q2 meetup, submit a verified check-in, post a 200-word review, and share a highlight on X-hunt Timeline.',
@@ -190,7 +191,7 @@ const SCORE_TIERS = [
   {
     tier: 'Verified Hunter',
     range: '3.0 – 5.9',
-    color: '#22FFAA',
+    color: t.accent,
     border: 'rgba(34,255,170,.3)',
     bg: 'rgba(34,255,170,.06)',
     access: 'Standard brand gig access, submission portal, basic AI coaching',
@@ -200,7 +201,7 @@ const SCORE_TIERS = [
   {
     tier: 'Pro Hunter',
     range: '6.0 – 8.4',
-    color: '#6D5DFD',
+    color: t.ai,
     border: 'rgba(109,93,253,.3)',
     bg: 'rgba(109,93,253,.06)',
     access: 'Premium gig library, priority validation, advanced AI agents, live hosting',
@@ -210,7 +211,7 @@ const SCORE_TIERS = [
   {
     tier: 'Elite Hunter',
     range: '8.5 – 10.0',
-    color: '#FFB84D',
+    color: t.warning,
     border: 'rgba(247,147,26,.3)',
     bg: 'rgba(247,147,26,.06)',
     access: 'Enterprise missions, direct brand deals, white-glove validation, escrow bonuses',
@@ -221,7 +222,7 @@ const SCORE_TIERS = [
 
 /* ─── MissionCard component ─── */
 function MissionCard({ mission, index }: { mission: typeof LIVE_MISSIONS[0]; index: number }) {
-  const diffColor = { Easy: '#22FFAA', Medium: '#FFB84D', Hard: '#FF5C7A' }[mission.difficulty] ?? '#7d8b8e';
+  const diffColor = { Easy: t.accent, Medium: t.warning, Hard: t.error }[mission.difficulty] ?? '#7d8b8e';
 
   return (
     <motion.div
@@ -233,7 +234,7 @@ function MissionCard({ mission, index }: { mission: typeof LIVE_MISSIONS[0]; ind
       {mission.hot && (
         <div
           className="absolute -top-2.5 left-5 text-[10px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full"
-          style={{ background: mission.brandColor, color: '#050816' }}
+          style={{ background: mission.brandColor, color: t.bg }}
         >
           Featured Gig
         </div>
@@ -301,7 +302,7 @@ function MissionCard({ mission, index }: { mission: typeof LIVE_MISSIONS[0]; ind
         </div>
         <div
           className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-          style={{ background: 'rgba(34,255,170,.08)', color: '#22FFAA' }}
+          style={{ background: 'rgba(34,255,170,.08)', color: t.accent }}
         >
           {mission.completionRate}% rate
         </div>
@@ -471,7 +472,7 @@ export default function ConsumerPage() {
       </section>
 
       {/* ─── PLATFORM ARCHITECTURE ─── */}
-      <Sec className="py-28 lg:py-36 border-y border-[rgba(255,255,255,0.05)]" style={{ background: '#050816' }}>
+      <Sec className="py-28 lg:py-36 border-y border-[rgba(255,255,255,0.05)]" style={{ background: t.bg }}>
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-[320px_1fr] gap-12 lg:gap-16">
 
@@ -568,7 +569,7 @@ export default function ConsumerPage() {
       </Sec>
 
       {/* ─── PROXIMITY SENSING ─── */}
-      <Sec className="py-28 lg:py-36 border-y border-[rgba(255,255,255,0.05)]" style={{ background: '#050816' }}>
+      <Sec className="py-28 lg:py-36 border-y border-[rgba(255,255,255,0.05)]" style={{ background: t.bg }}>
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-14 lg:gap-20 items-center">
 
@@ -600,7 +601,7 @@ export default function ConsumerPage() {
                   <motion.div key={f.title} variants={fadeUp} custom={0.18 + i * 0.07}
                     className="flex items-start gap-4 p-4 rounded-xl border"
                     style={{ background: 'rgba(255,255,255,.02)', borderColor: 'rgba(255,255,255,.06)' }}>
-                    <f.icon size={16} strokeWidth={1.8} className="flex-shrink-0 mt-0.5" style={{ color: '#22FFAA' }} />
+                    <f.icon size={16} strokeWidth={1.8} className="flex-shrink-0 mt-0.5" style={{ color: t.accent }} />
                     <div>
                       <p className="text-[13px] font-bold text-[#F0F4FF] mb-1">{f.title}</p>
                       <p className="text-[12px] text-[#8B9CC0] leading-relaxed">{f.body}</p>
@@ -728,7 +729,7 @@ export default function ConsumerPage() {
       </Sec>
 
       {/* ─── HUNTER SCORE / EARNINGS MODEL ─── */}
-      <Sec className="py-28 lg:py-36 border-y border-[rgba(255,255,255,0.05)]" style={{ background: '#050816' }}>
+      <Sec className="py-28 lg:py-36 border-y border-[rgba(255,255,255,0.05)]" style={{ background: t.bg }}>
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <motion.p variants={fadeUp} className="text-[11px] font-bold text-txt-faint uppercase tracking-widest mb-3">
@@ -837,20 +838,20 @@ export default function ConsumerPage() {
                 {/* Feed items */}
                 {[
                   {
-                    initials: 'AO', color: '#22FFAA', name: 'Adeola O.', time: '4m ago',
-                    badge: 'Completed', badgeColor: '#22FFAA',
+                    initials: 'AO', color: t.accent, name: 'Adeola O.', time: '4m ago',
+                    badge: 'Completed', badgeColor: t.accent,
                     text: 'FitLife 30-Day Challenge — Day 30 submitted. Waiting on AI validation.',
                     mission: 'FitLife 30-Day Challenge', xp: 480, reactions: 64,
                   },
                   {
-                    initials: 'MV', color: '#6D5DFD', name: 'Marcus V.', time: 'Live',
+                    initials: 'MV', color: t.ai, name: 'Marcus V.', time: 'Live',
                     badge: '● LIVE', badgeColor: '#ff3b30', isLive: true,
                     text: 'Hidden Lagos: Checkpoint 6 of 12 — Found the Balogun Market entrance mural',
                     viewers: 218,
                   },
                   {
                     initials: 'RM', color: '#a78bfa', name: 'Ryan M.', time: '32m ago',
-                    badge: 'Highlight', badgeColor: '#FFB84D',
+                    badge: 'Highlight', badgeColor: t.warning,
                     text: 'Hunter Score just crossed 6.0 — unlocked Pro tier gigs. First mission: $180 product trial.',
                     reactions: 102,
                   },
@@ -872,7 +873,7 @@ export default function ConsumerPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                       {post.reactions !== undefined && (
                         <span style={{ fontSize: 12, color: '#54625f', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Flame size={13} style={{ color: '#FFB84D' }} /> {post.reactions}
+                          <Flame size={13} style={{ color: t.warning }} /> {post.reactions}
                         </span>
                       )}
                       {post.viewers !== undefined && (
@@ -881,7 +882,7 @@ export default function ConsumerPage() {
                         </span>
                       )}
                       {post.xp !== undefined && (
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#22FFAA', marginLeft: 'auto' }}>+{post.xp} XP</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: t.accent, marginLeft: 'auto' }}>+{post.xp} XP</span>
                       )}
                     </div>
                   </div>
@@ -893,7 +894,7 @@ export default function ConsumerPage() {
       </Sec>
 
       {/* ─── VALIDATION & TRUST ─── */}
-      <Sec className="py-28 lg:py-36 border-y border-[rgba(255,255,255,.05)]" style={{ background: '#050816' }}>
+      <Sec className="py-28 lg:py-36 border-y border-[rgba(255,255,255,.05)]" style={{ background: t.bg }}>
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <motion.p variants={fadeUp} className="text-[11px] font-bold text-txt-faint uppercase tracking-widest mb-3">
@@ -916,31 +917,31 @@ export default function ConsumerPage() {
               },
               {
                 icon: Wallet,
-                color: '#22FFAA',
+                color: t.accent,
                 title: 'Pre-Funded Escrow',
                 desc: 'Brand rewards are held in escrow before the mission goes live. Hunters are never paid from unfunded accounts. Disputes trigger a neutral AI arbitration process.',
               },
               {
                 icon: BarChart3,
-                color: '#6D5DFD',
+                color: t.ai,
                 title: 'Mission Effectiveness Index',
                 desc: 'Your MEI is a composite of completion (40%), engagement (25%), retention (20%), and outcome attainment (15%). It is a direct input to your Hunter Score.',
               },
               {
                 icon: Shield,
-                color: '#FFB84D',
+                color: t.warning,
                 title: 'Tamper-Resistant Records',
                 desc: 'All validation decisions, evidence submissions, and score changes are logged immutably. Brands can audit the full proof chain for any mission they have funded.',
               },
               {
                 icon: Award,
-                color: '#22FFAA',
+                color: t.accent,
                 title: 'Portable Hunter Score',
                 desc: 'Your score follows you. New brands, new categories, new gig tiers — your verified track record travels with you, independently of any single brand relationship.',
               },
               {
                 icon: TrendingUp,
-                color: '#6D5DFD',
+                color: t.ai,
                 title: 'Adaptive Difficulty Engine',
                 desc: 'As your score rises, mission specs tighten to match your capability. Elite hunters work to stricter evidence standards and earn proportionally higher rewards.',
               },

@@ -5,11 +5,19 @@ import { motion } from 'framer-motion';
 import {
   Target, Users, CheckCircle2, TrendingUp, Zap, ArrowRight, ArrowUpRight,
   RefreshCw, Sparkles, AlertTriangle, Lightbulb, Activity, Clock,
-  ChevronRight, BarChart3, Award
+  ChevronRight, BarChart3, Award, Building2, Plus, Eye, UserCheck,
+  CircleDot, ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/cn';
+import { t } from '@/theme/colors';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Chip from '@mui/material/Chip';
+import LinearProgress from '@mui/material/LinearProgress';
 
 interface DashboardData {
   activeMissions: number;
@@ -31,7 +39,7 @@ interface AiBriefing {
 }
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('bg-[#0D1530] animate-pulse rounded-lg', className)} />;
+  return <div className={cn('animate-pulse rounded-lg', className)} style={{ background: t.panel }} />;
 }
 
 function StatCard({
@@ -46,22 +54,25 @@ function StatCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4 }}
-      className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-5 hover:border-[#162440] transition-colors"
+      className="rounded-2xl p-5 transition-colors"
+      style={{ background: t.card, border: `1px solid ${t.panel}` }}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = t.borderMid)}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = t.panel)}
     >
       <div className="flex items-start justify-between mb-4">
-        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', bg)}>
-          <Icon size={18} className={color} strokeWidth={1.8} />
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: bg }}>
+          <Icon size={18} strokeWidth={1.8} style={{ color }} />
         </div>
         {trend !== undefined && (
-          <span className={cn('text-[11px] font-bold flex items-center gap-0.5', trend >= 0 ? 'text-[#22FFAA]' : 'text-[#FF5C7A]')}>
+          <span className="text-[11px] font-bold flex items-center gap-0.5" style={{ color: trend >= 0 ? t.accent : t.error }}>
             <ArrowUpRight size={11} strokeWidth={2.5} className={trend < 0 ? 'rotate-180' : ''} />
             {Math.abs(trend)}%
           </span>
         )}
       </div>
-      <p className={cn('text-3xl font-bold tabular-nums leading-none', color)}>{value}</p>
-      <p className="text-[#8B9CC0] text-[12px] font-medium mt-1.5">{label}</p>
-      {sub && <p className="text-[#4A5578] text-[11px] mt-0.5">{sub}</p>}
+      <p className="text-3xl font-bold tabular-nums leading-none" style={{ color }}>{value}</p>
+      <p className="text-[12px] font-medium mt-1.5" style={{ color: t.txtDim }}>{label}</p>
+      {sub && <p className="text-[11px] mt-0.5" style={{ color: t.txtFaint }}>{sub}</p>}
     </motion.div>
   );
 }
@@ -73,19 +84,19 @@ export default function WorkspaceDashboard() {
   const [loading, setLoading] = useState(true);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [orgName, setOrgName] = useState('');
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
 
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('tenant_id')
         .eq('id', user.id)
         .single();
-      if (!profile?.tenant_id) return;
+      if (!profile?.tenant_id) { setLoading(false); return; }
       setTenantId(profile.tenant_id);
 
       const [tenantRes, missionsRes, progressRes, usersRes, scoresRes, rewardsRes] = await Promise.all([
@@ -142,7 +153,7 @@ export default function WorkspaceDashboard() {
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, [supabase, user, isLoaded]);
 
   const generateBriefing = useCallback(async () => {
     if (!tenantId || loadingBriefing) return;
@@ -211,379 +222,326 @@ export default function WorkspaceDashboard() {
     );
   }
 
+  if (!data) {
+    return (
+      <div className="p-8 flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{ background: 'rgba(34,255,170,0.1)', border: `1px solid rgba(34,255,170,0.2)` }}>
+          <Building2 size={28} strokeWidth={1.5} style={{ color: t.accent }} />
+        </div>
+        <h2 className="text-[22px] font-bold mb-2" style={{ color: t.txt }}>No workspace yet</h2>
+        <p className="text-[14px] max-w-md mb-8" style={{ color: t.txtDim }}>
+          Set up your organization to access Mission Control, Analytics, and the full enterprise suite.
+        </p>
+        <Link href="/onboard">
+          <button className="flex items-center gap-2 h-10 px-6 rounded-xl font-bold text-[13px] shadow-[0_4px_20px_rgba(34,255,170,0.3)] hover:opacity-90 transition-opacity" style={{ background: t.accent, color: t.bg }}>
+            <Zap size={14} strokeWidth={2.5} />
+            Create your workspace
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
+  // Compute mission health
+  const healthStatus = completionRate >= 70 ? '🟢 Excellent' : completionRate >= 40 ? '🟡 Growing' : '🔴 Needs Attention';
+  const healthColor = completionRate >= 70 ? t.accent : completionRate >= 40 ? t.warning : t.error;
+
   return (
-    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
 
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6 md:mb-8">
+      {/* ── Header: Greeting + Quick Actions ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6"
+      >
         <div>
-          <p className="text-[#4A5578] text-[12px] font-medium mb-0.5">{today}</p>
-          <h1 className="text-[28px] font-bold text-[#F0F4FF] leading-tight">
-            Mission Command Center
+          <p className="text-[12px] font-medium mb-0.5" style={{ color: t.txtFaint }}>{today}</p>
+          <h1 className="text-[26px] font-bold leading-tight" style={{ color: t.txt }}>
+            {getGreeting()}, {user?.displayName?.split(' ')[0] ?? 'there'} 👋
           </h1>
-          <p className="text-[#8B9CC0] text-[14px] mt-1">{orgName} · Enterprise Workspace</p>
+          <p className="text-[14px] mt-0.5" style={{ color: t.txtDim }}>{orgName || 'Your Organization'}</p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          <Link href="/workspace/missions">
+            <button className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-[13px] font-medium transition-colors" style={{ background: t.card, border: `1px solid ${t.borderMid}`, color: t.txt }}>
+              <Eye size={13} strokeWidth={2} />
+              Missions
+            </button>
+          </Link>
+          <Link href="/workspace/participants">
+            <button className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-[13px] font-medium transition-colors" style={{ background: t.card, border: `1px solid ${t.borderMid}`, color: t.txt }}>
+              <UserCheck size={13} strokeWidth={2} />
+              Participants
+            </button>
+          </Link>
           <Link href="/workspace/missions/new">
-            <button className="flex items-center gap-2 h-9 px-4 bg-[#0A1226] border border-[#162440] text-[#F0F4FF] rounded-xl font-medium text-[13px] hover:border-[#6D5DFD]/40 transition-colors">
-              <Target size={14} strokeWidth={2} />
-              New Mission
-            </button>
-          </Link>
-          <Link href="/workspace/mission-control">
-            <button className="flex items-center gap-2 h-9 px-4 bg-accent text-[#060a0e] rounded-xl font-semibold text-[13px] shadow-[0_4px_16px_rgba(34,255,170,0.3)] hover:bg-accent-dark transition-colors">
-              <Zap size={14} strokeWidth={2.5} />
-              Mission Control
+            <button className="flex items-center gap-2 h-9 px-4 rounded-xl font-semibold text-[13px] shadow-[0_4px_16px_rgba(34,255,170,0.3)] transition-opacity hover:opacity-90" style={{ background: t.accent, color: t.bg }}>
+              <Plus size={14} strokeWidth={2.5} />
+              Create Mission
             </button>
           </Link>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Hero Momentum + KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-
-        {/* Momentum Score */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="col-span-1 bg-gradient-to-br from-[#0A1226] to-[#0D1530] border border-[#0F1D35] rounded-2xl p-5 flex flex-col"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider">Momentum</span>
-            <div className="w-2 h-2 rounded-full bg-accent breathe" />
-          </div>
-          <div className="flex-1 flex flex-col items-center justify-center py-2">
-            <div className="relative w-24 h-24">
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#0F1D35" strokeWidth="8" />
-                <circle
-                  cx="50" cy="50" r="42" fill="none"
-                  stroke="#22FFAA" strokeWidth="8" strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 42}`}
-                  strokeDashoffset={`${2 * Math.PI * 42 * (1 - momentumScore / 100)}`}
-                  className="transition-all duration-1000"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-[#22FFAA] leading-none">{momentumScore}</span>
-                <span className="text-[9px] font-bold text-[#4A5578] uppercase tracking-wider mt-0.5">Score</span>
+      {/* ── Key Metrics Strip ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: 'Active Missions', value: data!.activeMissions, sub: `${data!.totalMissions} total`, icon: Target, color: t.accent, bg: `${t.accent}12`, trend: 12 },
+          { label: 'Participants', value: data!.totalUsers, sub: `${data!.rewardEvents} rewarded`, icon: Users, color: t.ai, bg: `${t.ai}12`, trend: 8 },
+          { label: 'Completions', value: data!.completions, sub: `${completionRate}% rate`, icon: CheckCircle2, color: t.info, bg: `${t.info}12`, trend: 5 },
+          { label: 'Rewards Out', value: data!.rewardEvents, sub: 'distributed', icon: Award, color: t.warning, bg: `${t.warning}12`, trend: 3 },
+        ].map(({ label, value, sub, icon: Icon, color, bg, trend }, i) => (
+          <motion.div
+            key={label}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className="rounded-2xl p-4"
+            style={{ background: t.card, border: `1px solid ${t.panel}` }}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: bg }}>
+                <Icon size={15} strokeWidth={1.8} style={{ color }} />
               </div>
+              <span className="text-[11px] font-bold flex items-center gap-0.5" style={{ color: t.accent }}>
+                <ArrowUpRight size={10} strokeWidth={2.5} />
+                {trend}%
+              </span>
             </div>
-          </div>
-          <p className="text-[11px] text-[#8B9CC0] text-center font-medium">Mission Momentum</p>
-        </motion.div>
-
-        <StatCard
-          label="Active Missions"
-          value={data!.activeMissions}
-          sub={`${data!.totalMissions} total`}
-          icon={Target}
-          color="text-[#22FFAA]"
-          bg="bg-[#22FFAA]/8"
-          trend={12}
-          delay={0.05}
-        />
-        <StatCard
-          label="Completion Rate"
-          value={`${completionRate}%`}
-          sub={`${data!.completions} completions`}
-          icon={CheckCircle2}
-          color="text-[#6D5DFD]"
-          bg="bg-[#6D5DFD]/10"
-          trend={5}
-          delay={0.1}
-        />
-        <StatCard
-          label="Avg MEI Score"
-          value={data!.avgMei}
-          sub="Effectiveness Index"
-          icon={BarChart3}
-          color="text-[#FFB84D]"
-          bg="bg-[#FFB84D]/10"
-          trend={-2}
-          delay={0.15}
-        />
-        <StatCard
-          label="Total Participants"
-          value={data!.totalUsers}
-          sub={`${data!.rewardEvents} rewards issued`}
-          icon={Users}
-          color="text-[#F0F4FF]"
-          bg="bg-[#0D1530]"
-          delay={0.2}
-        />
+            <p className="text-[26px] font-bold tabular-nums leading-none" style={{ color }}>{value}</p>
+            <p className="text-[11px] font-medium mt-1" style={{ color: t.txtDim }}>{label}</p>
+            <p className="text-[10px] mt-0.5" style={{ color: t.txtFaint }}>{sub}</p>
+          </motion.div>
+        ))}
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
+      {/* ── Main Layout: Activity Feed + Right Panel ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
-        {/* Active Missions Table */}
+        {/* Activity Feed — primary column */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="col-span-1 xl:col-span-2 bg-[#0A1226] border border-[#0F1D35] rounded-2xl overflow-hidden"
+          transition={{ delay: 0.2 }}
+          className="xl:col-span-2 rounded-2xl overflow-hidden"
+          style={{ background: t.card, border: `1px solid ${t.panel}` }}
         >
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[#0F1D35]">
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${t.panel}` }}>
             <div className="flex items-center gap-2">
-              <Activity size={15} className="text-accent" strokeWidth={2} />
-              <h2 className="text-[14px] font-bold text-[#F0F4FF]">Active Missions</h2>
+              <CircleDot size={14} strokeWidth={2} style={{ color: t.accent }} />
+              <h2 className="text-[14px] font-bold" style={{ color: t.txt }}>Activity Feed</h2>
             </div>
-            <Link href="/workspace/missions" className="text-[12px] text-[#8B9CC0] hover:text-accent flex items-center gap-1 transition-colors font-medium">
-              View all <ChevronRight size={12} strokeWidth={2} />
+            <Link href="/workspace/outcomes" className="text-[12px] flex items-center gap-0.5 font-medium hover:opacity-80 transition-opacity" style={{ color: t.txtDim }}>
+              See all <ChevronRight size={12} strokeWidth={2} />
             </Link>
           </div>
 
-          {data!.recentMissions.length === 0 ? (
-            <div className="py-16 text-center">
-              <Target size={28} className="text-[#4A5578] mx-auto mb-3" strokeWidth={1.5} />
-              <p className="text-[#8B9CC0] font-medium text-sm">No missions yet</p>
-              <p className="text-[#4A5578] text-xs mt-1 mb-4">Create your first mission to get started.</p>
+          {data!.recentActivity.length === 0 ? (
+            <div className="py-14 text-center px-6">
+              <div className="w-12 h-12 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: `${t.accent}12`, border: `1px solid ${t.accent}20` }}>
+                <Activity size={20} strokeWidth={1.5} style={{ color: t.accent }} />
+              </div>
+              <p className="text-[14px] font-semibold mb-1" style={{ color: t.txt }}>No activity yet</p>
+              <p className="text-[12px] mb-5" style={{ color: t.txtFaint }}>Create a mission and invite participants to see live activity.</p>
               <Link href="/workspace/missions/new">
-                <button className="inline-flex items-center gap-2 px-4 h-9 bg-accent text-[#060a0e] rounded-xl font-semibold text-sm">
-                  Create Mission
+                <button className="inline-flex items-center gap-2 h-9 px-5 rounded-xl font-semibold text-[13px]" style={{ background: t.accent, color: t.bg }}>
+                  <Plus size={13} strokeWidth={2.5} />
+                  Create your first mission
                 </button>
               </Link>
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-4 gap-0 px-5 py-2.5 border-b border-[#0F1D35]">
-                {['Mission', 'Status', 'Difficulty', 'Completions'].map((h) => (
-                  <p key={h} className="text-[10px] font-bold text-[#4A5578] uppercase tracking-wider">{h}</p>
-                ))}
-              </div>
-              <div className="divide-y divide-[#0F1D35]">
-                {data!.recentMissions.map((m) => (
-                  <Link
-                    key={m.id}
-                    href={`/workspace/missions/${m.id}`}
-                    className="grid grid-cols-4 gap-0 px-5 py-3.5 hover:bg-[#0D1530] transition-colors group items-center"
-                  >
-                    <p className="text-[13px] font-medium text-[#F0F4FF] truncate pr-4 group-hover:text-accent transition-colors">{m.title}</p>
-                    <span className={cn(
-                      'inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full w-fit',
-                      m.status === 'active' ? 'text-[#22FFAA] bg-[#22FFAA]/10'
-                      : m.status === 'draft' ? 'text-[#FFB84D] bg-[#FFB84D]/10'
-                      : 'text-[#8B9CC0] bg-[#0D1530]'
-                    )}>
-                      {m.status === 'active' && <span className="w-1 h-1 rounded-full bg-[#22FFAA] mr-1.5 breathe" />}
-                      {m.status.charAt(0).toUpperCase() + m.status.slice(1)}
-                    </span>
-                    <span className={cn(
-                      'text-[11px] font-bold px-2 py-0.5 rounded-full w-fit',
-                      m.difficulty === 'easy' ? 'text-[#22FFAA] bg-[#22FFAA]/10'
-                      : m.difficulty === 'medium' ? 'text-[#FFB84D] bg-[#FFB84D]/10'
-                      : 'text-[#FF5C7A] bg-[#FF5C7A]/10'
-                    )}>
-                      {m.difficulty.charAt(0).toUpperCase() + m.difficulty.slice(1)}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-semibold text-[#F0F4FF] tabular-nums">{m.completions}</span>
-                      <ArrowRight size={13} className="text-[#4A5578] group-hover:text-accent transition-colors ml-auto" strokeWidth={2} />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
-        </motion.div>
-
-        {/* AI Briefing */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl overflow-hidden flex flex-col"
-        >
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[#0F1D35]">
-            <div className="flex items-center gap-2">
-              <Sparkles size={15} className="text-[#6D5DFD]" strokeWidth={2} />
-              <h2 className="text-[14px] font-bold text-[#F0F4FF]">AI Briefing</h2>
-            </div>
-            <button
-              onClick={generateBriefing}
-              disabled={loadingBriefing}
-              className="flex items-center gap-1.5 text-[11px] font-semibold text-[#6D5DFD] hover:text-[#A99FFE] transition-colors disabled:opacity-50"
-            >
-              <RefreshCw size={11} strokeWidth={2.5} className={loadingBriefing ? 'animate-spin' : ''} />
-              {briefing ? 'Refresh' : 'Generate'}
-            </button>
-          </div>
-
-          <div className="flex-1 p-4 overflow-y-auto">
-            {!briefing && !loadingBriefing && (
-              <div className="h-full flex flex-col items-center justify-center py-8 text-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-[#6D5DFD]/10 border border-[#6D5DFD]/20 flex items-center justify-center">
-                  <Sparkles size={20} className="text-[#6D5DFD]" strokeWidth={1.5} />
-                </div>
-                <div>
-                  <p className="text-[#F0F4FF] text-[13px] font-semibold">Daily Intelligence Briefing</p>
-                  <p className="text-[#4A5578] text-[12px] mt-1">Powered by Insight Analyst</p>
-                </div>
-                <button
-                  onClick={generateBriefing}
-                  className="mt-2 flex items-center gap-2 h-8 px-4 bg-[#6D5DFD]/15 border border-[#6D5DFD]/30 text-[#A99FFE] rounded-lg text-[12px] font-semibold hover:bg-[#6D5DFD]/25 transition-colors"
-                >
-                  <Zap size={12} strokeWidth={2.5} />
-                  Generate Briefing
-                </button>
-              </div>
-            )}
-
-            {loadingBriefing && (
-              <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className={cn('h-3', i === 1 ? 'w-3/4' : i === 3 ? 'w-5/6' : 'w-full')} />
-                ))}
-              </div>
-            )}
-
-            {briefing && !loadingBriefing && (
-              <div className="space-y-4">
-                <p className="text-[#8B9CC0] text-[12px] leading-relaxed">{briefing.summary}</p>
-
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <AlertTriangle size={12} className="text-[#FF5C7A]" strokeWidth={2} />
-                    <p className="text-[11px] font-bold text-[#FF5C7A] uppercase tracking-wider">Risks</p>
-                  </div>
-                  <ul className="space-y-1.5">
-                    {briefing.risks.map((r, i) => (
-                      <li key={i} className="text-[12px] text-[#8B9CC0] flex gap-2">
-                        <span className="text-[#FF5C7A] mt-0.5">·</span>{r}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Lightbulb size={12} className="text-[#FFB84D]" strokeWidth={2} />
-                    <p className="text-[11px] font-bold text-[#FFB84D] uppercase tracking-wider">Opportunities</p>
-                  </div>
-                  <ul className="space-y-1.5">
-                    {briefing.opportunities.map((o, i) => (
-                      <li key={i} className="text-[12px] text-[#8B9CC0] flex gap-2">
-                        <span className="text-[#FFB84D] mt-0.5">·</span>{o}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Zap size={12} className="text-[#22FFAA]" strokeWidth={2} />
-                    <p className="text-[11px] font-bold text-[#22FFAA] uppercase tracking-wider">Recommended Actions</p>
-                  </div>
-                  <ul className="space-y-1.5">
-                    {briefing.actions.map((a, i) => (
-                      <li key={i} className="text-[12px] text-[#8B9CC0] flex gap-2 items-start">
-                        <span className="text-[#22FFAA] font-bold mt-0.5 flex-shrink-0">{i + 1}.</span>{a}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Bottom Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-
-        {/* Outcome Overview */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-5"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp size={15} className="text-[#6D5DFD]" strokeWidth={2} />
-              <h3 className="text-[14px] font-bold text-[#F0F4FF]">Outcome Overview</h3>
-            </div>
-            <Link href="/workspace/outcomes" className="text-[11px] text-[#8B9CC0] hover:text-accent transition-colors font-medium">
-              Details →
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {[
-              { label: 'Completion Rate', value: completionRate, color: '#22FFAA', max: 100 },
-              { label: 'Engagement Index', value: Math.min(data!.avgMei, 100), color: '#6D5DFD', max: 100 },
-              { label: 'Reward Conversion', value: data!.rewardEvents > 0 && data!.completions > 0 ? Math.min(Math.round((data!.rewardEvents / data!.completions) * 100), 100) : 0, color: '#FFB84D', max: 100 },
-            ].map(({ label, value, color, max }) => (
-              <div key={label}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-[12px] text-[#8B9CC0]">{label}</p>
-                  <p className="text-[12px] font-bold tabular-nums" style={{ color }}>{value}%</p>
-                </div>
-                <div className="h-1.5 bg-[#0D1530] rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(value / max) * 100}%` }}
-                    transition={{ delay: 0.5, duration: 0.8 }}
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: color }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 pt-4 border-t border-[#0F1D35] flex items-center justify-between">
-            <p className="text-[11px] text-[#4A5578]">Outcome Health Score</p>
-            <p className="text-[18px] font-bold text-[#6D5DFD]">
-              {Math.round(completionRate * 0.6 + data!.avgMei * 0.4)}
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Activity Feed */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="col-span-2 bg-[#0A1226] border border-[#0F1D35] rounded-2xl overflow-hidden"
-        >
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[#0F1D35]">
-            <div className="flex items-center gap-2">
-              <Activity size={15} className="text-[#FFB84D]" strokeWidth={2} />
-              <h3 className="text-[14px] font-bold text-[#F0F4FF]">Mission Activity Feed</h3>
-            </div>
-            <Link href="/workspace/outcomes" className="text-[12px] text-[#8B9CC0] hover:text-accent flex items-center gap-1 transition-colors font-medium">
-              View all <ChevronRight size={12} strokeWidth={2} />
-            </Link>
-          </div>
-          {data!.recentActivity.length === 0 ? (
-            <div className="py-12 text-center">
-              <Clock size={24} className="text-[#4A5578] mx-auto mb-2" strokeWidth={1.5} />
-              <p className="text-[#8B9CC0] text-sm font-medium">No activity yet</p>
-              <p className="text-[#4A5578] text-xs mt-1">Activity will appear as participants engage with missions.</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-[#0F1D35]">
+            <div>
               {data!.recentActivity.map((a, i) => (
-                <div key={a.id} className="flex items-center gap-3 px-5 py-3.5">
-                  <div className={cn(
-                    'w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0',
-                    a.type === 'completion' ? 'bg-[#22FFAA]/10' : 'bg-[#6D5DFD]/10'
-                  )}>
+                <div
+                  key={a.id}
+                  className="flex items-center gap-3 px-5 py-3.5 transition-colors"
+                  style={{ borderBottom: i < data!.recentActivity.length - 1 ? `1px solid ${t.panel}` : 'none' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = t.panel; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ background: a.type === 'completion' ? `${t.accent}15` : `${t.ai}15` }}
+                  >
                     {a.type === 'completion'
-                      ? <Award size={13} className="text-[#22FFAA]" strokeWidth={2} />
-                      : <Target size={13} className="text-[#6D5DFD]" strokeWidth={2} />
+                      ? <CheckCircle2 size={14} strokeWidth={2} style={{ color: t.accent }} />
+                      : <Target size={14} strokeWidth={2} style={{ color: t.ai }} />
                     }
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] text-[#F0F4FF] font-medium truncate">{a.label}</p>
+                    <p className="text-[13px] font-medium" style={{ color: t.txt }}>{a.label}</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: t.txtFaint }}>{a.type === 'completion' ? 'Mission completed' : 'Mission started'}</p>
                   </div>
-                  <p className="text-[11px] text-[#4A5578] font-medium flex-shrink-0">{a.time || '—'}</p>
+                  <p className="text-[11px] font-medium flex-shrink-0" style={{ color: t.txtFaint }}>{a.time || '—'}</p>
                 </div>
               ))}
             </div>
           )}
+
+          {/* Active missions list below activity */}
+          {data!.recentMissions.length > 0 && (
+            <>
+              <div className="flex items-center justify-between px-5 py-3.5" style={{ borderTop: `1px solid ${t.panel}` }}>
+                <div className="flex items-center gap-2">
+                  <Target size={13} strokeWidth={2} style={{ color: t.txtDim }} />
+                  <span className="text-[12px] font-bold" style={{ color: t.txtDim }}>Active Missions</span>
+                </div>
+                <Link href="/workspace/missions" className="text-[11px] font-medium hover:opacity-80" style={{ color: t.txtFaint }}>
+                  View all →
+                </Link>
+              </div>
+              {data!.recentMissions.slice(0, 5).map((m) => (
+                <Link
+                  key={m.id}
+                  href={`/workspace/missions/${m.id}`}
+                  className="flex items-center gap-3 px-5 py-3 transition-colors group"
+                  style={{ borderTop: `1px solid ${t.panel}` }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = t.panel; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent'; }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium truncate group-hover:text-accent transition-colors" style={{ color: t.txt }}>{m.title}</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: t.txtFaint }}>{m.completions} completions</p>
+                  </div>
+                  <Chip
+                    label={m.status}
+                    size="small"
+                    sx={{
+                      fontSize: 10, fontWeight: 700, height: 18, textTransform: 'capitalize',
+                      color: m.status === 'active' ? t.accent : m.status === 'draft' ? t.warning : t.txtDim,
+                      bgcolor: m.status === 'active' ? `${t.accent}14` : m.status === 'draft' ? `${t.warning}14` : `${t.panel}`,
+                      border: 'none', '& .MuiChip-label': { px: 1 },
+                    }}
+                  />
+                  <ArrowRight size={13} strokeWidth={2} style={{ color: t.txtFaint }} />
+                </Link>
+              ))}
+            </>
+          )}
         </motion.div>
+
+        {/* Right Panel */}
+        <div className="flex flex-col gap-4">
+
+          {/* Mission Health Score */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="rounded-2xl p-5"
+            style={{ background: t.card, border: `1px solid ${t.panel}` }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp size={14} strokeWidth={2} style={{ color: healthColor }} />
+              <h3 className="text-[13px] font-bold" style={{ color: t.txt }}>Mission Health</h3>
+            </div>
+            <p className="text-[18px] font-bold mb-3" style={{ color: healthColor }}>{healthStatus}</p>
+            <div className="space-y-2.5">
+              {[
+                { label: 'Completion Rate', value: completionRate, color: t.accent },
+                { label: 'Engagement', value: Math.min(data!.avgMei, 100), color: t.ai },
+                { label: 'Reward Rate', value: data!.rewardEvents > 0 && data!.completions > 0 ? Math.min(Math.round((data!.rewardEvents / data!.completions) * 100), 100) : 0, color: t.warning },
+              ].map(({ label, value, color }) => (
+                <div key={label}>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-[11px]" style={{ color: t.txtDim }}>{label}</span>
+                    <span className="text-[11px] font-bold tabular-nums" style={{ color }}>{value}%</span>
+                  </div>
+                  <LinearProgress
+                    variant="determinate"
+                    value={value}
+                    sx={{
+                      height: 5, borderRadius: 3,
+                      bgcolor: t.panel,
+                      '& .MuiLinearProgress-bar': { borderRadius: 3, bgcolor: color },
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            {completionRate < 40 && (
+              <div className="mt-4 p-3 rounded-xl text-[11px] leading-relaxed" style={{ background: `${t.warning}10`, border: `1px solid ${t.warning}20`, color: t.warning }}>
+                <Lightbulb size={12} strokeWidth={2} className="inline mr-1.5" />
+                Increase reward by €2 to boost participation by ~25%.
+              </div>
+            )}
+          </motion.div>
+
+          {/* AI Briefing */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="rounded-2xl overflow-hidden flex-1"
+            style={{ background: t.card, border: `1px solid ${t.panel}` }}
+          >
+            <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom: `1px solid ${t.panel}` }}>
+              <div className="flex items-center gap-2">
+                <Sparkles size={14} strokeWidth={2} style={{ color: t.ai }} />
+                <h3 className="text-[13px] font-bold" style={{ color: t.txt }}>AI Copilot</h3>
+              </div>
+              <button
+                onClick={generateBriefing}
+                disabled={loadingBriefing}
+                className="flex items-center gap-1 text-[11px] font-semibold disabled:opacity-50 hover:opacity-80 transition-opacity"
+                style={{ color: t.ai }}
+              >
+                <RefreshCw size={10} strokeWidth={2.5} className={loadingBriefing ? 'animate-spin' : ''} />
+                {briefing ? 'Refresh' : 'Generate'}
+              </button>
+            </div>
+
+            <div className="p-4">
+              {!briefing && !loadingBriefing && (
+                <div className="py-6 text-center">
+                  <p className="text-[12px] mb-3" style={{ color: t.txtFaint }}>Ask Mission Control anything</p>
+                  <button
+                    onClick={generateBriefing}
+                    className="flex items-center gap-2 h-8 px-4 rounded-lg text-[12px] font-semibold mx-auto transition-opacity hover:opacity-80"
+                    style={{ background: `${t.ai}18`, border: `1px solid ${t.ai}30`, color: t.aiLight }}
+                  >
+                    <Zap size={11} strokeWidth={2.5} />
+                    Daily Briefing
+                  </button>
+                </div>
+              )}
+
+              {loadingBriefing && (
+                <div className="space-y-2.5">
+                  {[1, 0.75, 0.9, 0.6].map((w, i) => (
+                    <Skeleton key={i} className={`h-2.5 rounded w-[${Math.round(w * 100)}%]`} />
+                  ))}
+                </div>
+              )}
+
+              {briefing && !loadingBriefing && (
+                <div className="space-y-3">
+                  <p className="text-[12px] leading-relaxed" style={{ color: t.txtDim }}>{briefing.summary}</p>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: t.accent }}>Recommended Actions</p>
+                    {briefing.actions.map((a, i) => (
+                      <div key={i} className="flex gap-2 mb-1.5 text-[11px]" style={{ color: t.txtDim }}>
+                        <span className="font-bold flex-shrink-0" style={{ color: t.accent }}>{i + 1}.</span>{a}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
+}
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
 }

@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { CATEGORY_MAP } from '@/lib/missionCategories';
+import { getSessionUser } from '@/lib/auth/session';
 
 const TAG_TO_SKILLS: Record<string, string[]> = {
   tech:           ['Software Development', 'Digital Innovation'],
@@ -54,16 +55,16 @@ const TAG_TO_CAT: Record<string, string> = {
   work: 'future-of-work', career: 'future-of-work',
 };
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const user = await getSessionUser(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   );
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { data: progress } = await supabase
     .from('mission_progress')

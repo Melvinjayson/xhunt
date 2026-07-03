@@ -1,33 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { jwtVerify } from 'jose';
+import { PREVIEW_ENABLED } from '@/lib/auth/preview';
+import { getJwtSecretKey } from '@/lib/env';
+
+const BACKEND = process.env.NEXT_PUBLIC_AUTH_URL ?? '';
+
+async function decodeLocalJwt(token: string) {
+  const { payload } = await jwtVerify(token, getJwtSecretKey(), { algorithms: ['HS256'] });
+  if (payload['type'] !== 'access') throw new Error('not an access token');
+  return NextResponse.json({
+    id: payload['sub'],
+    email: payload['email'],
+    display_name: (payload['email'] as string | undefined)?.split('@')[0] ?? 'Explorer',
+    avatar_url: null,
+    role: payload['app_role'] ?? 'explorer',
+    default_surface: payload['surface'] ?? 'home',
+    onboarding_complete: (payload['onboarding_complete'] as boolean) ?? false,
+    tenant_id: (payload['tenant_id'] as string | null) ?? null,
+  });
+}
 
 export async function GET(req: NextRequest) {
-  const session = await getSession(req);
-  if (!session) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  const token = req.cookies.get('__xhunt_session')?.value;
+  if (!token) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  try {
-    const supabase = createAdminClient();
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('id, email, display_name, avatar_url, role, default_surface, onboarding_complete, tenant_id')
-      .eq('id', session.sub)
-      .single();
-
-    if (!profile) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-
-    return NextResponse.json({
-      id: profile.id,
-      email: profile.email,
-      display_name: profile.display_name,
-      avatar_url: profile.avatar_url,
-      role: profile.role,
-      default_surface: profile.default_surface ?? 'home',
-      onboarding_complete: profile.onboarding_complete ?? false,
-      tenant_id: profile.tenant_id,
-    });
-  } catch (err) {
-    console.error('[auth/me]', err);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  // Explicit preview mode or no backend configured — decode JWT locally
+  if (PREVIEW_ENABLED || !BACKEND) {
+    try { return await decodeLocalJwt(token); }
+    catch { return NextResponse.json({ error: 'Not authenticated' }, { status: 401 }); }
   }
+
+  // Try backend first (with timeout), fall back to local decode on any failure
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+  const upstream = await fetch(`${BACKEND}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+    signal: controller.signal,
+  }).catch(() => null).finally(() => clearTimeout(timeout));
+
+  if (upstream?.ok) return NextResponse.json(await upstream.json());
+
+  // Backend unreachable or error — decode the JWT locally (handles preview-mode tokens)
+  try { return await decodeLocalJwt(token); }
+  catch { return NextResponse.json({ error: 'Not authenticated' }, { status: 401 }); }
 }

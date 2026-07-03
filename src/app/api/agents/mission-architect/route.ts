@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-import { AGENT_SYSTEM_PROMPTS } from '@/lib/agents/prompts';
 import type { MissionArchitectInput, MissionArchitectOutput } from '@/lib/agents/types';
 import { requireTenantAgent } from '@/lib/agents/auth';
-
-const client = new Anthropic();
+import { runGovernedAgent } from '@/lib/xil/agent-runner';
 
 export async function POST(req: NextRequest) {
   const auth = await requireTenantAgent();
@@ -37,20 +34,20 @@ Success Metric: ${success_metric}
 Return a JSON object matching the MissionArchitectOutput schema exactly. No markdown, no code fences — raw JSON only.`;
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 2048,
-      system: AGENT_SYSTEM_PROMPTS['mission-architect'],
-      messages: [{ role: 'user', content: userPrompt }],
+    const result = await runGovernedAgent({
+      agentId: 'mission-architect',
+      objective: `Design mission: ${goal}`,
+      userPrompt,
+      context: { goal, audience, industry, duration, success_metric },
+      userId: auth.userId,
     });
-
-    const raw = (message.content[0] as { type: string; text: string }).text.trim();
-    const jsonStart = raw.indexOf('{');
-    const jsonEnd = raw.lastIndexOf('}');
-    const jsonStr = raw.slice(jsonStart, jsonEnd + 1);
-
-    const output: MissionArchitectOutput = JSON.parse(jsonStr);
-    return NextResponse.json(output);
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: 'Request rejected by constitutional alignment check', redFlags: result.redFlags, conditions: result.conditions },
+        { status: 422 },
+      );
+    }
+    return NextResponse.json(result.data as MissionArchitectOutput);
   } catch (err) {
     console.error('[mission-architect]', err);
     return NextResponse.json({ error: 'Agent failed to generate mission' }, { status: 500 });

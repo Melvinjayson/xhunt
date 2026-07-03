@@ -1,322 +1,679 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Trophy, Share2, ArrowRight, Home, Clock, Zap, Sparkles, Radio, CheckCircle2 } from 'lucide-react';
-import { loadState } from '@/lib/store';
-import { getTagGradient } from '@/lib/mockHunts';
-import type { Hunt } from '@/lib/types';
-import { cn } from '@/lib/cn';
-import { emitEvent, emitRewardClaimed } from '@/lib/supabase/events';
+import {
+  CheckCircle2, Clock, Zap, DollarSign, Share2, Home,
+  ChevronRight, AlertCircle, XCircle, RotateCcw, ArrowRight,
+  Sparkles, Shield, Eye, User2,
+} from 'lucide-react';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Alert from '@mui/material/Alert';
+import Stepper from '@mui/material/Stepper';
+import Step from '@mui/material/Step';
+import StepLabel from '@mui/material/StepLabel';
+import StepContent from '@mui/material/StepContent';
+import { t } from '@/theme/colors';
+import { loadState, getVerificationStatus } from '@/lib/store';
+import { estimateCashReward, estimateXP } from '@/lib/missionCategories';
+import StatusPill from '@/components/consumer/StatusPill';
+import MissionCard from '@/components/consumer/MissionCard';
+import Surface from '@/components/consumer/Surface';
+import type { Hunt, VerificationRecord, VerificationStatus } from '@/lib/types';
+import BottomNav from '@/components/BottomNav';
 
-const CONFETTI_COLORS = ['#22FFAA', '#6D5DFD', '#FFB84D', '#a78bfa', '#f472b6', '#60a5fa'];
+// ── Verification pipeline ─────────────────────────────────────────────────
 
-const CONFETTI_PIECES = Array.from({ length: 40 }, () => ({
-  color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-  dir: Math.random() > 0.5 ? 1 : -1,
-  offsetX: (Math.random() - 0.5) * 100,
-  dur: 2.5 + Math.random(),
-}));
-
-const DIFFICULTY_COLOR: Record<string, string> = {
-  easy:   '#22FFAA',
-  medium: '#FFB84D',
-  hard:   '#FF5C7A',
-};
-
-interface Recommendation {
+interface PipelineStage {
   id: string;
-  title: string;
-  difficulty: string;
-  estimated_time: string | null;
-  tags: string[];
-  confidence_pct: number;
-  reason: string;
+  key: VerificationStatus | 'terminal';
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ size?: number; color?: string }>;
+  color: string;
+  eta: string;
 }
 
-function ConfettiPiece({ delay, x, piece }: { delay: number; x: number; piece: { color: string; dir: number; offsetX: number; dur: number } }) {
+const PIPELINE: PipelineStage[] = [
+  {
+    id: 'submitted',
+    key: 'submitted',
+    label: 'Submitted',
+    description: 'Your proof of work has been received and queued.',
+    icon: CheckCircle2,
+    color: t.accent,
+    eta: 'Instant',
+  },
+  {
+    id: 'ai_reviewing',
+    key: 'ai_reviewing',
+    label: 'AI Review',
+    description: 'Our AI agent is checking your submission against requirements.',
+    icon: Sparkles,
+    color: t.ai,
+    eta: '5–15 min',
+  },
+  {
+    id: 'manual_review',
+    key: 'manual_review',
+    label: 'Human Review',
+    description: 'A mission reviewer is evaluating your work.',
+    icon: Eye,
+    color: t.info,
+    eta: '24–48 hrs',
+  },
+  {
+    id: 'terminal',
+    key: 'terminal',
+    label: 'Decision',
+    description: 'Your verification result is available.',
+    icon: Shield,
+    color: t.accent,
+    eta: '',
+  },
+];
+
+const TERMINAL_STATUSES: VerificationStatus[] = ['approved', 'rejected', 'needs_info'];
+
+function getPipelineIndex(status: VerificationStatus): number {
+  if (status === 'submitted') return 0;
+  if (status === 'ai_reviewing') return 1;
+  if (status === 'manual_review') return 2;
+  if (TERMINAL_STATUSES.includes(status)) return 3;
+  return 0;
+}
+
+// ── Hero ──────────────────────────────────────────────────────────────────
+
+function HeroSection({
+  status,
+  hunt,
+}: {
+  status: VerificationStatus;
+  hunt: Hunt;
+}) {
+  const cash = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
+  const xp = estimateXP(hunt.xpReward, hunt.difficulty, hunt.steps?.length ?? 3);
+  const isApproved = status === 'approved';
+  const isRejected = status === 'rejected';
+  const isNeedsInfo = status === 'needs_info';
+
+  const heroColor = isApproved ? t.accent : isRejected ? t.error : isNeedsInfo ? t.warning : t.ai;
+  const heroGlow = isApproved
+    ? `radial-gradient(ellipse 60% 40% at 50% 0%, ${t.accent}22 0%, transparent 70%)`
+    : isRejected
+    ? `radial-gradient(ellipse 60% 40% at 50% 0%, ${t.error}22 0%, transparent 70%)`
+    : `radial-gradient(ellipse 60% 40% at 50% 0%, ${t.ai}22 0%, transparent 70%)`;
+
+  const heroIcon = isApproved ? (
+    <CheckCircle2 size={48} color={t.accent} />
+  ) : isRejected ? (
+    <XCircle size={48} color={t.error} />
+  ) : isNeedsInfo ? (
+    <AlertCircle size={48} color={t.warning} />
+  ) : (
+    <Box className="breathe" sx={{ color: t.ai }}>
+      <Sparkles size={48} />
+    </Box>
+  );
+
+  const heroTitle = isApproved
+    ? 'Mission Approved!'
+    : isRejected
+    ? 'Submission Rejected'
+    : isNeedsInfo
+    ? 'More Info Needed'
+    : 'Verification In Progress';
+
+  const heroSubtitle = isApproved
+    ? 'Your proof was accepted. Reward is being processed.'
+    : isRejected
+    ? "Your submission didn't meet requirements. See feedback below."
+    : isNeedsInfo
+    ? 'The reviewer needs additional information from you.'
+    : "Your submission is being reviewed. We'll notify you when done.";
+
   return (
-    <motion.div
-      className="absolute top-0 w-2 h-3 rounded-sm"
-      style={{ left: `${x}%`, backgroundColor: piece.color }}
-      initial={{ y: -20, opacity: 1, rotate: 0 }}
-      animate={{
-        y: ['0%', '120vh'],
-        opacity: [1, 1, 0],
-        rotate: [0, 360 * piece.dir],
-        x: [piece.offsetX],
+    <Box
+      sx={{
+        background: heroGlow,
+        padding: '40px 24px 32px',
+        textAlign: 'center',
+        borderBottom: `1px solid ${t.border}`,
       }}
-      transition={{ duration: piece.dur, delay, ease: 'easeIn' }}
-    />
+    >
+      {/* Status icon */}
+      <Stack sx={{ mb: 2, alignItems: 'center' }}>
+        {heroIcon}
+      </Stack>
+
+      {/* Status pill */}
+      <Stack sx={{ mb: 1.5, alignItems: 'center' }}>
+        <StatusPill status={status} size="md" />
+      </Stack>
+
+      {/* Title */}
+      <Typography variant="h5" sx={{ fontSize: 22, fontWeight: 700, color: t.txt, mb: 1, lineHeight: 1.2 }}>
+        {heroTitle}
+      </Typography>
+      <Typography sx={{ fontSize: 13, color: t.txtDim, mb: 3, lineHeight: 1.5 }}>
+        {heroSubtitle}
+      </Typography>
+
+      {/* Mission name */}
+      <Typography
+        sx={{
+          fontSize: 12,
+          color: heroColor,
+          fontWeight: 600,
+          mb: 2.5,
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase',
+        }}
+      >
+        {hunt.tenantName ?? 'Mission'} · {hunt.title}
+      </Typography>
+
+      {/* Reward pills — only show if not rejected */}
+      {!isRejected && (
+        <Stack direction="row" spacing={1.25} sx={{ justifyContent: 'center', flexWrap: 'wrap' }}>
+          {cash > 0 && (
+            <Chip
+              icon={<DollarSign size={14} />}
+              label={isApproved ? `$${cash} USD` : `$${cash} Pending`}
+              sx={{
+                background: isApproved ? `${t.accent}18` : `${t.txtFaint}18`,
+                border: `1px solid ${isApproved ? `${t.accent}30` : t.border}`,
+                color: isApproved ? t.accent : t.txtDim,
+                fontWeight: 700,
+                fontSize: 13,
+                borderRadius: '100px',
+              }}
+            />
+          )}
+          {xp > 0 && (
+            <Chip
+              icon={<Zap size={14} />}
+              label={isApproved ? `+${xp} XP` : `${xp} XP Pending`}
+              sx={{
+                background: isApproved ? `${t.ai}18` : `${t.txtFaint}18`,
+                border: `1px solid ${isApproved ? `${t.ai}30` : t.border}`,
+                color: isApproved ? t.aiLight : t.txtDim,
+                fontWeight: 700,
+                fontSize: 13,
+                borderRadius: '100px',
+              }}
+            />
+          )}
+        </Stack>
+      )}
+    </Box>
   );
 }
+
+// ── Verification timeline ─────────────────────────────────────────────────
+
+function VerificationTimeline({
+  status,
+  record,
+}: {
+  status: VerificationStatus;
+  record: VerificationRecord;
+}) {
+  const activeIndex = getPipelineIndex(status);
+  const isTerminal = TERMINAL_STATUSES.includes(status);
+
+  const terminalColor =
+    status === 'approved' ? t.accent : status === 'rejected' ? t.error : t.warning;
+
+  return (
+    <Surface variant="card" style={{ margin: '0 16px 16px' }}>
+      <Box sx={{ padding: '20px 20px 8px' }}>
+        <Typography variant="h6" sx={{ fontSize: 15, fontWeight: 700, color: t.txt, mb: 2.5 }}>
+          Verification Timeline
+        </Typography>
+
+        <Stepper
+          orientation="vertical"
+          activeStep={activeIndex}
+          sx={{
+            '& .MuiStepLabel-label': { color: 'text.primary' },
+            '& .MuiStepConnector-line': { borderColor: 'divider' },
+            '& .MuiStepContent-root': { borderColor: 'divider' },
+          }}
+        >
+          {PIPELINE.map((stage, i) => {
+            const isCompleted = i < activeIndex;
+            const isCurrent = i === activeIndex;
+            const isPending = i > activeIndex;
+            const isTerminalStage = i === 3;
+
+            const stageColor = isCompleted
+              ? t.accent
+              : isCurrent
+              ? isTerminalStage
+                ? terminalColor
+                : t.ai
+              : t.txtFaint;
+
+            return (
+              <Step key={stage.id} completed={isCompleted}>
+                <StepLabel
+                  slots={{ stepIcon: () => (
+                    <Box
+                      className={isCurrent && !isTerminalStage ? 'breathe' : undefined}
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: '50%',
+                        bgcolor: isCompleted
+                          ? `${t.accent}20`
+                          : isCurrent
+                          ? isTerminalStage
+                            ? `${terminalColor}20`
+                            : `${t.ai}20`
+                          : `${t.txtFaint}10`,
+                        border: `2px solid ${stageColor}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: stageColor,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {isCompleted
+                        ? React.createElement(CheckCircle2, { size: 16 })
+                        : React.createElement(stage.icon, { size: 16, color: stageColor })}
+                    </Box>
+                  ) }}
+                >
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 600,
+                        color: isPending ? t.txtFaint : t.txt,
+                      }}
+                    >
+                      {isTerminalStage && isTerminal
+                        ? status === 'approved'
+                          ? 'Approved'
+                          : status === 'rejected'
+                          ? 'Rejected'
+                          : 'Needs More Info'
+                        : stage.label}
+                    </Typography>
+                    {isCurrent && (
+                      <StatusPill
+                        status={isTerminalStage ? (status as VerificationStatus) : status}
+                        size="sm"
+                      />
+                    )}
+                  </Stack>
+                </StepLabel>
+                <StepContent>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.5 }}>
+                    {isTerminalStage && isTerminal
+                      ? status === 'approved'
+                        ? 'Congratulations! Your submission was accepted.'
+                        : status === 'rejected'
+                        ? 'Your submission did not meet the requirements.'
+                        : 'A reviewer needs additional information.'
+                      : stage.description}
+                  </Typography>
+                  {!isPending && stage.eta && !isTerminalStage && (
+                    <Typography variant="caption" sx={{ color: stageColor, display: 'block', mt: 0.5 }}>
+                      ⏱ {stage.eta}
+                    </Typography>
+                  )}
+                  {i === 0 && record.submittedAt && (
+                    <Typography variant="caption" sx={{ color: t.txtFaint, display: 'block', mt: 0.5 }}>
+                      {new Date(record.submittedAt).toLocaleString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Typography>
+                  )}
+                  {i === 3 && record.reviewedAt && (
+                    <Typography variant="caption" sx={{ color: t.txtFaint, display: 'block', mt: 0.5 }}>
+                      {new Date(record.reviewedAt).toLocaleString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Typography>
+                  )}
+                </StepContent>
+              </Step>
+            );
+          })}
+        </Stepper>
+      </Box>
+    </Surface>
+  );
+}
+
+// ── Reviewer feedback ─────────────────────────────────────────────────────
+
+function ReviewerFeedback({
+  status,
+  feedback,
+}: {
+  status: VerificationStatus;
+  feedback?: string;
+}) {
+  if (!feedback) return null;
+  const isRejected = status === 'rejected';
+  const isNeedsInfo = status === 'needs_info';
+  if (!isRejected && !isNeedsInfo && !feedback) return null;
+
+  const color = isRejected ? t.error : t.warning;
+
+  return (
+    <Box sx={{ margin: '0 16px 16px' }}>
+      <Alert
+        severity={isRejected ? 'error' : 'warning'}
+        sx={{
+          borderRadius: 2,
+          bgcolor: `${color}08`,
+          color,
+          border: `1px solid ${color}30`,
+          '& .MuiAlert-icon': { color },
+        }}
+      >
+        <Typography sx={{ fontSize: 14, fontWeight: 700, color, mb: 1 }}>
+          {isRejected ? 'Rejection Reason' : 'Reviewer Note'}
+        </Typography>
+        <Typography sx={{ fontSize: 13, color: t.txtDim, lineHeight: 1.6 }}>
+          {feedback}
+        </Typography>
+        {isNeedsInfo && (
+          <Button
+            onClick={() => {}}
+            endIcon={<ArrowRight size={14} />}
+            sx={{
+              mt: 1.75,
+              background: `${t.warning}20`,
+              border: `1px solid ${t.warning}40`,
+              color: t.warning,
+              fontSize: 13,
+              fontWeight: 600,
+              borderRadius: '10px',
+              textTransform: 'none',
+            }}
+          >
+            Provide More Info
+          </Button>
+        )}
+        {isRejected && (
+          <Button
+            onClick={() => {}}
+            startIcon={<RotateCcw size={14} />}
+            sx={{
+              mt: 1.75,
+              background: `${t.ai}20`,
+              border: `1px solid ${t.ai}40`,
+              color: t.aiLight,
+              fontSize: 13,
+              fontWeight: 600,
+              borderRadius: '10px',
+              textTransform: 'none',
+            }}
+          >
+            Resubmit
+          </Button>
+        )}
+      </Alert>
+    </Box>
+  );
+}
+
+// ── Estimated timing ──────────────────────────────────────────────────────
+
+function EstimatedTiming({ status }: { status: VerificationStatus }) {
+  if (TERMINAL_STATUSES.includes(status)) return null;
+
+  const currentStage = PIPELINE.find((s) => s.key === status);
+  if (!currentStage) return null;
+
+  return (
+    <Surface variant="inset" style={{ margin: '0 16px 16px' }}>
+      <Stack direction="row" spacing={1.5} sx={{ padding: '14px 16px', alignItems: 'center' }}>
+        <Box
+          sx={{
+            width: 36,
+            height: 36,
+            borderRadius: '10px',
+            background: `${t.info}18`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: t.info,
+            flexShrink: 0,
+          }}
+        >
+          <Clock size={18} />
+        </Box>
+        <Box>
+          <Typography sx={{ fontSize: 12, color: t.txtFaint, mb: 0.25 }}>
+            Expected decision time
+          </Typography>
+          <Typography sx={{ fontSize: 14, fontWeight: 700, color: t.txt }}>
+            {currentStage.eta}
+          </Typography>
+        </Box>
+      </Stack>
+    </Surface>
+  );
+}
+
+// ── Recommended missions ──────────────────────────────────────────────────
+
+function RecommendedMissions({
+  currentId,
+  hunts,
+}: {
+  currentId: string;
+  hunts: Hunt[];
+}) {
+  const picks = hunts.filter((h) => h.id !== currentId).slice(0, 3);
+  if (picks.length === 0) return null;
+
+  return (
+    <Box sx={{ margin: '0 0 24px' }}>
+      <Stack
+        direction="row"
+        sx={{ padding: '0 16px 12px', alignItems: 'center', justifyContent: 'space-between' }}
+      >
+        <Typography variant="h6" sx={{ fontSize: 15, fontWeight: 700, color: t.txt }}>
+          More Opportunities
+        </Typography>
+        <Button
+          href="/explore"
+          endIcon={<ChevronRight size={14} />}
+          sx={{ fontSize: 12, color: t.accent, p: 0, minWidth: 0, textTransform: 'none' }}
+        >
+          See all
+        </Button>
+      </Stack>
+      <Stack spacing={1.5} sx={{ padding: '0 16px' }}>
+        {picks.map((h) => (
+          <MissionCard key={h.id} hunt={h} compact />
+        ))}
+      </Stack>
+    </Box>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────
 
 export default function CompletePage() {
   const params = useParams();
   const router = useRouter();
-  const huntId = params?.id as string;
+  const huntId = params.id as string;
 
   const [hunt, setHunt] = useState<Hunt | null>(null);
-  const [completedAt, setCompletedAt] = useState<string>('');
-  const [stepsCompleted, setStepsCompleted] = useState(0);
-  const [mounted, setMounted] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [sharing, setSharing] = useState(false);
-  const [shared, setShared] = useState(false);
+  const [record, setRecord] = useState<VerificationRecord | null>(null);
+  const [allHunts, setAllHunts] = useState<Hunt[]>([]);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const state = loadState();
-    const allHunts = state.hunts;
-    const found = allHunts.find((h) => h.id === huntId);
-
-    if (found) {
-      setHunt(found);
-      const prog = state.progress[huntId];
-      if (prog) {
-        setStepsCompleted(prog.completedSteps.length);
-        setCompletedAt(prog.completedAt || new Date().toISOString());
-      }
-      emitEvent('mission_completed', { missionId: huntId });
-      emitRewardClaimed(huntId, found.reward);
-    }
-    setMounted(true);
-    setTimeout(() => setShowConfetti(true), 100);
-
-    void fetch(`/api/recommendations?mission_id=${huntId}&limit=3`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.recommendations?.length) {
-          setRecommendations(data.recommendations as Recommendation[]);
-        }
-      })
-      .catch(() => {});
+    const found = state.hunts.find((h) => h.id === huntId) ?? null;
+    setHunt(found);
+    setAllHunts(state.hunts);
+    const rec = getVerificationStatus(huntId);
+    setRecord(rec);
   }, [huntId]);
 
-  if (!mounted || !hunt) return null;
-
-  const gradient = getTagGradient(hunt.tags);
-  const completionDate = new Date(completedAt).toLocaleDateString('en-US', {
-    month: 'long', day: 'numeric', year: 'numeric',
-  });
-
-  async function handleShareToTimeline() {
-    if (sharing || shared) return;
-    setSharing(true);
-    try {
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(huntId);
-      await fetch('/api/timeline/post', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          post_type:  'completion',
-          caption:    `Just completed "${hunt!.title}" 🏆`,
-          mission_id: isUUID ? huntId : undefined,
-          metadata:   { reward: hunt!.reward, steps: stepsCompleted, title: hunt!.title },
-        }),
-      });
-      setShared(true);
-    } finally {
-      setSharing(false);
-    }
+  if (!hunt) {
+    return (
+      <Box className="consumer-app">
+        <Box className="consumer-app-inner">
+          <Stack
+            spacing={1.5}
+            sx={{ minHeight: '60vh', color: t.txtDim, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Sparkles size={32} color={t.txtFaint} />
+            <Typography sx={{ fontSize: 14 }}>Mission not found</Typography>
+            <Button
+              variant="outlined"
+              onClick={() => router.push('/missions')}
+              sx={{
+                borderRadius: '10px',
+                background: `${t.accent}18`,
+                border: `1px solid ${t.accent}30`,
+                color: t.accent,
+                fontSize: 13,
+                fontWeight: 600,
+                textTransform: 'none',
+              }}
+            >
+              My Missions
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
+    );
   }
 
+  const status: VerificationStatus = record?.status ?? 'submitted';
+  const isTerminal = TERMINAL_STATUSES.includes(status);
+
   async function handleShare() {
+    const text = `I just submitted my proof for "${hunt!.title}" on X-Hunt!`;
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `I completed "${hunt!.title}" on X-hunt!`,
-          text: `Just finished the ${hunt!.title} hunt and earned: ${hunt!.reward} 🏆`,
-        });
-      } catch {}
+      await navigator.share({ title: 'X-Hunt Submission', text }).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden" style={{ background: '#050816' }}>
-      {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-          {CONFETTI_PIECES.map((piece, i) => (
-            <ConfettiPiece key={i} delay={i * 0.04} x={(i / 40) * 100} piece={piece} />
-          ))}
-        </div>
-      )}
-
-      <div className="max-w-[430px] mx-auto w-full flex flex-col min-h-screen px-5">
+    <Box className="consumer-app">
+      <BottomNav />
+      <Box className="consumer-app-inner" sx={{ paddingBottom: '100px' }}>
         {/* Hero */}
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', damping: 18, stiffness: 200, delay: 0.2 }}
-          className="flex flex-col items-center pt-20 pb-8"
-        >
-          <div
-            className={cn('w-24 h-24 rounded-full bg-gradient-to-br flex items-center justify-center mb-6', gradient)}
-            style={{ boxShadow: '0 0 40px rgba(34,255,170,.3)' }}
-          >
-            <span className="text-4xl">🏆</span>
-          </div>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.4 }}
-            className="text-center"
-          >
-            <p className="font-bold text-sm uppercase tracking-widest mb-2 text-accent">Mission Complete!</p>
-            <h1 className="text-[26px] font-bold leading-tight mb-2" style={{ color: '#F0F4FF' }}>{hunt.title}</h1>
-            <p className="text-sm" style={{ color: '#8B9CC0' }}>{completionDate}</p>
-          </motion.div>
-        </motion.div>
+        <HeroSection status={status} hunt={hunt} />
 
-        {/* Reward */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.65, duration: 0.4 }}
-          className="rounded-2xl p-5 mb-6"
-          style={{ background: 'rgba(255,184,77,.06)', border: '1px solid rgba(255,184,77,.18)' }}
-        >
-          <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: '#FFB84D' }}>Your Reward</p>
-          <div className="flex items-center gap-4">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(255,184,77,.12)' }}
-            >
-              <Trophy size={28} style={{ color: '#FFB84D' }} strokeWidth={1.8} />
-            </div>
-            <div>
-              <p className="text-[17px] font-bold leading-snug" style={{ color: '#F0F4FF' }}>{hunt.reward}</p>
-              <p className="text-[13px] mt-0.5" style={{ color: '#8B9CC0' }}>Added to your profile</p>
-            </div>
-          </div>
-        </motion.div>
+        <Box sx={{ height: 20 }} />
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.4 }}
-          className="grid grid-cols-2 gap-3 mb-8"
-        >
-          {[
-            { value: stepsCompleted, label: 'Steps Completed', color: '#22FFAA' },
-            { value: hunt.estimated_time, label: 'Time Well Spent', color: '#F0F4FF' },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className="rounded-2xl p-4 text-center"
-              style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,.07)' }}
-            >
-              <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
-              <p className="text-[12px] font-medium mt-1" style={{ color: '#7d8b8e' }}>{s.label}</p>
-            </div>
-          ))}
-        </motion.div>
+        {/* Estimated timing (only while pending) */}
+        <EstimatedTiming status={status} />
 
-        {/* Recommendations */}
-        {recommendations.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.95, duration: 0.4 }}
-            className="mb-8"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles size={15} className="text-ai" strokeWidth={2} />
-              <h2 className="text-[15px] font-bold" style={{ color: '#F0F4FF' }}>What&apos;s next for you</h2>
-            </div>
-            <div className="flex flex-col gap-3">
-              {recommendations.map((rec) => (
-                <button
-                  key={rec.id}
-                  onClick={() => router.push(`/hunt/${rec.id}`)}
-                  className="rounded-2xl p-4 text-left transition-colors group"
-                  style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,.07)' }}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <p
-                      className="text-[14px] font-semibold leading-snug group-hover:text-accent transition-colors"
-                      style={{ color: '#F0F4FF' }}
-                    >
-                      {rec.title}
-                    </p>
-                    <ArrowRight size={15} style={{ color: '#4A5578' }} className="group-hover:text-accent transition-colors flex-shrink-0 mt-0.5" strokeWidth={2} />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {rec.estimated_time && (
-                      <span className="flex items-center gap-1 text-[11px]" style={{ color: '#8B9CC0' }}>
-                        <Clock size={10} strokeWidth={2} />{rec.estimated_time}
-                      </span>
-                    )}
-                    <span
-                      className="flex items-center gap-1 text-[11px] font-semibold"
-                      style={{ color: DIFFICULTY_COLOR[rec.difficulty] ?? '#7d8b8e' }}
-                    >
-                      <Zap size={10} strokeWidth={2} />
-                      {rec.difficulty.charAt(0).toUpperCase() + rec.difficulty.slice(1)}
-                    </span>
-                    <span
-                      className="ml-auto text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ color: '#4A5578', background: 'rgba(255,255,255,.06)' }}
-                    >
-                      {rec.reason}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </motion.div>
+        {/* Verification timeline */}
+        <VerificationTimeline status={status} record={record ?? { huntId, status, submittedAt: new Date().toISOString() }} />
+
+        {/* Reviewer feedback */}
+        <ReviewerFeedback status={status} feedback={record?.feedback} />
+
+        {/* What happens next — show while in pipeline */}
+        {!isTerminal && (
+          <Surface variant="inset" style={{ margin: '0 16px 16px' }}>
+            <Box sx={{ padding: '16px 18px' }}>
+              <Stack direction="row" spacing={1} sx={{ mb: 1.25, alignItems: 'center' }}>
+                <User2 size={16} color={t.ai} />
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: t.txt }}>What happens next?</Typography>
+              </Stack>
+              <Box component="ul" sx={{ margin: 0, padding: '0 0 0 16px', color: t.txtDim, fontSize: 12, lineHeight: 1.8 }}>
+                <li>You'll receive an in-app notification when your status changes.</li>
+                <li>If approved, your reward will be credited automatically.</li>
+                <li>If more info is needed, check back here for reviewer notes.</li>
+              </Box>
+            </Box>
+          </Surface>
         )}
 
+        {/* Recommended missions */}
+        <RecommendedMissions currentId={huntId} hunts={allHunts} />
+
         {/* Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: recommendations.length > 0 ? 1.1 : 0.95, duration: 0.4 }}
-          className="flex flex-col gap-3 pb-12"
-        >
-          {/* Share to Timeline */}
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={handleShareToTimeline}
-            disabled={sharing || shared}
-            className="w-full h-14 rounded-2xl font-semibold flex items-center justify-center gap-2"
-            style={{
-              background: shared ? 'rgba(34,255,170,.1)' : '#0A1226',
-              border: shared ? '1px solid rgba(34,255,170,.3)' : '1px solid rgba(255,255,255,.07)',
-              color: shared ? '#22FFAA' : '#F0F4FF',
+        <Stack spacing={1.25} sx={{ padding: '0 16px' }}>
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={handleShare}
+            startIcon={<Share2 size={16} />}
+            sx={{
+              padding: '14px',
+              borderRadius: '14px',
+              background: `${t.accent}14`,
+              border: `1px solid ${t.accent}30`,
+              color: t.accent,
+              fontSize: 14,
+              fontWeight: 600,
+              textTransform: 'none',
             }}
           >
-            {shared ? <CheckCircle2 size={18} strokeWidth={2} /> : <Radio size={18} strokeWidth={2} />}
-            {sharing ? 'Sharing…' : shared ? 'Shared to Timeline!' : 'Share to Timeline'}
-          </motion.button>
+            {copied ? 'Copied!' : 'Share Submission'}
+          </Button>
 
-          {/* Native share */}
-          {typeof navigator !== 'undefined' && 'share' in navigator && (
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={handleShare}
-              className="w-full h-14 rounded-2xl font-semibold flex items-center justify-center gap-2"
-              style={{ background: '#0A1226', border: '1px solid rgba(255,255,255,.07)', color: '#F0F4FF' }}
-            >
-              <Share2 size={18} strokeWidth={2} />
-              Share Achievement
-            </motion.button>
-          )}
-
-          <motion.button
-            whileTap={{ scale: 0.98 }}
+          <Button
+            fullWidth
             onClick={() => router.push('/home')}
-            className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2"
-            style={{
-              background: '#22FFAA',
-              color: '#050816',
-              boxShadow: '0 4px 24px rgba(34,255,170,.4)',
+            startIcon={<Home size={16} />}
+            sx={{
+              padding: '14px',
+              borderRadius: '14px',
+              background: t.surface,
+              border: `1px solid ${t.border}`,
+              color: t.txtDim,
+              fontSize: 14,
+              fontWeight: 600,
+              textTransform: 'none',
             }}
           >
-            <Home size={18} strokeWidth={2} />
-            Back to Hunts
-            <ArrowRight size={18} strokeWidth={2.5} />
-          </motion.button>
-        </motion.div>
-      </div>
-    </div>
+            Return Home
+          </Button>
+
+          <Button
+            fullWidth
+            onClick={() => router.push('/explore')}
+            endIcon={<ArrowRight size={16} />}
+            sx={{
+              padding: '14px',
+              borderRadius: '14px',
+              background: `${t.ai}14`,
+              border: `1px solid ${t.ai}30`,
+              color: t.aiLight,
+              fontSize: 14,
+              fontWeight: 600,
+              textTransform: 'none',
+            }}
+          >
+            Explore Opportunities
+          </Button>
+        </Stack>
+      </Box>
+    </Box>
   );
 }

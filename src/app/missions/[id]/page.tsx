@@ -6,36 +6,34 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Target, Clock, Zap, Trophy,
   ArrowRight, Sparkles, AlertCircle, Loader2, SkipForward,
-  Building2, ShieldCheck, RotateCcw, MessageSquare,
+  Building2, ShieldCheck, RotateCcw, MessageSquare, Upload,
 } from 'lucide-react';
 import Link from 'next/link';
 import BottomNav from '@/components/BottomNav';
-import { createClient } from '@/lib/supabase/client';
+
 import { emitEvent, syncProgress, emitRewardClaimed } from '@/lib/supabase/events';
-import { loadState } from '@/lib/store';
+import { loadState, setVerificationStatus } from '@/lib/store';
+import { useAuth } from '@/lib/auth/context';
+import { t } from '@/theme/colors';
 import type { Hunt, Step } from '@/lib/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Phase = 'loading' | 'intro' | 'executing' | 'complete';
 
-const BG    = '#050816';
-const TXT   = '#F0F4FF';
-const DIM   = '#8B9CC0';
-const FAINT = '#4A5578';
-
 const STEP_META: Record<string, { label: string; bg: string; text: string; border: string; hint: string }> = {
-  action:        { label: 'Action',        bg: '#22FFAA12', text: '#22FFAA', border: '#22FFAA30', hint: 'Be specific. Describe what you did, the outcome, and any tools or people involved.' },
-  reflection:    { label: 'Reflection',    bg: '#6D5DFD12', text: '#A99FFE', border: '#6D5DFD30', hint: 'Think deeply. What surprised you? What would you do differently next time?' },
-  discovery:     { label: 'Discovery',     bg: '#FFB84D12', text: '#FFB84D', border: '#FFB84D30', hint: 'Document your findings clearly. Include names, sources, or links where relevant.' },
-  research:      { label: 'Research',      bg: '#60A5FA12', text: '#60A5FA', border: '#60A5FA30', hint: 'Share your research findings with context and evidence. Cite your sources.' },
-  submission:    { label: 'Submission',    bg: '#22FFAA12', text: '#22FFAA', border: '#22FFAA30', hint: 'Describe what you are submitting and how it can be accessed or verified.' },
-  collaboration: { label: 'Collaboration', bg: '#FF5C7A12', text: '#FF9DB2', border: '#FF5C7A30', hint: 'Who did you work with? Describe your individual contribution to the group effort.' },
+  action:        { label: 'Action',        bg: `${t.accent}12`, text: t.accent,   border: `${t.accent}30`, hint: 'Be specific. Describe what you did, the outcome, and any tools or people involved.' },
+  reflection:    { label: 'Reflection',    bg: `${t.ai}12`,     text: t.ai,       border: `${t.ai}30`,     hint: 'Think deeply. What surprised you? What would you do differently next time?' },
+  discovery:     { label: 'Discovery',     bg: `${t.warning}12`,text: t.warning,  border: `${t.warning}30`,hint: 'Document your findings clearly. Include names, sources, or links where relevant.' },
+  research:      { label: 'Research',      bg: '#60A5FA12',      text: '#60A5FA',  border: '#60A5FA30',     hint: 'Share your research findings with context and evidence. Cite your sources.' },
+  submission:    { label: 'Submission',    bg: `${t.accent}12`, text: t.accent,   border: `${t.accent}30`, hint: 'Describe what you are submitting and how it can be accessed or verified.' },
+  collaboration: { label: 'Collaboration', bg: `${t.error}12`,  text: '#FF9DB2',  border: `${t.error}30`,  hint: 'Who did you work with? Describe your individual contribution to the group effort.' },
 };
 
 export default function MissionExecutionPage() {
   const { id } = useParams<{ id: string }>();
   const router  = useRouter();
+  const { user, isLoaded } = useAuth();
 
   const [phase, setPhase]         = useState<Phase>('loading');
   const [mission, setMission]     = useState<Hunt | null>(null);
@@ -46,13 +44,27 @@ export default function MissionExecutionPage() {
   const [saving, setSaving]       = useState(false);
   const [loadErr, setLoadErr]     = useState('');
   const [chatConvId, setChatConvId] = useState<string | null>(null);
+  const [proofFile, setProofFile]   = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
   const startedAtRef              = useRef('');
 
+  function handleProofFile(file: File | null) {
+    setProofFile(file);
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => setProofPreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setProofPreview(null);
+    }
+  }
+
   useEffect(() => {
+    if (!isLoaded) return;
     async function boot() {
+      if (!user) { router.replace(`/sign-in?redirect_url=/missions/${id}`); return; }
+      const { createClient } = await import('@/lib/supabase/client');
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace(`/auth/login?next=/missions/${id}`); return; }
 
       // Non-UUID IDs come from localStorage (AI-generated missions).
       // Skip Supabase and load from local state directly.
@@ -100,7 +112,7 @@ export default function MissionExecutionPage() {
       const { data: prog } = await supabase
         .from('mission_progress')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .eq('mission_id', id)
         .maybeSingle();
 
@@ -122,7 +134,7 @@ export default function MissionExecutionPage() {
       setPhase('intro');
     }
     boot();
-  }, [id, router]);
+  }, [id, router, user, isLoaded]);
 
   async function startMission() {
     if (!mission) return;
@@ -185,6 +197,7 @@ export default function MissionExecutionPage() {
       emitEvent('mission_completed', { missionId: id, metadata: { total_steps: mission.steps.length } });
       emitRewardClaimed(id, mission.reward);
       void fetch('/api/mei/compute', { method: 'POST' });
+      setVerificationStatus(id, 'submitted');
       setDoneIds(newDone);
       setPhase('complete');
     } else {
@@ -218,8 +231,8 @@ export default function MissionExecutionPage() {
   /* ── LOADING ─────────────────────────────────────────────────── */
   if (phase === 'loading') {
     return (
-      <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader2 size={28} strokeWidth={2} style={{ color: '#22FFAA', animation: 'spin 1s linear infinite' }} />
+      <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 size={28} strokeWidth={2} style={{ color: t.accent, animation: 'spin 1s linear infinite' }} />
       </div>
     );
   }
@@ -227,10 +240,10 @@ export default function MissionExecutionPage() {
   /* ── ERROR ───────────────────────────────────────────────────── */
   if (loadErr) {
     return (
-      <div style={{ minHeight: '100vh', background: BG, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 }}>
-        <AlertCircle size={36} strokeWidth={1.5} style={{ color: '#FF5C7A' }} />
-        <p style={{ fontSize: 17, fontWeight: 800, color: TXT }}>{loadErr}</p>
-        <Link href="/missions" style={{ fontSize: 14, fontWeight: 600, color: '#22FFAA', textDecoration: 'none' }}>
+      <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 }}>
+        <AlertCircle size={36} strokeWidth={1.5} style={{ color: t.error }} />
+        <p style={{ fontSize: 17, fontWeight: 800, color: t.txt }}>{loadErr}</p>
+        <Link href="/missions" style={{ fontSize: 14, fontWeight: 600, color: t.accent, textDecoration: 'none' }}>
           ← Back to Missions
         </Link>
         <BottomNav />
@@ -240,39 +253,39 @@ export default function MissionExecutionPage() {
 
   if (!mission) return null;
 
-  const diffColor  = mission.difficulty === 'easy' ? '#22FFAA' : mission.difficulty === 'medium' ? '#FFB84D' : '#FF5C7A';
+  const diffColor  = mission.difficulty === 'easy' ? t.accent : mission.difficulty === 'medium' ? t.warning : t.error;
   const totalSteps = mission.steps.length;
   const pct        = totalSteps > 0 ? Math.round((doneIds.length / totalSteps) * 100) : 0;
 
   /* ── COMPLETE ────────────────────────────────────────────────── */
   if (phase === 'complete') {
     return (
-      <div style={{ minHeight: '100vh', background: BG, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px 110px', textAlign: 'center' }}>
+      <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px 110px', textAlign: 'center' }}>
         <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 18 }}>
           <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'rgba(34,255,170,0.1)', border: '2px solid rgba(34,255,170,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px', boxShadow: '0 0 60px rgba(34,255,170,0.15)' }}>
-            <Trophy size={44} strokeWidth={1.5} style={{ color: '#22FFAA' }} />
+            <Trophy size={44} strokeWidth={1.5} style={{ color: t.accent }} />
           </div>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <p style={{ fontSize: 11, fontWeight: 800, color: FAINT, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
+          <p style={{ fontSize: 11, fontWeight: 800, color: t.txtFaint, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
             Mission Complete
           </p>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: TXT, lineHeight: 1.22, marginBottom: 14, letterSpacing: '-0.025em' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: t.txt, lineHeight: 1.22, marginBottom: 14, letterSpacing: '-0.025em' }}>
             {mission.title}
           </h1>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,184,77,0.1)', border: '1px solid rgba(255,184,77,0.25)', borderRadius: 999, padding: '8px 20px', marginBottom: 10 }}>
-            <Zap size={14} strokeWidth={2.5} style={{ color: '#FFB84D' }} />
-            <span style={{ fontSize: 14, fontWeight: 800, color: '#FFB84D' }}>{mission.reward}</span>
+            <Zap size={14} strokeWidth={2.5} style={{ color: t.warning }} />
+            <span style={{ fontSize: 14, fontWeight: 800, color: t.warning }}>{mission.reward}</span>
           </div>
-          <p style={{ fontSize: 13, color: FAINT, marginBottom: 38 }}>
+          <p style={{ fontSize: 13, color: t.txtFaint, marginBottom: 38 }}>
             {totalSteps} step{totalSteps !== 1 ? 's' : ''} completed{mission.tenantName ? ` · ${mission.tenantName}` : ''}
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/missions" style={{ display: 'flex', alignItems: 'center', gap: 8, height: 50, padding: '0 22px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, color: TXT, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+            <Link href="/missions" style={{ display: 'flex', alignItems: 'center', gap: 8, height: 50, padding: '0 22px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, color: t.txt, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
               <RotateCcw size={14} strokeWidth={2.5} /> More Missions
             </Link>
-            <Link href="/home" style={{ display: 'flex', alignItems: 'center', gap: 8, height: 50, padding: '0 24px', background: '#22FFAA', borderRadius: 16, color: BG, fontWeight: 900, fontSize: 14, textDecoration: 'none', boxShadow: '0 4px 24px rgba(34,255,170,0.35)' }}>
+            <Link href="/home" style={{ display: 'flex', alignItems: 'center', gap: 8, height: 50, padding: '0 24px', background: t.accent, borderRadius: 16, color: t.bg, fontWeight: 900, fontSize: 14, textDecoration: 'none', boxShadow: '0 4px 24px rgba(34,255,170,0.35)' }}>
               Dashboard <ArrowRight size={14} strokeWidth={2.8} />
             </Link>
           </div>
@@ -285,16 +298,16 @@ export default function MissionExecutionPage() {
   /* ── INTRO ───────────────────────────────────────────────────── */
   if (phase === 'intro') {
     return (
-      <div className="consumer-app" style={{ minHeight: '100vh', background: BG, paddingBottom: 110 }}>
+      <div className="consumer-app" style={{ minHeight: '100vh', background: t.bg, paddingBottom: 110 }}>
         {/* nav bar */}
         <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', position: 'sticky', top: 0, background: 'rgba(5,8,22,0.95)', backdropFilter: 'blur(20px)', zIndex: 10 }}>
-          <button onClick={() => router.back()} style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: DIM, cursor: 'pointer' }}>
+          <button onClick={() => router.back()} style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.txtDim, cursor: 'pointer' }}>
             <ChevronLeft size={18} strokeWidth={2} />
           </button>
           {mission.isVerified && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', borderRadius: 20 }}>
-              <ShieldCheck size={11} strokeWidth={2.5} style={{ color: '#22FFAA' }} />
-              <span style={{ fontSize: 10, fontWeight: 800, color: '#22FFAA' }}>VERIFIED</span>
+              <ShieldCheck size={11} strokeWidth={2.5} style={{ color: t.accent }} />
+              <span style={{ fontSize: 10, fontWeight: 800, color: t.accent }}>VERIFIED</span>
             </div>
           )}
         </div>
@@ -311,7 +324,7 @@ export default function MissionExecutionPage() {
           )}
 
           {/* title */}
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: TXT, lineHeight: 1.22, margin: '0 0 16px', letterSpacing: '-0.025em' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: t.txt, lineHeight: 1.22, margin: '0 0 16px', letterSpacing: '-0.025em' }}>
             {mission.title}
           </h1>
 
@@ -321,25 +334,25 @@ export default function MissionExecutionPage() {
               {mission.difficulty}
             </span>
             {mission.estimated_time && (
-              <span style={{ fontSize: 11, fontWeight: 600, padding: '5px 12px', borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: DIM, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: '5px 12px', borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: t.txtDim, display: 'flex', alignItems: 'center', gap: 5 }}>
                 <Clock size={11} strokeWidth={2} />{mission.estimated_time}
               </span>
             )}
-            <span style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 20, background: 'rgba(255,184,77,0.1)', border: '1px solid rgba(255,184,77,0.2)', color: '#FFB84D', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 20, background: 'rgba(255,184,77,0.1)', border: '1px solid rgba(255,184,77,0.2)', color: t.warning, display: 'flex', alignItems: 'center', gap: 5 }}>
               <Zap size={11} strokeWidth={2.5} />{mission.reward}
             </span>
           </div>
 
           {/* story */}
           {mission.story_context && (
-            <p style={{ fontSize: 14, lineHeight: 1.68, color: DIM, marginBottom: 30 }}>
+            <p style={{ fontSize: 14, lineHeight: 1.68, color: t.txtDim, marginBottom: 30 }}>
               {mission.story_context}
             </p>
           )}
 
           {/* steps preview */}
           <div style={{ marginBottom: 32 }}>
-            <p style={{ fontSize: 11, fontWeight: 800, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
+            <p style={{ fontSize: 11, fontWeight: 800, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
               {totalSteps} Step{totalSteps !== 1 ? 's' : ''}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -368,7 +381,7 @@ export default function MissionExecutionPage() {
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={startMission}
-            style={{ width: '100%', height: 56, borderRadius: 18, background: '#22FFAA', border: 'none', color: BG, fontSize: 16, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer', boxShadow: '0 6px 32px rgba(34,255,170,0.35)', letterSpacing: '-0.01em', fontFamily: 'inherit' }}>
+            style={{ width: '100%', height: 56, borderRadius: 18, background: t.accent, border: 'none', color: t.bg, fontSize: 16, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer', boxShadow: '0 6px 32px rgba(34,255,170,0.35)', letterSpacing: '-0.01em', fontFamily: 'inherit' }}>
             <Target size={18} strokeWidth={2.5} />
             Start Mission
             <ChevronRight size={16} strokeWidth={2.5} />
@@ -382,7 +395,7 @@ export default function MissionExecutionPage() {
               width: '100%', height: 46, borderRadius: 14, marginTop: 10,
               background: 'rgba(255,184,77,0.08)',
               border: '1px solid rgba(255,184,77,0.22)',
-              color: '#FFB84D', fontSize: 14, fontWeight: 700,
+              color: t.warning, fontSize: 14, fontWeight: 700,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 8, cursor: 'pointer', fontFamily: 'inherit',
             }}>
@@ -400,12 +413,12 @@ export default function MissionExecutionPage() {
   const sm   = STEP_META[step?.type ?? 'action'] ?? STEP_META.action;
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', flexDirection: 'column' }}>
 
       {/* sticky progress header */}
       <div style={{ padding: '14px 20px 12px', background: 'rgba(5,8,22,0.97)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <button onClick={() => setPhase('intro')} style={{ background: 'none', border: 'none', color: FAINT, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, fontFamily: 'inherit', padding: 0 }}>
+          <button onClick={() => setPhase('intro')} style={{ background: 'none', border: 'none', color: t.txtFaint, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, fontFamily: 'inherit', padding: 0 }}>
             <ChevronLeft size={15} strokeWidth={2} />Mission
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -415,10 +428,10 @@ export default function MissionExecutionPage() {
                 background: 'rgba(255,184,77,0.1)', border: '1px solid rgba(255,184,77,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none',
               }}>
-                <MessageSquare size={13} style={{ color: '#FFB84D' }} />
+                <MessageSquare size={13} style={{ color: t.warning }} />
               </Link>
             )}
-            <span style={{ fontSize: 12, fontWeight: 700, color: FAINT }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: t.txtFaint }}>
               {currentIdx + 1} / {totalSteps}
             </span>
           </div>
@@ -429,7 +442,7 @@ export default function MissionExecutionPage() {
           {mission.steps.map((s, i) => (
             <div key={s.id} style={{
               flex: 1, height: 3, borderRadius: 3,
-              background: doneIds.includes(s.id) ? '#22FFAA'
+              background: doneIds.includes(s.id) ? t.accent
                 : i === currentIdx ? 'rgba(34,255,170,0.45)'
                 : 'rgba(255,255,255,0.06)',
               transition: 'background 0.35s ease',
@@ -437,8 +450,8 @@ export default function MissionExecutionPage() {
           ))}
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 10, color: FAINT, fontWeight: 600 }}>{pct}% complete</span>
-          <span style={{ fontSize: 10, color: FAINT, fontWeight: 600 }}>{totalSteps - doneIds.length} remaining</span>
+          <span style={{ fontSize: 10, color: t.txtFaint, fontWeight: 600 }}>{pct}% complete</span>
+          <span style={{ fontSize: 10, color: t.txtFaint, fontWeight: 600 }}>{totalSteps - doneIds.length} remaining</span>
         </div>
       </div>
 
@@ -458,21 +471,21 @@ export default function MissionExecutionPage() {
             </div>
 
             {/* instruction */}
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: TXT, lineHeight: 1.35, marginBottom: 14, letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: t.txt, lineHeight: 1.35, marginBottom: 14, letterSpacing: '-0.02em' }}>
               {step.instruction}
             </h2>
 
             {/* success criteria */}
             {step.success_criteria && (
               <div className="liquid-glass" style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '10px 14px', background: 'rgba(34,255,170,0.04)', border: '1px solid rgba(34,255,170,0.12)', borderRadius: 12, marginBottom: 22 }}>
-                <CheckCircle2 size={13} strokeWidth={2} style={{ color: '#22FFAA', marginTop: 1, flexShrink: 0 }} />
-                <p style={{ fontSize: 12.5, color: DIM, margin: 0, lineHeight: 1.55 }}>{step.success_criteria}</p>
+                <CheckCircle2 size={13} strokeWidth={2} style={{ color: t.accent, marginTop: 1, flexShrink: 0 }} />
+                <p style={{ fontSize: 12.5, color: t.txtDim, margin: 0, lineHeight: 1.55 }}>{step.success_criteria}</p>
               </div>
             )}
 
             {/* response input */}
             <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 10, fontWeight: 800, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 10 }}>
+              <label style={{ fontSize: 10, fontWeight: 800, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 10 }}>
                 Your Response
               </label>
               <textarea
@@ -496,7 +509,7 @@ export default function MissionExecutionPage() {
                   borderRadius: 16,
                   padding: '14px 16px',
                   fontSize: 14,
-                  color: TXT,
+                  color: t.txt,
                   resize: 'vertical',
                   outline: 'none',
                   fontFamily: 'inherit',
@@ -508,8 +521,24 @@ export default function MissionExecutionPage() {
                 onFocus={(e) => { e.target.style.borderColor = 'rgba(34,255,170,0.3)'; }}
                 onBlur={(e)  => { e.target.style.borderColor = stepErr ? 'rgba(255,92,122,0.4)' : 'rgba(255,255,255,0.08)'; }}
               />
+              {step.type === 'submission' && (
+                <div style={{ marginTop: 10 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '10px 14px', borderRadius: 12, border: '1px dashed rgba(34,255,170,0.25)', background: 'rgba(34,255,170,0.03)' }}>
+                    <Upload size={15} strokeWidth={2} style={{ color: t.accent }} />
+                    <span style={{ fontSize: 13, color: t.txtDim, flex: 1 }}>
+                      {proofFile ? proofFile.name : 'Attach proof (photo, PDF, screenshot)'}
+                    </span>
+                    <input type="file" accept="image/*,.pdf" style={{ display: 'none' }}
+                      onChange={e => handleProofFile(e.target.files?.[0] ?? null)} />
+                  </label>
+                  {proofPreview && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={proofPreview} alt="proof preview" style={{ marginTop: 8, height: 80, borderRadius: 8, objectFit: 'cover' }} />
+                  )}
+                </div>
+              )}
               {stepErr && (
-                <p style={{ fontSize: 12, color: '#FF5C7A', marginTop: 7, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <p style={{ fontSize: 12, color: t.error, marginTop: 7, display: 'flex', alignItems: 'center', gap: 5 }}>
                   <AlertCircle size={12} strokeWidth={2} />{stepErr}
                 </p>
               )}
@@ -518,7 +547,7 @@ export default function MissionExecutionPage() {
             {/* AI coaching hint */}
             <div className="liquid-glass" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 14px', background: 'rgba(109,93,253,0.06)', border: '1px solid rgba(109,93,253,0.14)', borderRadius: 12 }}>
               <Sparkles size={12} strokeWidth={2} style={{ color: '#A99FFE', marginTop: 2, flexShrink: 0 }} />
-              <p style={{ fontSize: 12, color: DIM, margin: 0, lineHeight: 1.55 }}>{sm.hint}</p>
+              <p style={{ fontSize: 12, color: t.txtDim, margin: 0, lineHeight: 1.55 }}>{sm.hint}</p>
             </div>
           </motion.div>
         </AnimatePresence>
@@ -530,7 +559,7 @@ export default function MissionExecutionPage() {
           {currentIdx < totalSteps - 1 && (
             <button
               onClick={skipStep}
-              style={{ height: 52, padding: '0 18px', borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: FAINT, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, fontFamily: 'inherit' }}>
+              style={{ height: 52, padding: '0 18px', borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: t.txtFaint, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, fontFamily: 'inherit' }}>
               <SkipForward size={14} strokeWidth={2} />Skip
             </button>
           )}
@@ -538,7 +567,7 @@ export default function MissionExecutionPage() {
             whileTap={{ scale: 0.97 }}
             onClick={completeStep}
             disabled={saving}
-            style={{ flex: 1, height: 52, borderRadius: 16, background: saving ? 'rgba(34,255,170,0.5)' : '#22FFAA', border: 'none', color: BG, fontSize: 15, fontWeight: 900, cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, boxShadow: '0 4px 28px rgba(34,255,170,0.28)', transition: 'background 0.2s', fontFamily: 'inherit' }}>
+            style={{ flex: 1, height: 52, borderRadius: 16, background: saving ? 'rgba(34,255,170,0.5)' : t.accent, border: 'none', color: t.bg, fontSize: 15, fontWeight: 900, cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, boxShadow: '0 4px 28px rgba(34,255,170,0.28)', transition: 'background 0.2s', fontFamily: 'inherit' }}>
             {saving
               ? <Loader2 size={17} strokeWidth={2.5} style={{ animation: 'spin 1s linear infinite' }} />
               : currentIdx === totalSteps - 1

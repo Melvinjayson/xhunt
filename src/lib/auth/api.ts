@@ -1,6 +1,6 @@
 import type { AuthUser } from './types';
 
-interface LoginPayload { email: string; password: string }
+interface LoginPayload { email: string; password: string; surface?: string }
 interface RegisterPayload { email: string; password: string; display_name?: string }
 
 interface AuthResponse {
@@ -56,9 +56,27 @@ export async function apiRegister(payload: RegisterPayload): Promise<AuthUser> {
   return mapUser(data.user);
 }
 
+/**
+ * Exchange the httpOnly refresh token for a fresh access token.
+ * Returns true if the session was renewed. Safe to call speculatively.
+ */
+export async function apiRefresh(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/auth/refresh', { method: 'POST' });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function apiMe(): Promise<AuthUser | null> {
   try {
-    const res = await fetch('/api/auth/me', { cache: 'no-store' });
+    let res = await fetch('/api/auth/me', { cache: 'no-store' });
+    // Access token expired → attempt a one-shot refresh, then retry once.
+    // Without this, an expired (but refreshable) session silently logs the user out.
+    if (res.status === 401 && (await apiRefresh())) {
+      res = await fetch('/api/auth/me', { cache: 'no-store' });
+    }
     if (!res.ok) return null;
     const data = await res.json();
     return mapUser(data);
@@ -76,11 +94,9 @@ export async function apiUpdateProfile(updates: {
   avatar_url?: string;
   default_surface?: string;
 }): Promise<AuthUser> {
-  const BACKEND = process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:8000';
-  const res = await fetch(`${BACKEND}/users/me`, {
+  const res = await fetch('/api/auth/profile', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
     body: JSON.stringify(updates),
   });
   if (!res.ok) throw new Error('Failed to update profile');

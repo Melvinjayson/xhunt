@@ -3,17 +3,18 @@
 import { usePathname } from 'next/navigation';
 import ConversationList from '@/components/chat/ConversationList';
 import BottomNav from '@/components/BottomNav';
+import { t } from '@/theme/colors';
 
 export default function MessagesLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isRoot = pathname === '/messages';
 
   return (
-    <div className="consumer-app" style={{
+    <div style={{
       height: '100dvh',
       display: 'flex',
       overflow: 'hidden',
-      background: '#050816',
+      background: t.bg,
     }}>
       <BottomNav />
 
@@ -24,9 +25,8 @@ export default function MessagesLayout({ children }: { children: React.ReactNode
           flexShrink: 0,
           height: '100%',
           overflow: 'hidden',
-          // Mobile: show only on root, hidden in chat
-          display: isRoot ? 'flex' : 'none',
           flexDirection: 'column',
+          borderRight: `1px solid ${t.border}`,
         }}
         className={`${isRoot ? 'flex' : 'hidden'} md:flex`}
       >

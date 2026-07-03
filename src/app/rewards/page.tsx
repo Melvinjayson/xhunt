@@ -7,20 +7,29 @@ import {
   ArrowLeft, Trophy, Flame, Zap, Star, TrendingUp,
   Award, Gift, Clock, CheckCircle2, ChevronRight,
 } from 'lucide-react';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Avatar from '@mui/material/Avatar';
+import LinearProgress from '@mui/material/LinearProgress';
+import Chip from '@mui/material/Chip';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Divider from '@mui/material/Divider';
+import Grid from '@mui/material/Grid';
 import BottomNav from '@/components/BottomNav';
 import { loadState } from '@/lib/store';
-import type { CompletedHunt } from '@/lib/types';
+import type { CompletedHunt, VerificationRecord, Hunt } from '@/lib/types';
+import { estimateCashReward } from '@/lib/missionCategories';
+import { t } from '@/theme/colors';
+
+const LINE = 'rgba(255,255,255,.07)';
 
 function parseReward(r: string): number {
   return parseFloat(r.replace(/[^0-9.]/g, '')) || 0;
 }
-
-const T = {
-  bg: '#050816', panel: '#07101F', card: '#0A1226', elev: '#0D1530',
-  line: 'rgba(255,255,255,.07)', line2: 'rgba(255,255,255,.12)',
-  txt: '#F0F4FF', muted: '#8B9CC0', dim: '#4A5578',
-  green: '#22FFAA', amber: '#FFB84D', ai: '#6D5DFD', red: '#FF5C7A',
-} as const;
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return 'XP';
@@ -36,10 +45,10 @@ function timeAgo(iso: string): string {
 }
 
 const TIERS = [
-  { name: 'Explorer',        min: 0,    max: 2.9,  color: '#54625f', next: 'Verified Hunter' },
-  { name: 'Verified Hunter', min: 3.0,  max: 5.9,  color: T.green,   next: 'Pro Hunter'      },
-  { name: 'Pro Hunter',      min: 6.0,  max: 8.4,  color: T.ai,      next: 'Elite Hunter'    },
-  { name: 'Elite Hunter',    min: 8.5,  max: 10.0, color: T.amber,   next: null              },
+  { name: 'Explorer',        min: 0,    max: 2.9,  color: t.txtFaint, next: 'Verified Hunter' },
+  { name: 'Verified Hunter', min: 3.0,  max: 5.9,  color: t.accent,  next: 'Pro Hunter'      },
+  { name: 'Pro Hunter',      min: 6.0,  max: 8.4,  color: t.ai,      next: 'Elite Hunter'    },
+  { name: 'Elite Hunter',    min: 8.5,  max: 10.0, color: t.warning, next: null              },
 ];
 
 type BadgeFn = (h: CompletedHunt[], streak: number) => boolean;
@@ -69,6 +78,7 @@ export default function RewardsPage() {
   const [hunterScore, setScore]       = useState(0);
   const [subStatus, setSub]           = useState<SubStatus | null>(null);
   const [mounted, setMounted]         = useState(false);
+  const [pendingRewards, setPendingRewards] = useState<{ record: VerificationRecord; hunt: Hunt }[]>([]);
 
   useEffect(() => {
     const state = loadState();
@@ -77,6 +87,14 @@ export default function RewardsPage() {
     setName((state.user as { name?: string })?.name ?? null);
     setScore((state.user as { hunterScore?: number })?.hunterScore ?? 0);
     setMounted(true);
+    const vMap = state.verificationStatus ?? {};
+    const allHunts = state.hunts ?? [];
+    const pendingStatuses = ['submitted', 'ai_reviewing', 'manual_review'];
+    const pendingItems = Object.values(vMap)
+      .filter(r => pendingStatuses.includes(r.status))
+      .map(r => ({ record: r, hunt: allHunts.find(h => h.id === r.huntId) ?? null }))
+      .filter((x): x is { record: VerificationRecord; hunt: Hunt } => x.hunt !== null);
+    setPendingRewards(pendingItems);
     void fetch('/api/subscription/status')
       .then(r => r.json())
       .then((d: SubStatus) => setSub(d))
@@ -86,6 +104,19 @@ export default function RewardsPage() {
   if (!mounted) return null;
 
   const totalEarned   = completedHunts.reduce((s, c) => s + parseReward(c.reward), 0);
+  const pendingAmount = pendingRewards.reduce((s, { hunt }) =>
+    s + estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType), 0);
+  const approvedAmount = (() => {
+    const state = loadState();
+    const vMap = state.verificationStatus ?? {};
+    const allH = state.hunts ?? [];
+    return Object.values(vMap)
+      .filter(r => r.status === 'approved')
+      .reduce((s, r) => {
+        const h = allH.find(x => x.id === r.huntId);
+        return s + (h ? estimateCashReward(h.cashReward, h.difficulty, h.missionType) : 0);
+      }, 0);
+  })();
   const thisMonth     = completedHunts.filter(c => {
     const d = new Date(c.completedAt ?? 0);
     const now = new Date();
@@ -102,203 +133,370 @@ export default function RewardsPage() {
   const totalXP = completedHunts.length * 100;
 
   return (
-    <main className="consumer-app" style={{ background: T.bg, minHeight: '100dvh', paddingBottom: '5.5rem', color: T.txt }}>
+    <main className="consumer-app" style={{ background: t.bg, minHeight: '100dvh', paddingBottom: '5.5rem', color: t.txt }}>
 
       {/* ─── Header ─── */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(5,8,22,.94)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${T.line}`, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={() => router.back()} style={{ width: 36, height: 36, borderRadius: '50%', background: T.card, border: `1px solid ${T.line}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-          <ArrowLeft size={16} style={{ color: T.txt }} />
-        </button>
-        <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0 }}>Rewards & Earnings</h1>
-      </div>
+      <Box sx={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(5,8,22,.94)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${LINE}`, p: '12px 16px', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <IconButton
+          onClick={() => router.back()}
+          size="small"
+          sx={{ width: 36, height: 36, borderRadius: '50%', background: t.card, border: `1px solid ${LINE}` }}
+        >
+          <ArrowLeft size={16} style={{ color: t.txt }} />
+        </IconButton>
+        <Typography variant="h6" sx={{ fontWeight: 800 }}>Rewards & Earnings</Typography>
+      </Box>
 
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 16px' }}>
+      <Box sx={{ maxWidth: 600, margin: '0 auto', px: 2 }}>
 
         {/* ─── Profile card ─── */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-          style={{ margin: '16px 0', padding: '18px', borderRadius: 20, background: 'linear-gradient(135deg, rgba(34,255,170,.06) 0%, rgba(109,93,253,.06) 100%)', border: `1px solid rgba(34,255,170,.15)` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,#22FFAA,#6D5DFD)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 900, color: '#050816', flexShrink: 0 }}>
-              {getInitials(displayName)}
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>{displayName ?? 'Hunter'}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: currentTier.color, background: `${currentTier.color}15`, border: `1px solid ${currentTier.color}30`, borderRadius: 6, padding: '2px 8px' }}>{currentTier.name}</span>
-                {subStatus?.isTrialActive && (
-                  <span style={{ fontSize: 11, color: T.ai, background: 'rgba(109,93,253,.1)', border: '1px solid rgba(109,93,253,.2)', borderRadius: 6, padding: '2px 8px' }}>
-                    Trial · {subStatus.trialDaysLeft}d left
-                  </span>
-                )}
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ margin: 0, fontSize: 10, color: T.dim }}>Hunter Score</p>
-              <p style={{ margin: '2px 0 0', fontSize: 28, fontWeight: 900, color: currentTier.color, lineHeight: 1 }}>{hunterScore.toFixed(1)}</p>
-            </div>
-          </div>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <Box sx={{ my: 2, p: '18px', borderRadius: '20px', background: 'linear-gradient(135deg, rgba(34,255,170,.06) 0%, rgba(109,93,253,.06) 100%)', border: `1px solid rgba(34,255,170,.15)` }}>
+            <Stack direction="row" spacing={1.75} sx={{ alignItems: 'center' }}>
+              <Avatar
+                sx={{
+                  width: 52, height: 52, borderRadius: '50%',
+                  background: 'linear-gradient(135deg,rgba(34,255,170,1),rgba(109,93,253,1))',
+                  fontSize: 20, fontWeight: 900, color: t.bg, flexShrink: 0,
+                }}
+              >
+                {getInitials(displayName)}
+              </Avatar>
+              <Box sx={{ flex: 1 }}>
+                <Typography sx={{ fontSize: 16, fontWeight: 800 }}>{displayName ?? 'Hunter'}</Typography>
+                <Stack direction="row" spacing={1} sx={{ mt: '4px', alignItems: 'center' }}>
+                  <Chip
+                    label={currentTier.name}
+                    size="small"
+                    sx={{
+                      fontSize: 11, fontWeight: 700, color: currentTier.color,
+                      background: `${currentTier.color}15`, border: `1px solid ${currentTier.color}30`,
+                      borderRadius: '6px',
+                    }}
+                  />
+                  {subStatus?.isTrialActive && (
+                    <Chip
+                      label={`Trial · ${subStatus.trialDaysLeft}d left`}
+                      size="small"
+                      sx={{
+                        fontSize: 11, color: t.ai,
+                        background: 'rgba(109,93,253,.1)', border: '1px solid rgba(109,93,253,.2)',
+                        borderRadius: '6px',
+                      }}
+                    />
+                  )}
+                </Stack>
+              </Box>
+              <Box sx={{ textAlign: 'right' }}>
+                <Typography sx={{ fontSize: 10, color: t.txtDim }}>Hunter Score</Typography>
+                <Typography sx={{ fontSize: 28, fontWeight: 900, color: currentTier.color, lineHeight: 1, mt: '2px' }}>{hunterScore.toFixed(1)}</Typography>
+              </Box>
+            </Stack>
+          </Box>
+        </motion.div>
+
+        {/* ─── Wallet ─── */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <Card sx={{ mb: 2, borderRadius: '20px', background: t.surface, border: `1px solid ${LINE}`, overflow: 'hidden' }}>
+            <Box sx={{ px: 2, py: 1.5, borderBottom: `1px solid ${LINE}` }}>
+              <Typography sx={{ fontSize: 10, fontWeight: 700, color: t.txtDim, textTransform: 'uppercase', letterSpacing: '.08em' }}>Participation Wallet</Typography>
+            </Box>
+            <Grid container>
+              {[
+                { label: 'Available',      value: `$${approvedAmount.toFixed(0)}`, color: t.accent,  sub: 'ready to claim' },
+                { label: 'Pending',        value: `~$${pendingAmount.toFixed(0)}`,  color: t.warning, sub: 'under review'   },
+                { label: 'Lifetime Earned',value: `$${totalEarned.toFixed(0)}`,    color: t.txt,     sub: 'all time'       },
+              ].map(({ label, value, color, sub }, i) => (
+                <Grid key={label} size={{ xs: 4 }}>
+                  <Box sx={{ p: '14px 12px', borderRight: i < 2 ? `1px solid ${LINE}` : 'none', textAlign: 'center' }}>
+                    <Typography sx={{ fontSize: 20, fontWeight: 900, color, letterSpacing: '-.03em', lineHeight: 1 }}>{value}</Typography>
+                    <Typography sx={{ mt: '3px', fontSize: 9.5, color: t.txtDim, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</Typography>
+                    <Typography sx={{ fontSize: 9, color: t.txtDim }}>{sub}</Typography>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </Card>
         </motion.div>
 
         {/* ─── Earnings summary ─── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
+        <Grid container spacing={1.25} sx={{ mb: 2 }}>
           {[
-            { icon: <Trophy size={16} />, value: `$${totalEarned.toFixed(0)}`, label: 'Total Earned', color: T.green },
-            { icon: <TrendingUp size={16} />, value: `$${thisMonth.toFixed(0)}`, label: 'This Month', color: T.amber },
-            { icon: <Zap size={16} />, value: totalXP.toLocaleString(), label: 'Total XP', color: T.ai },
+            { icon: <Trophy size={16} />, value: `$${totalEarned.toFixed(0)}`, label: 'Total Earned', color: t.accent },
+            { icon: <TrendingUp size={16} />, value: `$${thisMonth.toFixed(0)}`, label: 'This Month', color: t.warning },
+            { icon: <Zap size={16} />, value: totalXP.toLocaleString(), label: 'Total XP', color: t.ai },
           ].map((s, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-              style={{ padding: '14px 12px', borderRadius: 16, background: T.card, border: `1px solid ${T.line}`, textAlign: 'center' }}>
-              <div style={{ color: s.color, marginBottom: 6, display: 'flex', justifyContent: 'center' }}>{s.icon}</div>
-              <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: s.color, letterSpacing: '-.025em', lineHeight: 1 }}>{s.value}</p>
-              <p style={{ margin: '4px 0 0', fontSize: 10, color: T.dim }}>{s.label}</p>
-            </motion.div>
+            <Grid key={i} size={{ xs: 12, sm: 4 }}>
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}>
+                <Card sx={{ p: '14px 12px', borderRadius: '16px', background: t.card, border: `1px solid ${LINE}`, textAlign: 'center' }}>
+                  <Box sx={{ color: s.color, mb: '6px', display: 'flex', justifyContent: 'center' }}>{s.icon}</Box>
+                  <Typography sx={{ fontSize: 20, fontWeight: 900, color: s.color, letterSpacing: '-.025em', lineHeight: 1 }}>{s.value}</Typography>
+                  <Typography sx={{ mt: '4px', fontSize: 10, color: t.txtFaint }}>{s.label}</Typography>
+                </Card>
+              </motion.div>
+            </Grid>
           ))}
-        </div>
+        </Grid>
 
         {/* ─── Stats row ─── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
-          <div style={{ padding: '14px 16px', borderRadius: 16, background: T.card, border: `1px solid ${T.line}`, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,184,77,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Flame size={18} style={{ color: T.amber }} />
-            </div>
-            <div>
-              <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color: T.amber, lineHeight: 1 }}>{streak} 🔥</p>
-              <p style={{ margin: '3px 0 0', fontSize: 10, color: T.dim }}>Day streak</p>
-            </div>
-          </div>
-          <div style={{ padding: '14px 16px', borderRadius: 16, background: T.card, border: `1px solid ${T.line}`, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(34,255,170,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CheckCircle2 size={18} style={{ color: T.green }} />
-            </div>
-            <div>
-              <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color: T.green, lineHeight: 1 }}>{completedHunts.length}</p>
-              <p style={{ margin: '3px 0 0', fontSize: 10, color: T.dim }}>Completed</p>
-            </div>
-          </div>
-        </div>
+        <Grid container spacing={1.25} sx={{ mb: 2.5 }}>
+          <Grid size={{ xs: 6 }}>
+            <Card sx={{ p: '14px 16px', borderRadius: '16px', background: t.card, border: `1px solid ${LINE}` }}>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                <Box sx={{ width: 36, height: 36, borderRadius: '12px', background: 'rgba(255,184,77,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Flame size={18} style={{ color: t.warning }} />
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: 22, fontWeight: 900, color: t.warning, lineHeight: 1 }}>{streak} 🔥</Typography>
+                  <Typography sx={{ mt: '3px', fontSize: 10, color: t.txtFaint }}>Day streak</Typography>
+                </Box>
+              </Stack>
+            </Card>
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            <Card sx={{ p: '14px 16px', borderRadius: '16px', background: t.card, border: `1px solid ${LINE}` }}>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                <Box sx={{ width: 36, height: 36, borderRadius: '12px', background: 'rgba(34,255,170,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckCircle2 size={18} style={{ color: t.accent }} />
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: 22, fontWeight: 900, color: t.accent, lineHeight: 1 }}>{completedHunts.length}</Typography>
+                  <Typography sx={{ mt: '3px', fontSize: 10, color: t.txtFaint }}>Completed</Typography>
+                </Box>
+              </Stack>
+            </Card>
+          </Grid>
+        </Grid>
 
         {/* ─── Hunter Score progress ─── */}
         {nextTier && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            style={{ marginBottom: 20, padding: '16px', borderRadius: 18, background: T.panel, border: `1px solid ${T.line}` }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div>
-                <p style={{ margin: 0, fontSize: 11, color: T.dim, fontWeight: 600 }}>Next tier</p>
-                <p style={{ margin: '2px 0 0', fontSize: 14, fontWeight: 700, color: nextTier.color }}>{nextTier.name}</p>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ margin: 0, fontSize: 11, color: T.dim }}>Need score</p>
-                <p style={{ margin: '2px 0 0', fontSize: 14, fontWeight: 700, color: nextTier.color }}>{nextTier.min}+</p>
-              </div>
-            </div>
-            <div style={{ height: 6, borderRadius: 3, background: T.elev, marginBottom: 6 }}>
-              <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(scoreProgress, 100)}%` }} transition={{ duration: 0.8, ease: 'easeOut' }}
-                style={{ height: '100%', borderRadius: 3, background: `linear-gradient(90deg, ${currentTier.color}, ${nextTier.color})` }} />
-            </div>
-            <p style={{ margin: 0, fontSize: 11, color: T.dim }}>
-              {hunterScore.toFixed(1)} / {nextTier.min} — complete {nextTier.name === 'Verified Hunter' ? 'more missions' : 'higher-tier missions'} to advance
-            </p>
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Box sx={{ mb: 2.5, p: 2, borderRadius: '18px', background: t.surface, border: `1px solid ${LINE}` }}>
+              <Stack direction="row" sx={{ mb: 1.25, alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography sx={{ fontSize: 11, color: t.txtFaint, fontWeight: 600 }}>Next tier</Typography>
+                  <Typography sx={{ mt: '2px', fontSize: 14, fontWeight: 700, color: nextTier.color }}>{nextTier.name}</Typography>
+                </Box>
+                <Box sx={{ textAlign: 'right' }}>
+                  <Typography sx={{ fontSize: 11, color: t.txtFaint }}>Need score</Typography>
+                  <Typography sx={{ mt: '2px', fontSize: 14, fontWeight: 700, color: nextTier.color }}>{nextTier.min}+</Typography>
+                </Box>
+              </Stack>
+              <LinearProgress
+                variant="determinate"
+                value={Math.min(scoreProgress, 100)}
+                sx={{
+                  height: 6, borderRadius: 3, mb: '6px',
+                  background: 'rgba(255,255,255,0.06)',
+                  '& .MuiLinearProgress-bar': {
+                    background: `linear-gradient(90deg, ${currentTier.color}, ${nextTier.color})`,
+                    borderRadius: 3,
+                  },
+                }}
+              />
+              <Typography sx={{ fontSize: 11, color: t.txtFaint }}>
+                {hunterScore.toFixed(1)} / {nextTier.min} — complete {nextTier.name === 'Verified Hunter' ? 'more missions' : 'higher-tier missions'} to advance
+              </Typography>
+            </Box>
           </motion.div>
         )}
 
         {/* ─── Badges earned ─── */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 7 }}>
-              <Award size={16} style={{ color: T.green }} /> Badges
-              <span style={{ fontSize: 12, color: T.dim, fontWeight: 500 }}>({earnedBadges.length}/{BADGE_CATALOG.length})</span>
-            </h2>
-          </div>
+        <Box sx={{ mb: 2.5 }}>
+          <Stack direction="row" sx={{ mb: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1, color: 'text.primary' }}>
+              <Award size={16} style={{ color: t.accent }} /> Badges
+              <Typography component="span" sx={{ fontSize: 12, color: t.txtFaint, fontWeight: 500 }}>({earnedBadges.length}/{BADGE_CATALOG.length})</Typography>
+            </Typography>
+          </Stack>
 
           {earnedBadges.length > 0 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
+            <Grid container spacing={1} sx={{ mb: 1.5 }}>
               {earnedBadges.map((badge, i) => (
-                <motion.div key={badge.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                  style={{ padding: '12px 8px', borderRadius: 14, background: T.card, border: '1px solid rgba(34,255,170,.15)', textAlign: 'center' }}>
-                  <div style={{ fontSize: 26, marginBottom: 6 }}>{badge.emoji}</div>
-                  <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: T.green, lineHeight: 1.2 }}>{badge.label}</p>
-                  <p style={{ margin: '3px 0 0', fontSize: 9, color: T.dim, lineHeight: 1.3 }}>{badge.desc}</p>
-                </motion.div>
+                <Grid key={badge.id} size={{ xs: 4 }}>
+                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}>
+                    <Card sx={{ p: '12px 8px', borderRadius: '14px', background: t.card, border: '1px solid rgba(34,255,170,.15)', textAlign: 'center' }}>
+                      <Typography sx={{ fontSize: 26, mb: '6px' }}>{badge.emoji}</Typography>
+                      <Typography sx={{ fontSize: 11, fontWeight: 700, color: t.accent, lineHeight: 1.2 }}>{badge.label}</Typography>
+                      <Typography sx={{ mt: '3px', fontSize: 9, color: t.txtFaint, lineHeight: 1.3 }}>{badge.desc}</Typography>
+                    </Card>
+                  </motion.div>
+                </Grid>
               ))}
-            </div>
+            </Grid>
           ) : (
-            <div style={{ padding: '20px', borderRadius: 16, background: T.card, border: `1px solid ${T.line}`, textAlign: 'center', marginBottom: 12 }}>
-              <p style={{ margin: 0, fontSize: 13, color: T.muted }}>Complete missions to earn badges</p>
-            </div>
+            <Card sx={{ p: '20px', borderRadius: '16px', background: t.card, border: `1px solid ${LINE}`, textAlign: 'center', mb: 1.5 }}>
+              <Typography sx={{ fontSize: 13, color: t.txtDim }}>Complete missions to earn badges</Typography>
+            </Card>
           )}
 
           {lockedBadges.length > 0 && (
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 600, color: T.dim, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>Locked</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            <Box>
+              <Typography sx={{ fontSize: 11, fontWeight: 600, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '.06em', mb: 1 }}>Locked</Typography>
+              <Grid container spacing={1}>
                 {lockedBadges.slice(0, 6).map(badge => (
-                  <div key={badge.id} style={{ padding: '12px 8px', borderRadius: 14, background: T.panel, border: `1px solid ${T.line}`, textAlign: 'center', opacity: 0.5 }}>
-                    <div style={{ fontSize: 22, marginBottom: 6, filter: 'grayscale(1)' }}>{badge.emoji}</div>
-                    <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: T.dim }}>{badge.label}</p>
-                  </div>
+                  <Grid key={badge.id} size={{ xs: 4 }}>
+                    <Card sx={{ p: '12px 8px', borderRadius: '14px', background: t.surface, border: `1px solid ${LINE}`, textAlign: 'center', opacity: 0.5 }}>
+                      <Typography sx={{ fontSize: 22, mb: '6px', filter: 'grayscale(1)' }}>{badge.emoji}</Typography>
+                      <Typography sx={{ fontSize: 10, fontWeight: 600, color: t.txtFaint }}>{badge.label}</Typography>
+                    </Card>
+                  </Grid>
                 ))}
-              </div>
-            </div>
+              </Grid>
+            </Box>
           )}
-        </div>
+        </Box>
+
+        {/* ─── Pending verification ─── */}
+        {pendingRewards.length > 0 && (
+          <Box sx={{ mb: 2.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, color: 'text.primary' }}>
+              <Clock size={16} style={{ color: t.warning }} /> Pending Verification
+            </Typography>
+            <Card sx={{ borderRadius: '16px', background: t.card, border: `1px solid ${LINE}`, overflow: 'hidden' }}>
+              {pendingRewards.map(({ hunt, record }, i) => (
+                <Box key={hunt.id}>
+                  <Stack direction="row" spacing={1.5} sx={{ p: '12px 14px', alignItems: 'center' }}>
+                    <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(255,184,77,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Clock size={15} style={{ color: t.warning }} />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: t.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hunt.title}</Typography>
+                      <Typography sx={{ mt: '2px', fontSize: 11, color: t.warning, fontWeight: 600 }}>
+                        {record.status === 'ai_reviewing' ? '🤖 AI Reviewing' : record.status === 'manual_review' ? '👁 In Review' : '📬 Submitted'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                      <Typography sx={{ fontSize: 14, fontWeight: 800, color: t.warning }}>~${estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType)}</Typography>
+                      <Typography sx={{ mt: '2px', fontSize: 10, color: t.txtFaint }}>pending</Typography>
+                    </Box>
+                  </Stack>
+                  {i < pendingRewards.length - 1 && <Divider sx={{ borderColor: LINE }} />}
+                </Box>
+              ))}
+            </Card>
+          </Box>
+        )}
 
         {/* ─── Recent payouts ─── */}
         {completedHunts.length > 0 && (
-          <div style={{ marginBottom: 20 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 7 }}>
-              <Clock size={16} style={{ color: T.amber }} /> Recent Payouts
-            </h2>
-            <div style={{ borderRadius: 16, background: T.card, border: `1px solid ${T.line}`, overflow: 'hidden' }}>
-              {[...completedHunts].reverse().slice(0, 5).map((h, i) => (
-                <div key={`${h.huntId}-${i}`} style={{ padding: '12px 14px', borderBottom: i < 4 ? `1px solid ${T.line}` : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(34,255,170,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <CheckCircle2 size={16} style={{ color: T.green }} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: T.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {(h as { title?: string }).title ?? `Mission ${i + 1}`}
-                    </p>
-                    <p style={{ margin: '2px 0 0', fontSize: 11, color: T.dim }}>{h.completedAt ? timeAgo(h.completedAt) : '—'}</p>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    {parseReward(h.reward) > 0 && (
-                      <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: T.green }}>{h.reward}</p>
-                    )}
-                    <p style={{ margin: '2px 0 0', fontSize: 11, color: T.amber }}>+100 XP</p>
-                  </div>
-                </div>
+          <Box sx={{ mb: 2.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, color: 'text.primary' }}>
+              <Clock size={16} style={{ color: t.warning }} /> Recent Payouts
+            </Typography>
+            <Card sx={{ borderRadius: '16px', background: t.card, border: `1px solid ${LINE}`, overflow: 'hidden' }}>
+              {[...completedHunts].reverse().slice(0, 5).map((h, i, arr) => (
+                <Box key={`${h.huntId}-${i}`}>
+                  <Stack direction="row" spacing={1.5} sx={{ p: '12px 14px', alignItems: 'center' }}>
+                    <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(34,255,170,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <CheckCircle2 size={16} style={{ color: t.accent }} />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: t.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {(h as { title?: string }).title ?? `Mission ${i + 1}`}
+                      </Typography>
+                      <Typography sx={{ mt: '2px', fontSize: 11, color: t.txtFaint }}>{h.completedAt ? timeAgo(h.completedAt) : '—'}</Typography>
+                    </Box>
+                    <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                      {parseReward(h.reward) > 0 && (
+                        <Typography sx={{ fontSize: 14, fontWeight: 800, color: t.accent }}>{h.reward}</Typography>
+                      )}
+                      <Typography sx={{ mt: '2px', fontSize: 11, color: t.warning }}>+100 XP</Typography>
+                    </Box>
+                  </Stack>
+                  {i < arr.length - 1 && <Divider sx={{ borderColor: LINE }} />}
+                </Box>
               ))}
-            </div>
-          </div>
+            </Card>
+          </Box>
         )}
 
         {/* ─── Unlock more CTA ─── */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-          style={{ marginBottom: 16, padding: '20px', borderRadius: 20, background: 'linear-gradient(135deg, rgba(34,255,170,.06), rgba(109,93,253,.06))', border: '1px solid rgba(34,255,170,.15)', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg,#22FFAA,#6D5DFD)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Gift size={22} style={{ color: '#050816' }} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 700, color: T.txt }}>Unlock higher-value missions</p>
-            <p style={{ margin: 0, fontSize: 12, color: T.muted }}>Complete more missions to raise your Hunter Score and access premium brand gigs.</p>
-          </div>
-          <button onClick={() => router.push('/missions')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.green, flexShrink: 0 }}>
-            <ChevronRight size={20} />
-          </button>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+          <Stack
+            direction="row"
+            spacing={1.75}
+            sx={{
+              mb: 2, p: '20px', borderRadius: '20px',
+              background: 'linear-gradient(135deg, rgba(34,255,170,.06), rgba(109,93,253,.06))',
+              border: '1px solid rgba(34,255,170,.15)',
+              alignItems: 'center',
+            }}
+          >
+            <Box sx={{ width: 48, height: 48, borderRadius: '14px', background: 'linear-gradient(135deg,rgba(34,255,170,1),rgba(109,93,253,1))', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Gift size={22} style={{ color: t.bg }} />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ mb: '3px', fontSize: 14, fontWeight: 700, color: t.txt }}>Unlock higher-value missions</Typography>
+              <Typography sx={{ fontSize: 12, color: t.txtDim }}>Complete more missions to raise your Hunter Score and access premium brand gigs.</Typography>
+            </Box>
+            <IconButton onClick={() => router.push('/missions')} size="small" sx={{ color: t.accent, flexShrink: 0 }}>
+              <ChevronRight size={20} />
+            </IconButton>
+          </Stack>
+        </motion.div>
+
+        {/* ─── Community Exchange CTA ─── */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.40 }}>
+          <Button
+            onClick={() => router.push('/community')}
+            fullWidth
+            sx={{
+              mb: 1.5, p: '18px 20px', borderRadius: '20px',
+              background: `linear-gradient(135deg, ${t.accent}10, ${t.info}0A)`,
+              border: `1px solid ${t.accent}28`,
+              display: 'flex', alignItems: 'center', gap: '14px', textAlign: 'left',
+              justifyContent: 'flex-start', textTransform: 'none',
+            }}
+          >
+            <Box sx={{ width: 46, height: 46, borderRadius: '14px', background: `${t.accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Star size={20} style={{ color: t.accent }} />
+            </Box>
+            <Box sx={{ flex: 1, textAlign: 'left' }}>
+              <Typography sx={{ mb: '3px', fontSize: 14, fontWeight: 700, color: t.txt }}>Community Exchange</Typography>
+              <Typography sx={{ fontSize: 12, color: t.txtDim }}>Pool resources with other hunters, join crowd tasks, and earn recognition from the community.</Typography>
+            </Box>
+            <ChevronRight size={18} style={{ color: t.accent, flexShrink: 0 }} />
+          </Button>
+        </motion.div>
+
+        {/* ─── Barter Exchange CTA ─── */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }}>
+          <Button
+            onClick={() => router.push('/barter')}
+            fullWidth
+            sx={{
+              mb: 1.5, p: '18px 20px', borderRadius: '20px',
+              background: `linear-gradient(135deg, ${t.ai}14, ${t.accent}0A)`,
+              border: `1px solid ${t.ai}30`,
+              display: 'flex', alignItems: 'center', gap: '14px', textAlign: 'left',
+              justifyContent: 'flex-start', textTransform: 'none',
+            }}
+          >
+            <Box sx={{ width: 46, height: 46, borderRadius: '14px', background: `${t.ai}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <TrendingUp size={20} style={{ color: t.ai }} />
+            </Box>
+            <Box sx={{ flex: 1, textAlign: 'left' }}>
+              <Typography sx={{ mb: '3px', fontSize: 14, fontWeight: 700, color: t.txt }}>Barter Exchange</Typography>
+              <Typography sx={{ fontSize: 12, color: t.txtDim }}>Trade your points and badges with other hunters for skills, coupons, and recognition.</Typography>
+            </Box>
+            <ChevronRight size={18} style={{ color: t.ai, flexShrink: 0 }} />
+          </Button>
         </motion.div>
 
         {/* ─── Social enterprise note ─── */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-          style={{ marginBottom: 16, padding: '16px', borderRadius: 16, background: T.panel, border: `1px solid ${T.line}` }}>
-          <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: T.ai, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Star size={12} /> Social Impact Missions
-          </p>
-          <p style={{ margin: 0, fontSize: 12, color: T.muted, lineHeight: 1.55 }}>
-            Some missions are run by non-profits and civic programs. Completing these earns XP and impact badges but may not include cash payouts. They count toward your Hunter Score.
-          </p>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+          <Box sx={{ mb: 2, p: 2, borderRadius: '16px', background: t.surface, border: `1px solid ${LINE}` }}>
+            <Typography sx={{ mb: '6px', fontSize: 12, fontWeight: 700, color: t.ai, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Star size={12} /> Social Impact Missions
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: t.txtDim, lineHeight: 1.55 }}>
+              Some missions are run by non-profits and civic programs. Completing these earns XP and impact badges but may not include cash payouts. They count toward your Hunter Score.
+            </Typography>
+          </Box>
         </motion.div>
 
-      </div>
+      </Box>
 
       <BottomNav />
     </main>

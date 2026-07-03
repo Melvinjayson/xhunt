@@ -1,89 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/auth/sso/callback
+ * ACS (Assertion Consumer Service) endpoint for SAML 2.0 / OIDC SSO.
  *
- * ACS (Assertion Consumer Service) endpoint for SAML 2.0 and OIDC SSO flows.
- * After the IdP authenticates the user it redirects here with a code/SAMLResponse.
- * We exchange it via Supabase Auth, then redirect to the workspace.
+ * NOTE: SSO is not yet wired to the canonical auth backend. The session is issued
+ * exclusively by the Python auth service (`NEXT_PUBLIC_AUTH_URL`) as a signed
+ * `__xhunt_session` JWT; establishing a session here requires that backend to
+ * validate the IdP assertion and mint the JWT. Until that exists, this endpoint
+ * must NOT establish a session by any other means.
  *
- * For SAML:  IdP posts to this URL with SAMLResponse in the body (handled by Supabase)
- * For OIDC:  IdP redirects here with ?code=… (standard PKCE code exchange)
+ * The previous implementation used Supabase Auth (`exchangeCodeForSession`,
+ * `signInWithSSO`), which (a) is forbidden by the canonical auth flow and (b) set a
+ * Supabase session the rest of the app cannot see — every downstream check reads
+ * `__xhunt_session`, so those users were silently treated as logged out. It has been
+ * removed so it can no longer create a phantom, unreadable session.
  *
- * The actual cryptographic verification is delegated to Supabase Auth — this route
- * only needs to exchange the code and establish the session cookie.
+ * This handler fails safe: it redirects to sign-in with a clear message rather than
+ * pretending to log the user in. The ACS URL remains stable so IdP config in
+ * `workspace/settings` does not break once backend SSO lands.
  */
-export async function GET(req: NextRequest) {
-  const { searchParams, origin } = new URL(req.url);
-  const code  = searchParams.get('code');
-  const error = searchParams.get('error');
-  const next  = searchParams.get('next') ?? '/workspace';
-
-  if (error) {
-    const desc = searchParams.get('error_description') ?? error;
-    return NextResponse.redirect(
-      `${origin}/auth/login?error=${encodeURIComponent(desc)}`,
-    );
-  }
-
-  if (code) {
-    const supabase = await createClient();
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-    if (exchangeError) {
-      return NextResponse.redirect(
-        `${origin}/auth/login?error=${encodeURIComponent(exchangeError.message)}`,
-      );
-    }
-
-    // Log the SSO event for audit trail
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('sso_audit_log').insert({
-          user_id:    user.id,
-          event_type: 'sso_login',
-          metadata:   { provider: user.app_metadata?.provider ?? 'unknown', next },
-        });
-      }
-    } catch {
-      // Non-critical — don't block login if audit insert fails
-    }
-
-    return NextResponse.redirect(`${origin}${next}`);
-  }
-
-  // No code and no error — unexpected state, return to login
-  return NextResponse.redirect(`${origin}/auth/login`);
+function ssoUnavailable(origin: string): NextResponse {
+  return NextResponse.redirect(
+    `${origin}/sign-in?error=${encodeURIComponent(
+      'Single sign-on is not available yet for this workspace. Contact your administrator.',
+    )}`,
+  );
 }
 
-/**
- * POST /api/auth/sso/callback
- * Handles SAML 2.0 POST binding — IdP sends SAMLResponse as form data.
- */
+export async function GET(req: NextRequest) {
+  const { origin } = new URL(req.url);
+  return ssoUnavailable(origin);
+}
+
 export async function POST(req: NextRequest) {
-  const origin = new URL(req.url).origin;
-  const formData = await req.formData();
-  const samlResponse = formData.get('SAMLResponse');
-  const relayState   = formData.get('RelayState')?.toString() ?? '/workspace';
-
-  if (!samlResponse) {
-    return NextResponse.redirect(`${origin}/auth/login?error=Missing+SAMLResponse`);
-  }
-
-  // Supabase handles SAML validation internally; we initiate via the SAML sign-in URL.
-  // This endpoint exists so orgs can configure our URL as their ACS endpoint.
-  // Forward as a redirect to Supabase's SAML handler.
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithSSO({
-    domain: '',  // resolved from SAMLResponse issuer by Supabase
-  });
-
-  if (error || !data?.url) {
-    return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(error?.message ?? 'SAML error')}`);
-  }
-
-  return NextResponse.redirect(data.url);
+  const { origin } = new URL(req.url);
+  return ssoUnavailable(origin);
 }

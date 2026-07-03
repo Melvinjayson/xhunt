@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
 import { IMPACT_CATEGORIES, SDG_META } from '@/lib/missionCategories';
+import { t } from '@/theme/colors';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -75,23 +76,23 @@ const BLANK_FORM = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_META = {
-  active:   { color: '#22FFAA', label: 'Active',   bg: 'rgba(34,255,170,0.08)' },
-  draft:    { color: '#FFB84D', label: 'Draft',    bg: 'rgba(255,184,77,0.08)' },
-  paused:   { color: '#8B9CC0', label: 'Paused',   bg: 'rgba(139,156,192,0.08)' },
-  archived: { color: '#4A5578', label: 'Archived', bg: 'rgba(74,85,120,0.08)' },
+  active:   { color: t.accent,   label: 'Active',   bg: 'rgba(34,255,170,0.08)' },
+  draft:    { color: t.warning,  label: 'Draft',    bg: 'rgba(255,184,77,0.08)' },
+  paused:   { color: t.txtDim,   label: 'Paused',   bg: 'rgba(139,156,192,0.08)' },
+  archived: { color: t.txtFaint, label: 'Archived', bg: 'rgba(74,85,120,0.08)' },
 };
 
 const APP_STATUS_META = {
-  pending:   { color: '#FFB84D', label: 'Pending',   icon: Clock },
-  accepted:  { color: '#22FFAA', label: 'Accepted',  icon: CheckCircle2 },
-  rejected:  { color: '#FF5C7A', label: 'Rejected',  icon: XCircle },
-  withdrawn: { color: '#4A5578', label: 'Withdrawn', icon: XCircle },
+  pending:   { color: t.warning,  label: 'Pending',   icon: Clock },
+  accepted:  { color: t.accent,   label: 'Accepted',  icon: CheckCircle2 },
+  rejected:  { color: t.error,    label: 'Rejected',  icon: XCircle },
+  withdrawn: { color: t.txtFaint, label: 'Withdrawn', icon: XCircle },
 };
 
 const DIFF_BADGE: Record<string, string> = {
-  easy:   '#22FFAA',
-  medium: '#FFB84D',
-  hard:   '#FF5C7A',
+  easy:   t.accent,
+  medium: t.warning,
+  hard:   t.error,
 };
 
 function formatDate(iso: string) {
@@ -103,14 +104,14 @@ function formatDate(iso: string) {
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: number | string; icon: typeof Globe; color: string }) {
   return (
     <div className="rounded-2xl p-4 flex items-center gap-3"
-      style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
+      style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
       <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
         style={{ background: `${color}12` }}>
         <Icon size={18} strokeWidth={1.8} style={{ color }} />
       </div>
       <div>
-        <p className="text-[20px] font-black" style={{ color: '#F0F4FF' }}>{value}</p>
-        <p className="text-[11px]" style={{ color: '#4A5578' }}>{label}</p>
+        <p className="text-[20px] font-black" style={{ color: t.txt }}>{value}</p>
+        <p className="text-[11px]" style={{ color: t.txtFaint }}>{label}</p>
       </div>
     </div>
   );
@@ -189,16 +190,16 @@ function EditDrawer({
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 26, stiffness: 260 }}
         className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-lg overflow-y-auto"
-        style={{ background: '#050816', borderLeft: '1px solid rgba(255,255,255,0.08)' }}
+        style={{ background: t.bg, borderLeft: '1px solid rgba(255,255,255,0.08)' }}
       >
         <div className="sticky top-0 flex items-center justify-between px-6 py-4 z-10"
-          style={{ background: '#050816', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          <h2 className="text-[16px] font-bold" style={{ color: '#F0F4FF' }}>
+          style={{ background: t.bg, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <h2 className="text-[16px] font-bold" style={{ color: t.txt }}>
             {listing?.id ? 'Edit Listing' : 'New Listing'}
           </h2>
           <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <X size={15} strokeWidth={2} style={{ color: '#8B9CC0' }} />
+            style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
+            <X size={15} strokeWidth={2} style={{ color: t.txtDim }} />
           </button>
         </div>
 
@@ -206,10 +207,10 @@ function EditDrawer({
           {/* Mission select */}
           {!listing?.id && (
             <div>
-              <label className="block text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5">Mission</label>
+              <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: t.txtFaint }}>Mission</label>
               <select value={missionId} onChange={(e) => setMissionId(e.target.value)}
                 className="w-full h-10 px-3 rounded-xl text-[13px] focus:outline-none"
-                style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F4FF' }}>
+                style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.08)', color: t.txt }}>
                 {missions.map((m) => (
                   <option key={m.id} value={m.id}>{m.title}</option>
                 ))}
@@ -219,30 +220,30 @@ function EditDrawer({
 
           {/* Tagline */}
           <div>
-            <label className="block text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5">Tagline *</label>
+            <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: t.txtFaint }}>Tagline *</label>
             <input value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })}
               placeholder="One-line pitch for this mission"
               className="w-full h-10 px-3 rounded-xl text-[13px] focus:outline-none"
-              style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F4FF' }} />
+              style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.08)', color: t.txt }} />
           </div>
 
           {/* Highlight */}
           <div>
-            <label className="block text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5">Highlight</label>
+            <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: t.txtFaint }}>Highlight</label>
             <textarea value={form.highlight} onChange={(e) => setForm({ ...form, highlight: e.target.value })}
               placeholder="Bold callout — e.g. '🏆 Winners featured in our annual impact report'"
               rows={2}
               className="w-full px-3 py-2.5 rounded-xl text-[13px] resize-none focus:outline-none"
-              style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F4FF' }} />
+              style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.08)', color: t.txt }} />
           </div>
 
           {/* Type + Price */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5">Type</label>
+              <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: t.txtFaint }}>Type</label>
               <select value={form.listing_type} onChange={(e) => setForm({ ...form, listing_type: e.target.value as typeof form.listing_type })}
                 className="w-full h-10 px-3 rounded-xl text-[13px] focus:outline-none"
-                style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F4FF' }}>
+                style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.08)', color: t.txt }}>
                 <option value="free">Free</option>
                 <option value="paid">Paid</option>
                 <option value="sponsored">Sponsored</option>
@@ -250,19 +251,19 @@ function EditDrawer({
             </div>
             {form.listing_type === 'paid' && (
               <div>
-                <label className="block text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5">Price (USD)</label>
+                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: t.txtFaint }}>Price (USD)</label>
                 <input type="number" min="0" step="1"
                   value={form.price_cents / 100}
                   onChange={(e) => setForm({ ...form, price_cents: Math.round(parseFloat(e.target.value || '0') * 100) })}
                   className="w-full h-10 px-3 rounded-xl text-[13px] focus:outline-none"
-                  style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F4FF' }} />
+                  style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.08)', color: t.txt }} />
               </div>
             )}
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5">Category</label>
+            <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: t.txtFaint }}>Category</label>
             <div className="flex flex-wrap gap-2">
               {IMPACT_CATEGORIES.map((c) => (
                 <button key={c.id} type="button"
@@ -270,7 +271,7 @@ function EditDrawer({
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition-all"
                   style={{
                     background:  form.category === c.id ? `${c.color}15` : 'transparent',
-                    color:       form.category === c.id ? c.color : '#8B9CC0',
+                    color:       form.category === c.id ? c.color : t.txtDim,
                     borderColor: form.category === c.id ? `${c.color}30` : 'rgba(255,255,255,0.07)',
                   }}>
                   {c.emoji} {c.label}
@@ -281,7 +282,7 @@ function EditDrawer({
 
           {/* SDG Goals */}
           <div>
-            <label className="block text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5">SDG Goals</label>
+            <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: t.txtFaint }}>SDG Goals</label>
             <div className="flex flex-wrap gap-1.5">
               {Array.from({ length: 17 }, (_, i) => i + 1).map((n) => {
                 const meta = SDG_META[n as keyof typeof SDG_META];
@@ -291,7 +292,7 @@ function EditDrawer({
                     className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border transition-all"
                     style={{
                       background:  active ? `${meta.color}15` : 'transparent',
-                      color:       active ? meta.color : '#4A5578',
+                      color:       active ? meta.color : t.txtFaint,
                       borderColor: active ? `${meta.color}30` : 'rgba(255,255,255,0.06)',
                     }}>
                     {meta.emoji} {n}
@@ -303,23 +304,23 @@ function EditDrawer({
 
           {/* Required skills */}
           <div>
-            <label className="block text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5">Required Skills</label>
+            <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: t.txtFaint }}>Required Skills</label>
             <div className="flex gap-2 mb-2">
               <input value={skillInput} onChange={(e) => setSkillInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
                 placeholder="Type a skill and press Enter…"
                 className="flex-1 h-9 px-3 rounded-xl text-[13px] focus:outline-none"
-                style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F4FF' }} />
+                style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.08)', color: t.txt }} />
               <button onClick={addSkill} type="button"
                 className="h-9 px-3 rounded-xl text-[12px] font-semibold"
-                style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: '#22FFAA' }}>
+                style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: t.accent }}>
                 Add
               </button>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {form.required_skills.map((s) => (
                 <span key={s} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold"
-                  style={{ background: 'rgba(109,93,253,0.1)', border: '1px solid rgba(109,93,253,0.2)', color: '#6D5DFD' }}>
+                  style={{ background: 'rgba(109,93,253,0.1)', border: '1px solid rgba(109,93,253,0.2)', color: t.ai }}>
                   {s}
                   <button onClick={() => setForm((f) => ({ ...f, required_skills: f.required_skills.filter((x) => x !== s) }))}
                     type="button">
@@ -332,7 +333,7 @@ function EditDrawer({
 
           {/* Status */}
           <div>
-            <label className="block text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-1.5">Status</label>
+            <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: t.txtFaint }}>Status</label>
             <div className="flex gap-2">
               {(['active', 'draft', 'paused'] as const).map((s) => {
                 const meta = STATUS_META[s];
@@ -341,7 +342,7 @@ function EditDrawer({
                     className="flex-1 h-9 rounded-xl text-[12px] font-semibold border transition-all"
                     style={{
                       background:  form.status === s ? meta.bg : 'transparent',
-                      color:       form.status === s ? meta.color : '#8B9CC0',
+                      color:       form.status === s ? meta.color : t.txtDim,
                       borderColor: form.status === s ? `${meta.color}30` : 'rgba(255,255,255,0.07)',
                     }}>
                     {meta.label}
@@ -354,7 +355,7 @@ function EditDrawer({
           {/* Save */}
           <button onClick={save} disabled={saving || !form.tagline.trim() || !missionId}
             className="w-full h-11 rounded-2xl font-bold text-[14px] flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
-            style={{ background: '#22FFAA', color: '#050816' }}>
+            style={{ background: t.accent, color: t.bg }}>
             {saving ? 'Saving…' : listing?.id ? 'Update Listing' : 'Publish Listing'}
             <ArrowRight size={15} strokeWidth={2.5} />
           </button>
@@ -392,42 +393,42 @@ function ApplicationDrawer({
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 26, stiffness: 260 }}
         className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-lg overflow-y-auto"
-        style={{ background: '#050816', borderLeft: '1px solid rgba(255,255,255,0.08)' }}
+        style={{ background: t.bg, borderLeft: '1px solid rgba(255,255,255,0.08)' }}
       >
         <div className="sticky top-0 flex items-center justify-between px-6 py-4 z-10"
-          style={{ background: '#050816', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          style={{ background: t.bg, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <div>
-            <h2 className="text-[16px] font-bold" style={{ color: '#F0F4FF' }}>Applications</h2>
-            <p className="text-[12px]" style={{ color: '#4A5578' }}>{listingTitle}</p>
+            <h2 className="text-[16px] font-bold" style={{ color: t.txt }}>Applications</h2>
+            <p className="text-[12px]" style={{ color: t.txtFaint }}>{listingTitle}</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <X size={15} strokeWidth={2} style={{ color: '#8B9CC0' }} />
+            style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
+            <X size={15} strokeWidth={2} style={{ color: t.txtDim }} />
           </button>
         </div>
 
         <div className="p-6 space-y-3">
           {applications.length === 0 ? (
             <div className="text-center py-10">
-              <Users size={28} strokeWidth={1.2} style={{ color: '#4A5578' }} className="mx-auto mb-3" />
-              <p className="text-[14px] font-semibold" style={{ color: '#8B9CC0' }}>No applications yet</p>
+              <Users size={28} strokeWidth={1.2} style={{ color: t.txtFaint }} className="mx-auto mb-3" />
+              <p className="text-[14px] font-semibold" style={{ color: t.txtDim }}>No applications yet</p>
             </div>
           ) : applications.map((app) => {
             const statusMeta = APP_STATUS_META[app.status];
             return (
               <div key={app.id} className="rounded-2xl p-4"
-                style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
+                style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-[12px] font-bold"
-                      style={{ background: 'rgba(109,93,253,0.15)', color: '#6D5DFD' }}>
+                      style={{ background: 'rgba(109,93,253,0.15)', color: t.ai }}>
                       {(app.user_profile?.display_name ?? app.user_profile?.email ?? 'U')[0].toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[13px] font-semibold truncate" style={{ color: '#F0F4FF' }}>
+                      <p className="text-[13px] font-semibold truncate" style={{ color: t.txt }}>
                         {app.user_profile?.display_name ?? app.user_profile?.email ?? 'Unknown'}
                       </p>
-                      <p className="text-[11px]" style={{ color: '#4A5578' }}>{formatDate(app.created_at)}</p>
+                      <p className="text-[11px]" style={{ color: t.txtFaint }}>{formatDate(app.created_at)}</p>
                     </div>
                   </div>
                   <span className="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -440,7 +441,7 @@ function ApplicationDrawer({
                   </span>
                 </div>
                 {app.cover_note && (
-                  <p className="text-[12px] mb-3 p-2.5 rounded-xl" style={{ background: '#0A1226', color: '#8B9CC0' }}>
+                  <p className="text-[12px] mb-3 p-2.5 rounded-xl" style={{ background: t.card, color: t.txtDim }}>
                     {app.cover_note}
                   </p>
                 )}
@@ -448,13 +449,13 @@ function ApplicationDrawer({
                   <div className="flex gap-2">
                     <button onClick={() => setStatus(app.id, 'accepted')} disabled={!!updating}
                       className="flex-1 h-8 rounded-xl text-[12px] font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
-                      style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: '#22FFAA' }}>
+                      style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: t.accent }}>
                       {updating === app.id ? <RefreshCw size={11} className="animate-spin" /> : <CheckCircle2 size={11} strokeWidth={2} />}
                       Accept
                     </button>
                     <button onClick={() => setStatus(app.id, 'rejected')} disabled={!!updating}
                       className="flex-1 h-8 rounded-xl text-[12px] font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
-                      style={{ background: 'rgba(255,92,122,0.08)', border: '1px solid rgba(255,92,122,0.2)', color: '#FF5C7A' }}>
+                      style={{ background: 'rgba(255,92,122,0.08)', border: '1px solid rgba(255,92,122,0.2)', color: t.error }}>
                       <XCircle size={11} strokeWidth={2} />
                       Decline
                     </button>
@@ -543,27 +544,27 @@ export default function WorkspaceMarketplacePage() {
   const pendingApps    = allApps.filter((a) => a.status === 'pending').length;
 
   return (
-    <div className="min-h-screen p-6 md:p-8" style={{ background: '#050816' }}>
+    <div className="min-h-screen p-6 md:p-8" style={{ background: t.bg }}>
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between mb-8">
           <div>
-            <h1 className="text-[24px] font-black" style={{ color: '#F0F4FF' }}>Marketplace</h1>
-            <p className="text-[13px] mt-0.5" style={{ color: '#4A5578' }}>
+            <h1 className="text-[24px] font-black" style={{ color: t.txt }}>Marketplace</h1>
+            <p className="text-[13px] mt-0.5" style={{ color: t.txtFaint }}>
               List your missions publicly and manage applications
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/marketplace" target="_blank"
               className="flex items-center gap-1.5 h-9 px-4 rounded-xl text-[13px] font-semibold"
-              style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.08)', color: '#8B9CC0' }}>
+              style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.08)', color: t.txtDim }}>
               <ExternalLink size={13} strokeWidth={2} />
               View public page
             </Link>
             <button
               onClick={() => setEditListing(null)}
               className="flex items-center gap-1.5 h-9 px-4 rounded-xl text-[13px] font-semibold"
-              style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: '#22FFAA' }}>
+              style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: t.accent }}>
               <Plus size={14} strokeWidth={2.5} />
               New Listing
             </button>
@@ -572,24 +573,23 @@ export default function WorkspaceMarketplacePage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Active Listings" value={activeListings}  icon={Globe}      color="#22FFAA" />
-          <StatCard label="Total Views"     value={totalViews}      icon={Eye}        color="#6D5DFD" />
-          <StatCard label="Applications"    value={totalApplied}    icon={Users}      color="#FFB84D" />
-          <StatCard label="Pending Review"  value={pendingApps}     icon={AlertCircle} color="#FF5C7A" />
+          <StatCard label="Active Listings" value={activeListings}  icon={Globe}      color={t.accent} />
+          <StatCard label="Total Views"     value={totalViews}      icon={Eye}        color={t.ai} />
+          <StatCard label="Applications"    value={totalApplied}    icon={Users}      color={t.warning} />
+          <StatCard label="Pending Review"  value={pendingApps}     icon={AlertCircle} color={t.error} />
         </div>
 
         {/* Tabs */}
         <div className="flex gap-1 mb-6 p-1 rounded-2xl w-fit"
-          style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
-          {([['listings', 'Listings'], ['applications', 'Applications']] as [Tab, string][]).map(([t, label]) => (
-            <button key={t} onClick={() => setTab(t)}
-              className={cn('h-8 px-5 rounded-xl text-[13px] font-semibold transition-all',
-                tab === t ? 'text-[#F0F4FF]' : 'text-[#4A5578] hover:text-[#8B9CC0]')}
-              style={tab === t ? { background: '#0A1226', boxShadow: '0 0 0 1px rgba(255,255,255,0.1)' } : {}}>
+          style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
+          {([['listings', 'Listings'], ['applications', 'Applications']] as [Tab, string][]).map(([tabId, label]) => (
+            <button key={tabId} onClick={() => setTab(tabId)}
+              className={cn('h-8 px-5 rounded-xl text-[13px] font-semibold transition-all')}
+              style={{ ...(tab === tabId ? { background: t.card, boxShadow: '0 0 0 1px rgba(255,255,255,0.1)', color: t.txt } : { color: t.txtFaint }) }}>
               {label}
-              {t === 'applications' && pendingApps > 0 && (
+              {tabId === 'applications' && pendingApps > 0 && (
                 <span className="ml-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full"
-                  style={{ background: 'rgba(255,92,122,0.15)', color: '#FF5C7A' }}>
+                  style={{ background: 'rgba(255,92,122,0.15)', color: t.error }}>
                   {pendingApps}
                 </span>
               )}
@@ -600,11 +600,11 @@ export default function WorkspaceMarketplacePage() {
         {/* Filter bar */}
         <div className="flex gap-3 mb-5">
           <div className="relative flex-1 max-w-xs">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#4A5578' }} />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: t.txtFaint }} />
             <input value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Search listings…"
               className="w-full h-9 pl-9 pr-3 rounded-xl text-[13px] focus:outline-none"
-              style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F4FF' }} />
+              style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.08)', color: t.txt }} />
           </div>
           {tab === 'listings' && (
             <div className="flex gap-1.5">
@@ -612,8 +612,9 @@ export default function WorkspaceMarketplacePage() {
                 <button key={s} onClick={() => setStatusFilter(s)}
                   className={cn('h-9 px-3 rounded-xl text-[12px] font-semibold border transition-all capitalize',
                     statusFilter === s
-                      ? 'bg-[rgba(255,255,255,0.06)] text-[#F0F4FF] border-[rgba(255,255,255,0.12)]'
-                      : 'text-[#4A5578] border-[rgba(255,255,255,0.06)] hover:text-[#8B9CC0]')}>
+                      ? 'bg-[rgba(255,255,255,0.06)] border-[rgba(255,255,255,0.12)]'
+                      : 'border-[rgba(255,255,255,0.06)]')}
+                  style={{ color: statusFilter === s ? t.txt : t.txtFaint }}>
                   {s}
                 </button>
               ))}
@@ -625,18 +626,18 @@ export default function WorkspaceMarketplacePage() {
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: '#07101F' }} />
+              <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: t.surface }} />
             ))}
           </div>
         ) : tab === 'listings' ? (
           filtered.length === 0 ? (
             <div className="text-center py-20 rounded-3xl"
-              style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <Globe size={32} strokeWidth={1} style={{ color: '#4A5578' }} className="mx-auto mb-3" />
-              <p className="text-[16px] font-bold mb-1" style={{ color: '#8B9CC0' }}>
+              style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.05)' }}>
+              <Globe size={32} strokeWidth={1} style={{ color: t.txtFaint }} className="mx-auto mb-3" />
+              <p className="text-[16px] font-bold mb-1" style={{ color: t.txtDim }}>
                 {listings.length === 0 ? 'No listings yet' : 'No results'}
               </p>
-              <p className="text-[13px] mb-5" style={{ color: '#4A5578' }}>
+              <p className="text-[13px] mb-5" style={{ color: t.txtFaint }}>
                 {listings.length === 0
                   ? 'Publish your first mission to the global marketplace.'
                   : 'Adjust your filter or search term.'}
@@ -644,7 +645,7 @@ export default function WorkspaceMarketplacePage() {
               {listings.length === 0 && (
                 <button onClick={() => setEditListing(null)}
                   className="inline-flex items-center gap-2 h-9 px-5 rounded-xl text-[13px] font-semibold"
-                  style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: '#22FFAA' }}>
+                  style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: t.accent }}>
                   <Plus size={14} strokeWidth={2.5} />
                   New Listing
                 </button>
@@ -660,7 +661,7 @@ export default function WorkspaceMarketplacePage() {
                   <motion.div key={listing.id}
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                     className="rounded-2xl overflow-hidden"
-                    style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
                     {/* Left accent */}
                     <div className="flex">
                       {catMeta && <div className="w-1 flex-shrink-0" style={{ background: catMeta.color }} />}
@@ -674,23 +675,23 @@ export default function WorkspaceMarketplacePage() {
                               </span>
                               {listing.is_featured && (
                                 <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
-                                  style={{ background: 'rgba(255,184,77,0.1)', color: '#FFB84D', border: '1px solid rgba(255,184,77,0.2)' }}>
+                                  style={{ background: 'rgba(255,184,77,0.1)', color: t.warning, border: '1px solid rgba(255,184,77,0.2)' }}>
                                   ⭐ Featured
                                 </span>
                               )}
                               <span className="text-[9px] font-bold px-2 py-0.5 rounded-full capitalize"
-                                style={{ background: 'rgba(109,93,253,0.08)', color: '#6D5DFD', border: '1px solid rgba(109,93,253,0.15)' }}>
+                                style={{ background: 'rgba(109,93,253,0.08)', color: t.ai, border: '1px solid rgba(109,93,253,0.15)' }}>
                                 {listing.listing_type}
                               </span>
                             </div>
-                            <h3 className="text-[14px] font-bold truncate" style={{ color: '#F0F4FF' }}>
+                            <h3 className="text-[14px] font-bold truncate" style={{ color: t.txt }}>
                               {listing.mission.title}
                             </h3>
-                            <p className="text-[12px] truncate mt-0.5" style={{ color: '#8B9CC0' }}>{listing.tagline}</p>
+                            <p className="text-[12px] truncate mt-0.5" style={{ color: t.txtDim }}>{listing.tagline}</p>
                           </div>
 
                           {/* Metrics */}
-                          <div className="flex items-center gap-4 text-[11px] flex-shrink-0" style={{ color: '#4A5578' }}>
+                          <div className="flex items-center gap-4 text-[11px] flex-shrink-0" style={{ color: t.txtFaint }}>
                             <span className="flex items-center gap-1">
                               <Eye size={11} /> {listing.view_count.toLocaleString()}
                             </span>
@@ -705,31 +706,32 @@ export default function WorkspaceMarketplacePage() {
                           style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                           <button onClick={() => setViewApps(listing)}
                             className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[11px] font-semibold transition-all"
-                            style={{ background: 'rgba(109,93,253,0.08)', border: '1px solid rgba(109,93,253,0.15)', color: '#6D5DFD' }}>
+                            style={{ background: 'rgba(109,93,253,0.08)', border: '1px solid rgba(109,93,253,0.15)', color: t.ai }}>
                             <Users size={11} strokeWidth={2} />
                             {apps.length} Applications
                             {apps.filter((a) => a.status === 'pending').length > 0 && (
-                              <span className="ml-1 text-[9px] font-black px-1 rounded-full bg-[rgba(255,92,122,0.2)] text-[#FF5C7A]">
+                              <span className="ml-1 text-[9px] font-black px-1 rounded-full bg-[rgba(255,92,122,0.2)]"
+                                style={{ color: t.error }}>
                                 {apps.filter((a) => a.status === 'pending').length}
                               </span>
                             )}
                           </button>
                           <button onClick={() => setEditListing(listing)}
                             className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[11px] font-semibold transition-all"
-                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#8B9CC0' }}>
+                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: t.txtDim }}>
                             <Pencil size={11} strokeWidth={2} />
                             Edit
                           </button>
                           <button onClick={() => toggleStatus(listing)}
                             className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[11px] font-semibold transition-all"
-                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#8B9CC0' }}>
+                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: t.txtDim }}>
                             {listing.status === 'active'
-                              ? <><ToggleRight size={11} strokeWidth={2} style={{ color: '#22FFAA' }} /> Pause</>
+                              ? <><ToggleRight size={11} strokeWidth={2} style={{ color: t.accent }} /> Pause</>
                               : <><ToggleLeft size={11} strokeWidth={2} /> Activate</>}
                           </button>
                           <button onClick={() => deleteListing(listing.id)}
                             className="ml-auto flex items-center gap-1.5 h-7 px-3 rounded-lg text-[11px] font-semibold transition-all"
-                            style={{ background: 'rgba(255,92,122,0.06)', border: '1px solid rgba(255,92,122,0.1)', color: '#FF5C7A' }}>
+                            style={{ background: 'rgba(255,92,122,0.06)', border: '1px solid rgba(255,92,122,0.1)', color: t.error }}>
                             <Trash2 size={11} strokeWidth={2} />
                           </button>
                         </div>
@@ -745,9 +747,9 @@ export default function WorkspaceMarketplacePage() {
           <div className="space-y-3">
             {allApps.length === 0 ? (
               <div className="text-center py-20 rounded-3xl"
-                style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <Users size={32} strokeWidth={1} style={{ color: '#4A5578' }} className="mx-auto mb-3" />
-                <p className="text-[16px] font-bold" style={{ color: '#8B9CC0' }}>No applications yet</p>
+                style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.05)' }}>
+                <Users size={32} strokeWidth={1} style={{ color: t.txtFaint }} className="mx-auto mb-3" />
+                <p className="text-[16px] font-bold" style={{ color: t.txtDim }}>No applications yet</p>
               </div>
             ) : allApps.filter((a) => !search || (a.user_profile?.display_name ?? a.user_profile?.email ?? '').toLowerCase().includes(search.toLowerCase())).map((app) => {
               const statusMeta = APP_STATUS_META[app.status];
@@ -756,15 +758,15 @@ export default function WorkspaceMarketplacePage() {
                 <motion.div key={app.id}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   className="rounded-2xl p-4"
-                  style={{ background: '#07101F', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  style={{ background: t.surface, border: '1px solid rgba(255,255,255,0.07)' }}>
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-[13px] font-bold"
-                      style={{ background: 'rgba(109,93,253,0.15)', color: '#6D5DFD' }}>
+                      style={{ background: 'rgba(109,93,253,0.15)', color: t.ai }}>
                       {(app.user_profile?.display_name ?? app.user_profile?.email ?? 'U')[0].toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-0.5">
-                        <p className="text-[14px] font-bold truncate" style={{ color: '#F0F4FF' }}>
+                        <p className="text-[14px] font-bold truncate" style={{ color: t.txt }}>
                           {app.user_profile?.display_name ?? app.user_profile?.email ?? 'Unknown user'}
                         </p>
                         <span className="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -773,16 +775,16 @@ export default function WorkspaceMarketplacePage() {
                         </span>
                       </div>
                       {listing && (
-                        <p className="text-[11px] mb-1" style={{ color: '#4A5578' }}>
+                        <p className="text-[11px] mb-1" style={{ color: t.txtFaint }}>
                           → {listing.mission.title}
                         </p>
                       )}
                       {app.cover_note && (
-                        <p className="text-[12px] mt-1.5 p-2 rounded-xl line-clamp-2" style={{ background: '#0A1226', color: '#8B9CC0' }}>
+                        <p className="text-[12px] mt-1.5 p-2 rounded-xl line-clamp-2" style={{ background: t.card, color: t.txtDim }}>
                           {app.cover_note}
                         </p>
                       )}
-                      <p className="text-[10px] mt-1.5" style={{ color: '#4A5578' }}>{formatDate(app.created_at)}</p>
+                      <p className="text-[10px] mt-1.5" style={{ color: t.txtFaint }}>{formatDate(app.created_at)}</p>
                     </div>
                   </div>
                   {app.status === 'pending' && (
@@ -792,7 +794,7 @@ export default function WorkspaceMarketplacePage() {
                         void load();
                       }}
                         className="flex-1 h-8 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-1.5"
-                        style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: '#22FFAA' }}>
+                        style={{ background: 'rgba(34,255,170,0.08)', border: '1px solid rgba(34,255,170,0.2)', color: t.accent }}>
                         <CheckCircle2 size={12} strokeWidth={2} /> Accept
                       </button>
                       <button onClick={async () => {
@@ -800,7 +802,7 @@ export default function WorkspaceMarketplacePage() {
                         void load();
                       }}
                         className="flex-1 h-8 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-1.5"
-                        style={{ background: 'rgba(255,92,122,0.08)', border: '1px solid rgba(255,92,122,0.2)', color: '#FF5C7A' }}>
+                        style={{ background: 'rgba(255,92,122,0.08)', border: '1px solid rgba(255,92,122,0.2)', color: t.error }}>
                         <XCircle size={12} strokeWidth={2} /> Decline
                       </button>
                     </div>

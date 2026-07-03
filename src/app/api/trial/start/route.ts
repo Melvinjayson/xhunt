@@ -1,17 +1,18 @@
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getSessionUser } from '@/lib/auth/session';
 import { TRIAL_DAYS } from '@/lib/freemium';
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    const sb = await createClient();
-    const { data: { user } } = await sb.auth.getUser();
+    const user = await getSessionUser(req);
 
     if (!user) {
       return Response.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    let { data: profile } = await sb
+    const admin = createAdminClient();
+    let { data: profile } = await admin
       .from('user_profiles')
       .select('subscription_tier, trial_started_at')
       .eq('id', user.id)
@@ -20,13 +21,10 @@ export async function POST() {
     // Profile missing — trigger may not have fired (e.g. migrations not applied).
     // Create a default profile via admin client so trial can proceed.
     if (!profile) {
-      const admin = createAdminClient();
-      const display = user.user_metadata?.full_name
-        ?? user.email?.split('@')[0]
-        ?? 'User';
+      const display = user.email?.split('@')[0] ?? 'User';
       const { data: created, error: createErr } = await admin
         .from('user_profiles')
-        .upsert({ id: user.id, display_name: display, subscription_tier: 'free' })
+        .upsert({ id: user.id, email: user.email, display_name: display, subscription_tier: 'free' })
         .select('subscription_tier, trial_started_at')
         .single();
       if (createErr || !created) {
@@ -45,7 +43,7 @@ export async function POST() {
     const now = new Date();
     const trialEndsAt = new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
 
-    const { error } = await sb.from('user_profiles').update({
+    const { error } = await admin.from('user_profiles').update({
       subscription_tier: 'trial',
       trial_started_at: now.toISOString(),
       trial_ends_at: trialEndsAt.toISOString(),

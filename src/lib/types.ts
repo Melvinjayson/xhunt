@@ -48,6 +48,7 @@ export interface Hunt {
   reward: string;
   tags: string[];
   createdAt?: string;
+  image_url?: string | null;
 
   /* ── organisation ── */
   tenantName?: string;
@@ -94,6 +95,23 @@ export interface HuntProgress {
   completedSteps: number[];
   startedAt: string;
   completedAt?: string;
+  proofFile?: string;
+}
+
+export type VerificationStatus =
+  | 'submitted'
+  | 'ai_reviewing'
+  | 'manual_review'
+  | 'approved'
+  | 'rejected'
+  | 'needs_info';
+
+export interface VerificationRecord {
+  huntId: string;
+  status: VerificationStatus;
+  submittedAt: string;
+  reviewedAt?: string;
+  feedback?: string;
 }
 
 export interface UserProfile {
@@ -114,6 +132,7 @@ export interface SkillScore {
 
 export interface ImpactProfile {
   archetype: string;           // e.g. "Systems Innovator"
+  summary: string;             // 2-3 sentence personalized description
   strengths: SkillScore[];     // top skills with scores
   causes: string[];            // e.g. ["Climate", "Education"]
   personality: string[];       // e.g. ["Builder", "Analyst"]
@@ -137,4 +156,6 @@ export interface AppState {
   progress: Record<string, HuntProgress>;
   completedHunts: CompletedHunt[];
   streak: number;
+  savedHunts: string[];
+  verificationStatus: Record<string, VerificationRecord>;
 }

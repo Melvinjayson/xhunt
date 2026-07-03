@@ -5,7 +5,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
 import { Menu, X } from 'lucide-react';
 import WorkspaceSidebar from '@/components/workspace/WorkspaceSidebar';
+import WorkspaceTour from '@/components/workspace/WorkspaceTour';
 import { createClient } from '@/lib/supabase/client';
+import { t } from '@/theme/colors';
 
 interface WorkspaceUser {
   orgName: string;
@@ -15,12 +17,18 @@ interface WorkspaceUser {
   avatarUrl: string | null;
 }
 
+const ADMIN_ROLES = ['platform_admin', 'tenant_admin', 'mission_creator', 'analyst'];
+
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isLoaded } = useAuth();
   const [workspaceUser, setWorkspaceUser] = useState<WorkspaceUser | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [wsTourDone, setWsTourDone] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return !!localStorage.getItem('xhunt_workspace_tour_done');
+  });
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
@@ -28,49 +36,44 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     if (!isLoaded) return;
     if (!user) { router.replace('/sign-in?redirect_url=/workspace'); return; }
 
-    async function boot() {
+    // Gate 1: requires tenant + completed onboarding (read from JWT via auth context)
+    if (!user.tenantId || !user.onboardingComplete) {
+      router.replace('/get-started');
+      return;
+    }
+
+    // Gate 2: workspace roles only
+    if (!ADMIN_ROLES.includes(user.role)) {
+      router.replace('/home');
+      return;
+    }
+
+    // All gates passed — fetch display info from Supabase (best-effort, falls back to defaults)
+    async function fetchDisplayInfo() {
       const supabase = createClient();
 
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('role, tenant_id, display_name, avatar_url, onboarding_complete')
-        .eq('id', user!.id)
-        .single();
-
-      if (!profile?.tenant_id || !profile?.onboarding_complete) {
-        router.replace('/get-started');
-        return;
-      }
-
-      const adminRoles = ['platform_admin', 'tenant_admin', 'mission_creator', 'analyst'];
-      if (!adminRoles.includes(profile.role)) {
-        router.replace('/home');
-        return;
-      }
-
-      const { data: tenant } = await supabase
-        .from('tenants')
-        .select('name, plan')
-        .eq('id', profile.tenant_id)
-        .single();
+      const [profileRes, tenantRes] = await Promise.all([
+        supabase.from('user_profiles').select('display_name, avatar_url').eq('id', user!.id).single(),
+        supabase.from('tenants').select('name, plan').eq('id', user!.tenantId!).single(),
+      ]);
 
       setWorkspaceUser({
-        orgName:  tenant?.name ?? 'Your Organization',
-        plan:     tenant?.plan ?? 'starter',
-        userName: profile.display_name,
-        userRole: profile.role,
-        avatarUrl: profile.avatar_url,
+        orgName:   tenantRes.data?.name  ?? 'Demo Organization',
+        plan:      tenantRes.data?.plan  ?? 'starter',
+        userName:  profileRes.data?.display_name ?? user!.displayName,
+        userRole:  user!.role,
+        avatarUrl: profileRes.data?.avatar_url   ?? user!.avatarUrl,
       });
     }
-    boot();
+    fetchDisplayInfo();
   }, [isLoaded, user, router]);
 
   if (!workspaceUser) {
     return (
-      <div className="min-h-screen bg-[#050816] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: t.bg }}>
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-          <p className="text-[#4A5578] text-sm font-medium">Loading workspace…</p>
+          <p className="text-sm font-medium" style={{ color: t.txtFaint }}>Loading workspace…</p>
         </div>
       </div>
     );
@@ -92,15 +95,22 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           <button
             onClick={() => setSidebarOpen(v => !v)}
             aria-label="Toggle navigation"
-            className="p-2 rounded-lg text-[#8B9CC0] hover:text-[#F0F4FF] hover:bg-[#0A1226] transition-colors"
+            className="p-2 rounded-lg transition-colors"
+            style={{ color: t.txtDim }}
           >
             {sidebarOpen ? <X size={20} strokeWidth={1.8} /> : <Menu size={20} strokeWidth={1.8} />}
           </button>
-          <span className="text-[15px] font-bold text-[#F0F4FF] tracking-tight">Workspace</span>
+          <span className="text-[15px] font-bold tracking-tight" style={{ color: t.txt }}>Workspace</span>
         </header>
         <main className="flex-1 min-w-0 overflow-auto">
           {children}
         </main>
+        {!wsTourDone && (
+          <WorkspaceTour onDone={() => {
+            localStorage.setItem('xhunt_workspace_tour_done', '1');
+            setWsTourDone(true);
+          }} />
+        )}
       </div>
     </div>
   );

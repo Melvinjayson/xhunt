@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { t } from '@/theme/colors';
 
 // ── SVG Distortion Filter ── must render once in the document root ──────────
 export function GlassFilter() {
@@ -60,13 +61,7 @@ export function GlassFilter() {
 
 // ── Shared layer styles ──────────────────────────────────────────────────────
 const DISTORT_LAYER: React.CSSProperties = {
-  position: 'absolute', inset: 0,
-  zIndex: 0, borderRadius: 'inherit', overflow: 'hidden',
-  backdropFilter: 'blur(4px)',
-  WebkitBackdropFilter: 'blur(4px)',
-  filter: 'url(#glass-distortion)',
-  isolation: 'isolate',
-  pointerEvents: 'none',
+  display: 'none',
 };
 
 const OVERLAY_LAYER: React.CSSProperties = {
@@ -155,7 +150,7 @@ export function GlassButton({
   onClick,
   disabled,
   type = 'button',
-  accent = '#22FFAA',
+  accent = t.accent,
 }: GlassButtonProps) {
   const outer: React.CSSProperties = {
     position: 'relative',
@@ -193,13 +188,9 @@ export function GlassButton({
 // Use this for the outermost div when you can't restructure HTML.
 // It provides the glass look without pseudo-element layers.
 export const LIQUID_GLASS_STYLE: React.CSSProperties = {
-  background: 'rgba(10, 18, 38, 0.90)',
-  border: '1px solid rgba(255, 255, 255, 0.09)',
-  boxShadow: [
-    '0 4px 16px rgba(0, 0, 0, 0.3)',
-    '0 0 0 0.5px rgba(255, 255, 255, 0.05)',
-    'inset 0 1px 0 rgba(255, 255, 255, 0.08)',
-  ].join(', '),
+  background: t.card,
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2)',
 };
 
 // Accent-tinted variant (e.g., for mission type cards)

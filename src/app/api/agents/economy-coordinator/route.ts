@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-import { AGENT_SYSTEM_PROMPTS } from '@/lib/agents/prompts';
 import type { EconomyCoordinatorInput, EconomyCoordinatorOutput } from '@/lib/agents/types';
 import { requireTenantAgent } from '@/lib/agents/auth';
-
-const client = new Anthropic();
+import { runGovernedAgent } from '@/lib/xil/agent-runner';
 
 export async function POST(req: NextRequest) {
   const agentAuth = await requireTenantAgent();
@@ -42,20 +39,20 @@ Explicitly check all anti-objectives before finalizing your output.
 Return a JSON object matching the EconomyCoordinatorOutput schema exactly. No markdown, no code fences — raw JSON only.`;
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 2048,
-      system: AGENT_SYSTEM_PROMPTS['economy-coordinator'],
-      messages: [{ role: 'user', content: userPrompt }],
+    const result = await runGovernedAgent({
+      agentId: 'economy-coordinator',
+      objective: `Economic coordination: ${objective}`,
+      userPrompt,
+      context: { context, objective, currentSkills, trustScores },
+      userId: agentAuth.userId,
     });
-
-    const raw = (message.content[0] as { type: string; text: string }).text.trim();
-    const jsonStart = raw.indexOf('{');
-    const jsonEnd = raw.lastIndexOf('}');
-    const jsonStr = raw.slice(jsonStart, jsonEnd + 1);
-
-    const output: EconomyCoordinatorOutput = JSON.parse(jsonStr);
-    return NextResponse.json(output);
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: 'Request rejected by constitutional alignment check', redFlags: result.redFlags, conditions: result.conditions },
+        { status: 422 },
+      );
+    }
+    return NextResponse.json(result.data as EconomyCoordinatorOutput);
   } catch (err) {
     console.error('[economy-coordinator]', err);
     return NextResponse.json({ error: 'Economy coordinator agent failed' }, { status: 500 });

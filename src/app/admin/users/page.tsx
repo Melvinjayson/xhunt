@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Users, ChevronDown, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import type { DbUserProfile } from '@/lib/supabase/types';
 import { cn } from '@/lib/cn';
 
@@ -22,12 +23,12 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
 
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -61,7 +62,7 @@ export default function AdminUsersPage() {
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, [supabase, user, isLoaded]);
 
   async function updateRole(userId: string, role: string) {
     setUpdating(userId);

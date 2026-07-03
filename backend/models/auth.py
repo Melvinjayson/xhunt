@@ -1,5 +1,4 @@
 from pydantic import BaseModel, EmailStr, field_validator
-import re
 
 
 class RegisterRequest(BaseModel):
@@ -18,12 +17,14 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+    surface: str | None = None  # hint from frontend: 'workspace' | 'home' | 'admin'
 
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = 'bearer'
-    expires_in: int
+    expires_in: int          # seconds
+    refresh_token: str | None = None  # set by login/register; consumed by Next.js proxy
 
 
 class UserProfile(BaseModel):
@@ -40,7 +41,3 @@ class UserProfile(BaseModel):
 class AuthResponse(BaseModel):
     token: TokenResponse
     user: UserProfile
-
-
-class RefreshRequest(BaseModel):
-    refresh_token: str | None = None

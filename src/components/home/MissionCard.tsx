@@ -9,10 +9,18 @@ import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
 import { t } from '@/theme/colors';
 import { tagAccent, tagBg, DIFF_CLR, getMissionImage } from '@/lib/missionHelpers';
 import { Spark } from '@/components/home/MMSCard';
-import type { Hunt } from '@/lib/types';
+import type { Hunt, VerificationRecord } from '@/lib/types';
 
-export function MissionCard({ hunt, index, isCompleted, matchScore }: {
+const VERI_BADGE: Record<string, { label: string; color: string }> = {
+  submitted:     { label: '📬 Submitted for review', color: t.txtDim  },
+  ai_reviewing:  { label: '🤖 AI Reviewing',         color: t.warning },
+  manual_review: { label: '👁 In Review',            color: t.warning },
+  approved:      { label: '✅ Approved',             color: t.accent  },
+};
+
+export function MissionCard({ hunt, index, isCompleted, matchScore, verificationRecord }: {
   hunt: Hunt; index: number; isCompleted?: boolean; matchScore?: number | null;
+  verificationRecord?: VerificationRecord | null;
 }) {
   const accent       = tagAccent(hunt.tags);
   const diffColor    = DIFF_CLR[hunt.difficulty] ?? t.txtDim;
@@ -66,6 +74,14 @@ export function MissionCard({ hunt, index, isCompleted, matchScore }: {
                 <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: isCompleted ? t.txtDim : t.txt, lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {hunt.title}
                 </p>
+                {verificationRecord && VERI_BADGE[verificationRecord.status] && (
+                  <p style={{ margin: '2px 0 4px', fontSize: 10, fontWeight: 700, color: VERI_BADGE[verificationRecord.status].color }}>
+                    {VERI_BADGE[verificationRecord.status].label}
+                    {verificationRecord.status === 'ai_reviewing' && (
+                      <span style={{ display: 'inline-block', marginLeft: 5, width: 5, height: 5, borderRadius: '50%', background: t.warning, verticalAlign: 'middle', animation: 'breathe 1.4s ease-in-out infinite' }} />
+                    )}
+                  </p>
+                )}
                 <p style={{ margin: '2px 0 8px', fontSize: 10.5, color: t.txtFaint }}>({hunt.tags[0] ?? 'mission'})</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Clock size={10} strokeWidth={2} style={{ color: t.txtFaint }} />

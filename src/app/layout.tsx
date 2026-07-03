@@ -3,7 +3,11 @@ import { Onest } from 'next/font/google';
 import { AuthProvider } from '@/lib/auth/context';
 import { GlassFilter } from '@/components/LiquidGlass';
 import { MuiProvider } from '@/components/MuiProvider';
+import { assertProductionEnv } from '@/lib/env';
 import './globals.css';
+import { t } from '@/theme/colors';
+
+assertProductionEnv();
 
 const onest = Onest({
   subsets: ['latin'],
@@ -16,11 +20,11 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://xhunt.app';
 export const metadata: Metadata = {
   metadataBase:    new URL(APP_URL),
   title: {
-    default:   'X-hunt — AI Mission Experiences',
-    template:  '%s · X-hunt',
+    default:   'X-Hunt — Participation Economy Platform',
+    template:  '%s · X-Hunt',
   },
-  description:     'Discover AI-powered missions that guide you through real-world adventures, challenges, and meaningful experiences. Join thousands of explorers.',
-  keywords:        ['AI experiences', 'missions', 'gamification', 'adventures', 'xhunt'],
+  description:     'Get paid for completing real-world tasks. Go places, try things, give feedback, attend events, and earn rewards. Join thousands of participants.',
+  keywords:        ['participation economy', 'earn rewards', 'real-world tasks', 'missions', 'xhunt', 'get paid'],
   manifest:        '/manifest.json',
   appleWebApp: {
     capable:        true,
@@ -32,14 +36,14 @@ export const metadata: Metadata = {
     locale:      'en_US',
     url:          APP_URL,
     siteName:    'X-hunt',
-    title:       'X-hunt — AI Mission Experiences',
-    description: 'Discover AI-powered missions that guide you through real-world adventures.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'X-hunt' }],
+    title:       'X-Hunt — Participation Economy Platform',
+    description: 'Get paid for completing real-world tasks. Go places, try things, give feedback, and earn rewards.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'X-Hunt' }],
   },
   twitter: {
     card:        'summary_large_image',
-    title:       'X-hunt — AI Mission Experiences',
-    description: 'Discover AI-powered missions that guide you through real-world adventures.',
+    title:       'X-Hunt — Participation Economy Platform',
+    description: 'Get paid for completing real-world tasks. Go places, try things, give feedback, and earn rewards.',
     images:      ['/og-image.png'],
   },
   robots: {
@@ -53,7 +57,7 @@ export const viewport: Viewport = {
   width:           'device-width',
   initialScale:    1,
   maximumScale:    5,
-  themeColor:      '#22FFAA',
+  themeColor:      t.accent,
   colorScheme:     'dark',
 };
 

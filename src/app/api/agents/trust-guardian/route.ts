@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-import { AGENT_SYSTEM_PROMPTS } from '@/lib/agents/prompts';
 import type { TrustGuardianInput, TrustGuardianOutput } from '@/lib/agents/types';
 import { requireTenantAgent } from '@/lib/agents/auth';
 import { runHeuristicCheck, persistConstitutionalCheck } from '@/lib/xil/constitution';
-
-const client = new Anthropic();
+import { runGovernedAgent } from '@/lib/xil/agent-runner';
 
 export async function POST(req: NextRequest) {
   const agentAuth = await requireTenantAgent();
@@ -49,17 +46,22 @@ Your verdict carries weight. Be rigorous. Be honest. Prioritize trust over growt
 Return a JSON object matching the TrustGuardianOutput schema exactly. No markdown, no code fences — raw JSON only.`;
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 2048,
-      system: AGENT_SYSTEM_PROMPTS['trust-guardian'],
-      messages: [{ role: 'user', content: userPrompt }],
+    // Route through the governed runner for provenance logging, but skip the
+    // pre-check gate: trust-guardian is the evaluator, so it must be allowed to
+    // assess actions the heuristic would otherwise reject. It persists its own
+    // (richer) constitutional check below.
+    const result = await runGovernedAgent({
+      agentId: 'trust-guardian',
+      objective: `Evaluate ${actionType}: ${proposedAction}`,
+      userPrompt,
+      context: context ?? {},
+      userId: agentAuth.userId,
+      skipConstitutionalGate: true,
     });
-
-    const raw = (message.content[0] as { type: string; text: string }).text.trim();
-    const jsonStart = raw.indexOf('{');
-    const jsonEnd = raw.lastIndexOf('}');
-    const output: TrustGuardianOutput = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
+    if (!result.ok) {
+      return NextResponse.json({ error: 'Trust Guardian agent failed' }, { status: 500 });
+    }
+    const output = result.data as TrustGuardianOutput;
 
     // Persist the constitutional check from the AI assessment
     const checkId = await persistConstitutionalCheck(

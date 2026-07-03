@@ -1,59 +1,66 @@
+"""
+JWT helpers for X-Hunt authentication.
+
+Token structure mirrors what the Next.js middleware (src/proxy.ts) and
+Supabase RLS both expect:
+  - sub          → user UUID (= user_profiles.id = auth.users.id)
+  - role         → 'authenticated' (Supabase RLS requirement)
+  - aud          → 'authenticated' (Supabase requirement)
+  - app_role     → application role (explorer / tenant_admin / platform_admin)
+  - surface      → default post-login destination (home / workspace / admin)
+  - onboarding_complete → gating flag read by proxy.ts
+  - tenant_id    → workspace UUID, null for explorers
+  - type         → 'access' | 'refresh'  (validated by proxy.ts)
+"""
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from jose import jwt, JWTError
-from passlib.context import CryptContext
 
 from config import settings
 
-pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
-def hash_password(plain: str) -> str:
-    return pwd_context.hash(plain)
-
-
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
-
-
-def _make_token(payload: dict[str, Any], expire_delta: timedelta) -> str:
-    exp = datetime.now(timezone.utc) + expire_delta
-    return jwt.encode(
-        {**payload, 'exp': exp, 'iat': datetime.now(timezone.utc)},
-        settings.jwt_secret,
-        algorithm=settings.jwt_algorithm,
-    )
-
-
-def create_access_token(user_id: str, email: str, role: str, surface: str) -> tuple[str, int]:
-    """
-    Issue a Supabase-compatible JWT.
-    Supabase RLS reads auth.uid() from the 'sub' claim and auth.role() from 'role'.
-    Including 'aud=authenticated' and 'role=authenticated' makes Supabase treat
-    this token as an authenticated session so RLS policies work correctly.
-    """
-    expires = timedelta(minutes=settings.access_token_expire_minutes)
-    exp = datetime.now(timezone.utc) + expires
-    payload = {
-        'sub': user_id,           # auth.uid() = user_profile.id (UUID)
-        'aud': 'authenticated',   # required by Supabase
-        'role': 'authenticated',  # enables RLS authenticated role
+def create_access_token(
+    user_id: str,
+    email: str,
+    role: str,
+    surface: str,
+    onboarding_complete: bool = False,
+    tenant_id: str | None = None,
+) -> tuple[str, int]:
+    """Return (signed_jwt, expires_in_seconds)."""
+    expires_in = settings.access_token_expire_minutes * 60
+    payload: dict[str, Any] = {
+        'sub': user_id,
+        'aud': 'authenticated',
+        'iat': _now(),
+        'exp': _now() + timedelta(seconds=expires_in),
+        # Supabase RLS — auth.role() returns 'authenticated' for this value
+        'role': 'authenticated',
+        # Custom claims read by proxy.ts and frontend
         'email': email,
-        # Custom claims (ignored by Supabase RLS but used by our app)
         'app_role': role,
         'surface': surface,
+        'onboarding_complete': onboarding_complete,
+        'tenant_id': tenant_id,
         'type': 'access',
-        'exp': exp,
-        'iat': datetime.now(timezone.utc),
     }
     token = jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
-    return token, settings.access_token_expire_minutes * 60
+    return token, expires_in
 
 
 def create_refresh_token(user_id: str) -> str:
-    expires = timedelta(days=settings.refresh_token_expire_days)
-    return _make_token({'sub': user_id, 'type': 'refresh'}, expires)
+    payload: dict[str, Any] = {
+        'sub': user_id,
+        'type': 'refresh',
+        'iat': _now(),
+        'exp': _now() + timedelta(days=settings.refresh_token_expire_days),
+    }
+    return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
 def decode_token(token: str) -> dict[str, Any]:
@@ -62,8 +69,7 @@ def decode_token(token: str) -> dict[str, Any]:
             token,
             settings.jwt_secret,
             algorithms=[settings.jwt_algorithm],
-            # Supabase uses 'authenticated' as the audience for user tokens
             options={'verify_aud': False},
         )
-    except JWTError as e:
-        raise ValueError(f'Invalid token: {e}') from e
+    except JWTError as exc:
+        raise ValueError(f'Invalid token: {exc}') from exc

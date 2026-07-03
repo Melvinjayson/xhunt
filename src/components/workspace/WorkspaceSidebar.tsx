@@ -8,14 +8,15 @@ import {
   LayoutDashboard, Layers, Radar, TrendingUp,
   BarChart3, Bot, Cpu,
   Coins, Globe,
-  ShieldCheck, Plug,
+  ShieldCheck, Plug, Users,
   CreditCard, Settings,
   ChevronDown, Plus, Sparkles, Zap, Building2,
-  Lock, Sun, Moon,
+  Sun, Moon,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { getDefaultConfig, mergeFeatureConfig } from '@/lib/features';
 import type { TenantFeatureConfig, NavFlags } from '@/lib/features';
+import { t } from '@/theme/colors';
 
 type NavFlag = keyof NavFlags | null;
 
@@ -28,52 +29,33 @@ interface NavItem {
   minTier?: 'growth' | 'enterprise';
 }
 
-// Consolidated: 12 items max (starter sees 5, growth 8, enterprise 12)
-const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
-  {
-    group: 'MISSIONS',
-    items: [
-      { href: '/workspace',                label: 'Dashboard',      icon: LayoutDashboard, exact: true, flag: null },
-      { href: '/workspace/missions',        label: 'Mission Studio', icon: Layers,          flag: null },
-      { href: '/workspace/mission-control', label: 'Mission Control',icon: Radar,           flag: null },
-      { href: '/workspace/outcomes',        label: 'Outcomes',       icon: TrendingUp,      flag: 'outcomes' },
-    ],
-  },
-  {
-    group: 'INTELLIGENCE',
-    items: [
-      { href: '/workspace/analytics',    label: 'Analytics',  icon: BarChart3, flag: 'analytics',    minTier: 'growth' },
-      { href: '/workspace/agents',       label: 'AI Agents',  icon: Bot,       flag: 'agents',       minTier: 'growth' },
-      { href: '/workspace/intelligence', label: 'XIL Hub',    icon: Cpu,       flag: 'xilHub',       minTier: 'enterprise' },
-    ],
-  },
-  {
-    group: 'ECONOMY',
-    items: [
-      { href: '/workspace/economy',      label: 'Economy',     icon: Coins,  flag: 'economy',      minTier: 'enterprise' },
-      { href: '/workspace/marketplace',  label: 'Marketplace', icon: Globe,  flag: 'marketplace',  minTier: 'growth' },
-    ],
-  },
-  {
-    group: 'PLATFORM',
-    items: [
-      { href: '/workspace/governance',   label: 'Governance',  icon: ShieldCheck, flag: 'governance',  minTier: 'enterprise' },
-      { href: '/workspace/integrations', label: 'Integrations',icon: Plug,        flag: null },
-    ],
-  },
-  {
-    group: 'WORKSPACE',
-    items: [
-      { href: '/workspace/billing',  label: 'Billing',  icon: CreditCard, flag: null },
-      { href: '/workspace/settings', label: 'Settings', icon: Settings,   flag: null },
-    ],
-  },
+// Single priority-ordered nav list. AGENTS.md caps the workspace sidebar at 8
+// visible items per tier; because the enterprise tier unlocks every flag, we show
+// the top 8 enabled items and fold any remainder into a collapsible "More" section
+// (nothing is removed — every page stays reachable). Order = priority.
+const MAX_VISIBLE = 8;
+
+const NAV_ITEMS: NavItem[] = [
+  { href: '/workspace',                 label: 'Dashboard',       icon: LayoutDashboard, exact: true, flag: null },
+  { href: '/workspace/missions',        label: 'Mission Studio',  icon: Layers,          flag: null },
+  { href: '/workspace/mission-control', label: 'Mission Control', icon: Radar,           flag: null },
+  { href: '/workspace/outcomes',        label: 'Outcomes',        icon: TrendingUp,      flag: 'outcomes' },
+  { href: '/workspace/analytics',       label: 'Analytics',       icon: BarChart3,       flag: 'analytics',   minTier: 'growth' },
+  { href: '/workspace/agents',          label: 'AI Agents',       icon: Bot,             flag: 'agents',      minTier: 'growth' },
+  { href: '/workspace/marketplace',     label: 'Marketplace',     icon: Globe,           flag: 'marketplace', minTier: 'growth' },
+  { href: '/workspace/community',       label: 'Community',       icon: Users,           flag: 'community',   minTier: 'growth' },
+  { href: '/workspace/intelligence',    label: 'XIL Hub',         icon: Cpu,             flag: 'xilHub',      minTier: 'enterprise' },
+  { href: '/workspace/economy',         label: 'Economy',         icon: Coins,           flag: 'economy',     minTier: 'enterprise' },
+  { href: '/workspace/governance',      label: 'Governance',      icon: ShieldCheck,     flag: 'governance',  minTier: 'enterprise' },
+  { href: '/workspace/integrations',    label: 'Integrations',    icon: Plug,            flag: null },
+  { href: '/workspace/billing',         label: 'Billing',         icon: CreditCard,      flag: null },
+  { href: '/workspace/settings',        label: 'Settings',        icon: Settings,        flag: null },
 ];
 
-const PLAN_BADGE: Record<string, { label: string; cls: string }> = {
-  enterprise: { label: 'Enterprise', cls: 'bg-[#6D5DFD]/15 text-[#A99FFE] border-[#6D5DFD]/30' },
+const PLAN_BADGE: Record<string, { label: string; cls: string; style?: React.CSSProperties }> = {
+  enterprise: { label: 'Enterprise', cls: '', style: { background: `${t.ai}26`, color: t.aiLight, borderColor: `${t.ai}4D` } },
   growth:     { label: 'Growth',     cls: 'bg-accent/10 text-accent border-accent/20' },
-  starter:    { label: 'Starter',    cls: 'bg-[#0F1D35] text-[#8B9CC0] border-[#162440]' },
+  starter:    { label: 'Starter',    cls: '', style: { background: t.panel, color: t.txtDim, borderColor: 'rgba(255,255,255,0.08)' } },
 };
 
 interface Props {
@@ -105,9 +87,43 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
       .catch(() => { setConfig(mergeFeatureConfig(getDefaultConfig(plan), {})); });
   }, [plan]);
 
+  const [showMore, setShowMore] = useState(false);
+
   function isNavEnabled(flag: NavFlag): boolean {
     if (flag === null) return true;
     return config.nav[flag] === true;
+  }
+
+  const enabledItems = NAV_ITEMS.filter((i) => isNavEnabled(i.flag));
+  const primaryItems = enabledItems.slice(0, MAX_VISIBLE);
+  const overflowItems = enabledItems.slice(MAX_VISIBLE);
+
+  function renderNavItem({ href, label, icon: Icon, exact }: NavItem) {
+    const active = exact ? pathname === href : pathname.startsWith(href);
+    return (
+      <Link key={href} href={href}
+        className={cn(
+          'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-100',
+          active ? 'bg-accent/10 text-accent' : 'hover:bg-card'
+        )}
+        style={
+          active && config.branding.primaryColor
+            ? { backgroundColor: `${config.branding.primaryColor}18`, color: config.branding.primaryColor }
+            : (!active ? { color: t.txtDim } : {})
+        }
+      >
+        <Icon size={15} strokeWidth={active ? 2.2 : 1.8}
+          className={active ? 'text-accent' : ''}
+          style={
+            active && config.branding.primaryColor
+              ? { color: config.branding.primaryColor }
+              : (!active ? { color: t.txtFaint } : {})
+          } />
+        {label}
+        {active && <div className="ml-auto w-1 h-1 rounded-full bg-accent flex-shrink-0"
+          style={config.branding.primaryColor ? { backgroundColor: config.branding.primaryColor } : {}} />}
+      </Link>
+    );
   }
 
   function toggleTheme() {
@@ -126,37 +142,38 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
         <div className="portal-overlay md:hidden" onClick={onClose} aria-hidden="true" />
       )}
       <aside
-        className="portal-sidebar liquid-nav bg-[#07101F] border-r border-[#0F1D35] flex flex-col"
+        className="portal-sidebar liquid-nav flex flex-col"
+        style={{ background: t.surface, borderRight: `1px solid ${t.panel}` }}
         data-open={isOpen ? 'true' : 'false'}
       >
         {/* Org Header */}
-        <div className="px-4 py-4 border-b border-[#0F1D35]">
-          <div className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-[#0A1226] cursor-pointer transition-colors group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent/20 to-[#6D5DFD]/20 border border-accent/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <div className="px-4 py-4" style={{ borderBottom: `1px solid ${t.panel}` }}>
+          <div className="flex items-center gap-3 px-2 py-2.5 rounded-xl cursor-pointer transition-colors group hover:bg-card">
+            <div className="w-8 h-8 rounded-lg border border-accent/20 flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: `linear-gradient(to bottom right, rgba(34,255,170,0.2), rgba(109,93,253,0.2))` }}>
               {config.branding.logoUrl
                 ? <img src={config.branding.logoUrl} alt="" className="w-full h-full object-cover" />
                 : <Building2 size={15} className="text-accent" strokeWidth={1.8} />}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-semibold text-[#F0F4FF] truncate leading-tight">
+              <p className="text-[13px] font-semibold truncate leading-tight" style={{ color: t.txt }}>
                 {config.branding.appName ?? orgName}
               </p>
-              <p className="text-[10px] text-[#4A5578] mt-0.5 capitalize">{config.maturity} tier</p>
+              <p className="text-[10px] mt-0.5 capitalize" style={{ color: t.txtFaint }}>{config.maturity} tier</p>
             </div>
-            <ChevronDown size={13} className="text-[#4A5578] group-hover:text-[#8B9CC0] flex-shrink-0" />
+            <ChevronDown size={13} className="flex-shrink-0" style={{ color: t.txtFaint }} />
           </div>
-          <div className={cn('mt-2 mx-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide', badge.cls)}>
+          <div className={cn('mt-2 mx-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide', badge.cls)} style={badge.style}>
             <Sparkles size={9} strokeWidth={2.5} />
             {badge.label}
           </div>
         </div>
 
         {/* New Mission CTA */}
-        <div className="px-4 py-3 border-b border-[#0F1D35]">
+        <div className="px-4 py-3" style={{ borderBottom: `1px solid ${t.panel}` }}>
           <Link href="/workspace/missions/new">
             <button
-              className="flex items-center gap-2 w-full h-9 px-3 bg-accent text-[#060a0e] rounded-xl font-semibold text-[12px] hover:bg-accent-dark transition-colors shadow-[0_4px_16px_rgba(34,255,170,0.25)]"
-              style={config.branding.primaryColor ? { backgroundColor: config.branding.primaryColor } : {}}
+              className="flex items-center gap-2 w-full h-9 px-3 bg-accent rounded-xl font-semibold text-[12px] hover:bg-accent-dark transition-colors shadow-[0_4px_16px_rgba(34,255,170,0.25)]"
+              style={{ color: t.bg, ...(config.branding.primaryColor ? { backgroundColor: config.branding.primaryColor } : {}) }}
             >
               <Plus size={14} strokeWidth={2.5} />
               New Mission
@@ -164,81 +181,59 @@ export default function WorkspaceSidebar({ orgName, plan, userName, userRole, av
           </Link>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-4">
-          {NAV_GROUPS.map(({ group, items }) => {
-            const enabled = items.filter((i) => isNavEnabled(i.flag));
-            const locked  = items.filter((i) => !isNavEnabled(i.flag) && i.flag !== null);
-            if (enabled.length === 0 && locked.length === 0) return null;
+        {/* Navigation — top 8 items visible; the rest fold into "More". */}
+        <nav className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-0.5">
+          {primaryItems.map(renderNavItem)}
 
-            return (
-              <div key={group}>
-                <p className="px-2 mb-1 text-[9px] font-bold text-[#4A5578] uppercase tracking-[0.1em]">{group}</p>
-                <div className="flex flex-col gap-0.5">
-                  {enabled.map(({ href, label, icon: Icon, exact }) => {
-                    const active = exact ? pathname === href : pathname.startsWith(href);
-                    return (
-                      <Link key={href} href={href}
-                        className={cn(
-                          'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-100',
-                          active ? 'bg-accent/10 text-accent' : 'text-[#8B9CC0] hover:text-[#F0F4FF] hover:bg-[#0A1226]'
-                        )}
-                        style={active && config.branding.primaryColor
-                          ? { backgroundColor: `${config.branding.primaryColor}18`, color: config.branding.primaryColor } : {}}
-                      >
-                        <Icon size={15} strokeWidth={active ? 2.2 : 1.8}
-                          className={active ? 'text-accent' : 'text-[#4A5578]'}
-                          style={active && config.branding.primaryColor ? { color: config.branding.primaryColor } : {}} />
-                        {label}
-                        {active && <div className="ml-auto w-1 h-1 rounded-full bg-accent flex-shrink-0"
-                          style={config.branding.primaryColor ? { backgroundColor: config.branding.primaryColor } : {}} />}
-                      </Link>
-                    );
-                  })}
-                  {locked.map(({ label, icon: Icon, minTier }) => (
-                    <div key={label}
-                      title={`Upgrade to ${minTier ?? 'higher'} tier to unlock`}
-                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium opacity-35 cursor-not-allowed select-none">
-                      <Icon size={15} strokeWidth={1.8} className="text-[#4A5578]" />
-                      {label}
-                      <Lock size={10} className="ml-auto text-[#4A5578] flex-shrink-0" strokeWidth={2} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+          {overflowItems.length > 0 && (
+            <>
+              <button
+                onClick={() => setShowMore((v) => !v)}
+                className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-100 hover:bg-card"
+                style={{ color: t.txtFaint }}
+              >
+                <ChevronDown size={15} strokeWidth={1.8}
+                  style={{ color: t.txtFaint, transform: showMore ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                {showMore ? 'Less' : `More (${overflowItems.length})`}
+              </button>
+              {showMore && overflowItems.map(renderNavItem)}
+            </>
+          )}
         </nav>
 
         {/* AI Status + Theme */}
-        <div className="px-4 py-3 border-t border-[#0F1D35]">
+        <div className="px-4 py-3" style={{ borderTop: `1px solid ${t.panel}` }}>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-[#6D5DFD]/8 border border-[#6D5DFD]/15 flex-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#22FFAA] breathe flex-shrink-0" />
-              <Zap size={12} className="text-[#A99FFE]" strokeWidth={1.8} />
-              <span className="text-[11px] font-medium text-[#A99FFE]">{agentCount} Agents Active</span>
+            <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg flex-1" style={{ background: `${t.ai}14`, border: `1px solid ${t.ai}26` }}>
+              <div className="w-1.5 h-1.5 rounded-full breathe flex-shrink-0" style={{ background: t.accent }} />
+              <Zap size={12} strokeWidth={1.8} style={{ color: t.aiLight }} />
+              <span className="text-[11px] font-medium" style={{ color: t.aiLight }}>{agentCount} Agents Active</span>
             </div>
             <button onClick={toggleTheme} title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[#4A5578] hover:text-[#8B9CC0] hover:bg-[#0A1226] transition-colors flex-shrink-0">
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 hover:bg-card"
+              style={{ color: t.txtFaint }}>
               {theme === 'dark' ? <Sun size={13} strokeWidth={1.8} /> : <Moon size={13} strokeWidth={1.8} />}
             </button>
           </div>
         </div>
 
         {/* User Profile */}
-        <div className="px-3 py-3 border-t border-[#0F1D35]">
-          <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-[#0A1226] transition-colors group">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#6D5DFD] to-accent flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#060a0e] overflow-hidden">
+        <div className="px-3 py-3" style={{ borderTop: `1px solid ${t.panel}` }}>
+          <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl transition-colors group hover:bg-card">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold overflow-hidden" style={{ background: `linear-gradient(to bottom right, ${t.ai}, ${t.accent})`, color: t.bg }}>
               {avatarUrl
                 ? <img src={avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
                 : initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-semibold text-[#F0F4FF] truncate leading-tight">{userName ?? 'Admin'}</p>
-              <p className="text-[10px] text-[#4A5578] capitalize">{userRole.replace('_', ' ')}</p>
+              <p className="text-[12px] font-semibold truncate leading-tight" style={{ color: t.txt }}>{userName ?? 'Admin'}</p>
+              <p className="text-[10px] capitalize" style={{ color: t.txtFaint }}>{userRole.replace('_', ' ')}</p>
             </div>
             <button onClick={() => signOut({ redirectUrl: '/' })} title="Sign out"
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-[#2a0a0a] hover:text-[#FF5C7A] text-[#4A5578]">
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md"
+              style={{ color: t.txtFaint }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = t.error; (e.currentTarget as HTMLButtonElement).style.background = `${t.error}14`; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = t.txtFaint; (e.currentTarget as HTMLButtonElement).style.background = ''; }}>
               <Settings size={13} strokeWidth={1.8} />
             </button>
           </div>

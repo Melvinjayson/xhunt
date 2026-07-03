@@ -1,14 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionUser } from '@/lib/auth/session';
 
 // POST /api/messages/register-key
 // Stores the user's ECDH public key in user_profiles.public_key.
 // Called once per device after login.
 
-export async function POST(req: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export async function POST(req: NextRequest) {
+  const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const supabase = await createClient();
 
   const { public_key } = await req.json() as { public_key: string };
   if (!public_key || typeof public_key !== 'string') {

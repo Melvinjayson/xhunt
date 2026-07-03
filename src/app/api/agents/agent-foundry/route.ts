@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-import { AGENT_SYSTEM_PROMPTS } from '@/lib/agents/prompts';
 import type { AgentFoundryInput, AgentFoundryOutput } from '@/lib/agents/types';
 import { requireTenantAgent } from '@/lib/agents/auth';
 import { createClient } from '@/lib/supabase/server';
-
-const client = new Anthropic();
+import { getSessionUser } from '@/lib/auth/session';
+import { runGovernedAgent } from '@/lib/xil/agent-runner';
 
 const ADMIN_ROLES = new Set(['platform_admin', 'tenant_admin']);
 
@@ -15,7 +13,7 @@ export async function POST(req: NextRequest) {
 
   // Agent Foundry is admin-only — it defines new agents, which is a governance action
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser(req);
   if (user) {
     const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', user.id).single();
     if (profile && !ADMIN_ROLES.has(profile.role as string)) {
@@ -58,17 +56,21 @@ The implementation_roadmap must be realistic.
 Return a JSON object matching the AgentFoundryOutput schema exactly. No markdown, no code fences — raw JSON only.`;
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 4096,
-      system: AGENT_SYSTEM_PROMPTS['agent-foundry'],
-      messages: [{ role: 'user', content: userPrompt }],
+    const result = await runGovernedAgent({
+      agentId: 'agent-foundry',
+      objective: `Design new agent: ${agentName}`,
+      userPrompt,
+      context: { agentName, purpose, category, problemContext },
+      userId: agentAuth.userId,
+      maxTokens: 4096,
     });
-
-    const raw = (message.content[0] as { type: string; text: string }).text.trim();
-    const jsonStart = raw.indexOf('{');
-    const jsonEnd = raw.lastIndexOf('}');
-    const output: AgentFoundryOutput = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: 'Request rejected by constitutional alignment check', redFlags: result.redFlags, conditions: result.conditions },
+        { status: 422 },
+      );
+    }
+    const output = result.data as AgentFoundryOutput;
 
     // Optionally register the new agent in the registry (if constitutionally approved)
     if (output.constitutional_compliance.verdict === 'approved' && output.agent_spec) {

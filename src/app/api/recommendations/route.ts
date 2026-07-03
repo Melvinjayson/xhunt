@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { proximityBoost } from '@/lib/proximity';
+import { getSessionUser } from '@/lib/auth/session';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -12,15 +13,15 @@ export async function GET(req: NextRequest) {
   const userLng = parseFloat(searchParams.get('lng') ?? '');
   const userCoords = !isNaN(userLat) && !isNaN(userLng) ? { lat: userLat, lng: userLng } : null;
 
+  const user = await getSessionUser(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   );
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { data: profile } = await supabase.from('user_profiles').select('tenant_id').eq('id', user.id).single();
   if (!profile?.tenant_id) return NextResponse.json({ error: 'No tenant' }, { status: 403 });
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
   // Load all active missions + their scores (include location fields)
   const [missionsRes, scoresRes, progressRes] = await Promise.all([
     supabase.from('missions')
-      .select('id, title, difficulty, estimated_time, tags, story_context, reward, location_type, lat, lng')
+      .select('id, title, difficulty, estimated_time, tags, story_context, reward, location_type, lat, lng, image_url')
       .eq('tenant_id', tid)
       .in('status', ['active', 'published']),
     supabase.from('mission_scores')

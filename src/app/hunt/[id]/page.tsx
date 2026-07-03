@@ -2,583 +2,401 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ArrowLeft, Clock, Zap, Trophy, ChevronDown, ChevronUp,
-  ShieldCheck, Building2, MapPin, Users, Calendar, Target,
-  Briefcase, BookOpen, Sparkles, CheckCircle2, DollarSign,
-  Star, Award, Brain, ExternalLink, Share2, Bookmark, AlertCircle,
-  FileText, Upload, MessageSquare, TrendingUp,
-} from 'lucide-react';
-import { loadState, loadProfile } from '@/lib/store';
-import { LIQUID_GLASS_STYLE } from '@/components/LiquidGlass';
-import {
-  MISSION_TYPE_META, ORG_TYPE_META, DIFF_META, SDG_META,
-  estimateCashReward, estimateXP, deadlineLabel, spotsLabel, demandLabel,
-  resolveCategory,
-} from '@/lib/missionCategories';
-import type { Hunt, ImpactProfile } from '@/lib/types';
+import { ArrowLeft, Clock, Bookmark, BookmarkCheck, Shield, Zap, ChevronDown, ChevronUp, MapPin, Users } from 'lucide-react';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Chip from '@mui/material/Chip';
+import BottomNav from '@/components/BottomNav';
+import MissionCard from '@/components/consumer/MissionCard';
+import SectionHeader from '@/components/consumer/SectionHeader';
+import StatusPill from '@/components/consumer/StatusPill';
+import Surface from '@/components/consumer/Surface';
+import ProgressBar from '@/components/consumer/ProgressBar';
+import CopilotFab from '@/components/consumer/CopilotFab';
+import { t } from '@/theme/colors';
+import { loadState, toggleSavedHunt, getVerificationStatus } from '@/lib/store';
+import { estimateCashReward, estimateXP, deadlineLabel, spotsLabel, demandLabel, resolveCategory, DIFF_META, MISSION_TYPE_META } from '@/lib/missionCategories';
+import type { Hunt, HuntProgress, VerificationStatus } from '@/lib/types';
+import { createClient } from '@/lib/supabase/client';
 
-/* ─── tokens ─── */
-const BG     = '#050816';
-const CARD   = '#0A1226';
-const SURF   = '#07101F';
-const ACCENT = '#22FFAA';
-const AI_CLR = '#6D5DFD';
-const WARN   = '#FFB84D';
-const ERR    = '#FF5C7A';
-const TXT    = '#F0F4FF';
-const DIM    = '#8B9CC0';
-const FAINT  = '#4A5578';
-
-const XGLASS: React.CSSProperties = LIQUID_GLASS_STYLE;
-
-/* ─── reward pill ─── */
-function RewardPill({ icon, label, value, color, bg }: {
-  icon: React.ReactNode; label: string; value: string; color: string; bg: string;
-}) {
-  return (
-    <div style={{ flex: 1, background: bg, border: `1px solid ${color}20`, borderRadius: 16, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        {icon}
-        <span style={{ fontSize: 10, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '.07em' }}>{label}</span>
-      </div>
-      <span style={{ fontSize: 17, fontWeight: 900, color, letterSpacing: '-.02em', lineHeight: 1 }}>{value}</span>
-    </div>
-  );
-}
-
-/* ─── sdg badge ─── */
-function SDGBadge({ goal }: { goal: number }) {
-  const meta = SDG_META[goal as keyof typeof SDG_META];
-  if (!meta) return null;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: `${meta.color}14`, border: `1px solid ${meta.color}25`, borderRadius: 10, padding: '4px 10px 4px 7px' }}>
-      <span style={{ fontSize: 13 }}>{meta.emoji}</span>
-      <span style={{ fontSize: 10, fontWeight: 700, color: meta.color, whiteSpace: 'nowrap' }}>SDG {goal}</span>
-    </div>
-  );
-}
-
-/* ─── deliverable item ─── */
-function Deliverable({ text, index }: { text: string; index: number }) {
-  return (
-    <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.06 }}
-      style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(34,255,170,.04)', border: '1px solid rgba(34,255,170,.1)' }}>
-      <div style={{ width: 20, height: 20, borderRadius: 6, background: `${ACCENT}18`, border: `1px solid ${ACCENT}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-        <span style={{ fontSize: 9, fontWeight: 800, color: ACCENT }}>{index + 1}</span>
-      </div>
-      <span style={{ fontSize: 13, color: DIM, lineHeight: 1.5, flex: 1 }}>{text}</span>
-    </motion.div>
-  );
-}
-
-/* ─── skill chip ─── */
-function SkillChip({ skill, color }: { skill: string; color: string }) {
-  return (
-    <span style={{ fontSize: 11, fontWeight: 700, color, background: `${color}10`, border: `1px solid ${color}20`, borderRadius: 999, padding: '4px 12px', whiteSpace: 'nowrap' }}>
-      {skill}
-    </span>
-  );
-}
-
-/* ─── match score ring ─── */
-function MatchRing({ score, color }: { score: number; color: string }) {
-  const r = 22, circ = 2 * Math.PI * r;
-  const dash = (score / 100) * circ;
-  return (
-    <div style={{ position: 'relative', width: 60, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <svg width={60} height={60} style={{ position: 'absolute', transform: 'rotate(-90deg)' }}>
-        <circle cx={30} cy={30} r={r} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth={4} />
-        <motion.circle cx={30} cy={30} r={r} fill="none" stroke={color} strokeWidth={4}
-          strokeLinecap="round"
-          initial={{ strokeDashoffset: circ }}
-          animate={{ strokeDashoffset: circ - dash }}
-          transition={{ duration: 1.2, delay: 0.4, ease: 'easeOut' }}
-          strokeDasharray={circ}
-        />
-      </svg>
-      <span style={{ fontSize: 13, fontWeight: 900, color, position: 'relative', zIndex: 1 }}>{score}%</span>
-    </div>
-  );
-}
-
-/* ─── page ─── */
 export default function HuntDetailPage() {
-  const params  = useParams();
-  const router  = useRouter();
-  const huntId  = params?.id as string;
+  const params = useParams();
+  const router = useRouter();
+  const huntId = params?.id as string;
 
-  const [hunt, setHunt]               = useState<Hunt | null>(null);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [stepsOpen, setStepsOpen]     = useState(false);
-  const [saved, setSaved]             = useState(false);
-  const [profile, setProfile]         = useState<ImpactProfile | null>(null);
-  const [mounted, setMounted]         = useState(false);
+  const [hunt, setHunt]         = useState<Hunt | null>(null);
+  const [progress, setProgress] = useState<HuntProgress | null>(null);
+  const [saved, setSaved]       = useState(false);
+  const [vStatus, setVStatus]   = useState<VerificationStatus | null>(null);
+  const [similar, setSimilar]   = useState<Hunt[]>([]);
+  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
     const state = loadState();
-    const found = state.hunts.find((h) => h.id === huntId);
+    const found = state.hunts.find(h => h.id === huntId) ?? null;
+    setSaved((state.savedHunts ?? []).includes(huntId));
+    setProgress(state.progress[huntId] ?? null);
+    const vr = getVerificationStatus(huntId);
+    if (vr) setVStatus(vr.status);
+
     if (found) {
       setHunt(found);
-      setIsCompleted(state.completedHunts.some((c) => c.huntId === huntId));
+      const cat = resolveCategory(found.tags ?? [], found.category);
+      setSimilar(state.hunts.filter(h => h.id !== huntId && resolveCategory(h.tags ?? [], h.category).id === cat.id).slice(0, 3));
+      setLoading(false);
+    } else {
+      void Promise.resolve(
+        createClient()
+          .from('missions')
+          .select('*')
+          .eq('id', huntId)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              const mapped = { id: data.id, title: data.title, story_context: data.story_context ?? '', difficulty: data.difficulty ?? 'easy', estimated_time: data.estimated_time ?? '1 hour', steps: data.steps ?? [], reward: data.reward ?? 'XP', tags: data.tags ?? [] } as Hunt;
+              setHunt(mapped);
+            }
+          }),
+      ).finally(() => setLoading(false));
     }
-    setProfile(loadProfile());
-    setMounted(true);
   }, [huntId]);
 
-  if (!mounted) return null;
-  if (!hunt) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: BG }}>
-      <p style={{ color: FAINT, fontSize: 14 }}>Mission not found.</p>
-    </div>
-  );
-
-  /* ── computed values ── */
-  const cash      = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
-  const xp        = estimateXP(hunt.xpReward, hunt.difficulty, hunt.steps.length);
-  const diff      = DIFF_META[hunt.difficulty] ?? DIFF_META.easy;
-  const cat       = resolveCategory(hunt.tags, hunt.category);
-  const mtype     = hunt.missionType ? MISSION_TYPE_META[hunt.missionType] : null;
-  const orgType   = hunt.organizationType ? ORG_TYPE_META[hunt.organizationType] : null;
-  const dlLabel   = deadlineLabel(hunt.deadline);
-  const spLabel   = spotsLabel(hunt.spotsRemaining, hunt.spotsTotal);
-  const demand    = demandLabel(hunt.applicationCount);
-
-  /* match score from impact profile */
-  let matchScore: number | null = null;
-  if (profile) {
-    const tagLower   = hunt.tags.map((t) => t.toLowerCase());
-    const causeLower = profile.causes.map((c) => c.toLowerCase());
-    const skillLower = profile.strengths.map((s) => s.name.toLowerCase());
-    let s = 55;
-    for (const t of tagLower) {
-      if (causeLower.some((c) => c.includes(t) || t.includes(c))) s += 12;
-      if (skillLower.some((k) => k.includes(t) || t.includes(k))) s += 8;
-    }
-    s += Math.round((profile.impactScore / 100) * 10);
-    matchScore = Math.min(98, s);
+  function handleSave() {
+    const next = toggleSavedHunt(huntId);
+    setSaved(next);
   }
 
-  const matchColor = matchScore == null ? DIM : matchScore >= 80 ? ACCENT : matchScore >= 65 ? WARN : DIM;
+  function toggleStep(idx: number) {
+    setExpandedSteps(prev => {
+      const s = new Set(prev);
+      s.has(idx) ? s.delete(idx) : s.add(idx);
+      return s;
+    });
+  }
 
-  /* hero gradient from category color */
-  const heroFrom = cat.color + '18';
-  const heroTo   = AI_CLR + '0A';
+  const isStarted   = !!progress && !progress.completedAt;
+  const isCompleted = !!progress?.completedAt || !!vStatus;
 
-  const deliverables: string[] = hunt.deliverables ?? [
-    'Written report or summary of findings',
-    'Photo/video evidence of completion',
-    'Brief reflection on impact created',
-  ];
+  if (loading) return (
+    <Box className="consumer-app" sx={{ background: t.bg }}>
+      <Stack sx={{ padding: '20px' }} spacing={2}>
+        {[1,2,3].map(i => <Box key={i} sx={{ height: 80, borderRadius: 2, background: t.card }} className="breathe" />)}
+      </Stack>
+      <BottomNav />
+    </Box>
+  );
 
-  const skills: string[] = hunt.requiredSkills ?? hunt.tags.slice(0, 4);
+  if (!hunt) return (
+    <Box className="consumer-app" sx={{ background: t.bg }}>
+      <Stack spacing={2} sx={{ padding: '40px 20px', alignItems: 'center' }}>
+        <Typography sx={{ color: t.txtFaint }}>Mission not found.</Typography>
+        <Button variant="contained" color="primary" onClick={() => router.push('/explore')}>Browse Missions</Button>
+      </Stack>
+      <BottomNav />
+    </Box>
+  );
+
+  const cash     = estimateCashReward(hunt.cashReward, hunt.difficulty, hunt.missionType);
+  const xp       = estimateXP(hunt.xpReward, hunt.difficulty, hunt.steps?.length ?? 0);
+  const diff     = DIFF_META[hunt.difficulty] ?? DIFF_META.easy;
+  const typeMeta = hunt.missionType ? MISSION_TYPE_META[hunt.missionType] : null;
+  const category = resolveCategory(hunt.tags ?? [], hunt.category);
+  const dl       = deadlineLabel(hunt.deadline);
+  const sl       = spotsLabel(hunt.spotsRemaining, hunt.spotsTotal);
+  const demand   = demandLabel(hunt.applicationCount);
+  const stepProgress = progress ? Math.round((progress.completedSteps.length / Math.max(hunt.steps.length, 1)) * 100) : 0;
+
+  const RewardPills = () => (
+    <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
+      <Chip
+        label={<><span style={{ fontSize: 18, fontWeight: 900, color: t.accent }}>${cash}</span><span style={{ fontSize: 11, color: t.txtDim, marginLeft: 4 }}>reward</span></>}
+        sx={{ background: `${t.accent}18`, border: `1px solid ${t.accent}30`, borderRadius: '12px', height: 36, '& .MuiChip-label': { px: 2 } }}
+      />
+      <Chip
+        icon={<Zap size={14} strokeWidth={2} style={{ color: t.ai }} />}
+        label={`${xp} XP`}
+        sx={{ background: `${t.ai}18`, border: `1px solid ${t.ai}30`, borderRadius: '12px', color: t.ai, fontWeight: 700, fontSize: 14, height: 36 }}
+      />
+      <Chip
+        icon={<Clock size={13} strokeWidth={1.8} style={{ color: t.txtFaint }} />}
+        label={hunt.estimated_time}
+        sx={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: '12px', color: t.txtDim, fontSize: 13, height: 36 }}
+      />
+      {dl && (
+        <Chip
+          label={dl.label}
+          sx={{ background: `${dl.color}14`, borderRadius: '12px', color: dl.color, fontWeight: 700, fontSize: 13, height: 36 }}
+        />
+      )}
+    </Stack>
+  );
+
+  const MetaBadges = () => (
+    <Stack direction="row" spacing={0.75} sx={{ mb: 2, flexWrap: 'wrap' }}>
+      <Chip size="small" label={diff.label} sx={{ background: diff.bg, color: diff.color, fontWeight: 700, fontSize: 11, borderRadius: '100px' }} />
+      {typeMeta && <Chip size="small" label={`${typeMeta.emoji} ${typeMeta.label}`} sx={{ background: `${typeMeta.color}14`, color: typeMeta.color, fontWeight: 600, fontSize: 11, borderRadius: '100px' }} />}
+      {hunt.locationType && (
+        <Chip
+          size="small"
+          icon={<MapPin size={9} strokeWidth={2} />}
+          label={hunt.locationType}
+          sx={{ background: t.card, border: `1px solid ${t.border}`, color: t.txtDim, fontWeight: 600, fontSize: 11, borderRadius: '100px' }}
+        />
+      )}
+      {sl && <Chip size="small" label={sl.label} sx={{ color: sl.color, fontWeight: 600, fontSize: 11, background: 'transparent' }} />}
+      {demand && <Chip size="small" label={demand} sx={{ color: t.warning, fontWeight: 600, fontSize: 11, background: 'transparent' }} />}
+    </Stack>
+  );
+
+  const CtaButtons = ({ compact }: { compact?: boolean }) => (
+    <Stack direction="row" spacing={1.25}>
+      {isCompleted ? (
+        <Button
+          variant="outlined"
+          fullWidth
+          onClick={() => router.push(`/complete/${huntId}`)}
+          sx={{ height: compact ? 44 : 50, borderRadius: 2, borderColor: `${t.accent}40`, color: t.accent, fontSize: compact ? 13 : 15, fontWeight: 700, '&:hover': { borderColor: t.accent, background: `${t.accent}18` } }}
+        >
+          View Verification Status
+        </Button>
+      ) : (
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          onClick={() => router.push(`/active/${huntId}`)}
+          sx={{ height: compact ? 44 : 50, borderRadius: 2, fontSize: compact ? 13 : 15, fontWeight: 800, boxShadow: `0 4px 20px ${t.accent}40` }}
+        >
+          {isStarted ? 'Continue Mission' : 'Start Mission'}
+        </Button>
+      )}
+      <IconButton
+        onClick={handleSave}
+        sx={{
+          width: compact ? 44 : 50, height: compact ? 44 : 50, borderRadius: 2,
+          background: saved ? `${t.accent}18` : t.card,
+          border: `1px solid ${saved ? t.accent : t.border}`,
+          color: saved ? t.accent : t.txtFaint,
+          flexShrink: 0,
+        }}
+      >
+        {saved ? <BookmarkCheck size={compact ? 18 : 20} strokeWidth={2} /> : <Bookmark size={compact ? 18 : 20} strokeWidth={1.8} />}
+      </IconButton>
+    </Stack>
+  );
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: TXT }}>
-      <div style={{ maxWidth: 480, margin: '0 auto' }}>
+    <Box className="consumer-app" sx={{ background: t.bg, minHeight: '100vh' }}>
+      <Box className="consumer-app-inner">
 
-        {/* ── HERO ── */}
-        <div style={{ position: 'relative', minHeight: 260, background: `linear-gradient(160deg, ${heroFrom} 0%, ${heroTo} 100%)`, overflow: 'hidden' }}>
-          {/* ambient glow */}
-          <div style={{ position: 'absolute', top: -60, right: -40, width: 240, height: 240, borderRadius: '50%', background: `radial-gradient(circle, ${cat.color}22 0%, transparent 65%)`, pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: -30, left: -30, width: 160, height: 160, borderRadius: '50%', background: `radial-gradient(circle, ${AI_CLR}14 0%, transparent 65%)`, pointerEvents: 'none' }} />
+        {/* Top bar */}
+        <Stack
+          direction="row"
+          sx={{ padding: '16px 20px', position: 'sticky', top: 0, zIndex: 30, background: `${t.bg}F0`, backdropFilter: 'blur(16px)', alignItems: 'center', justifyContent: 'space-between' }}
+        >
+          <Button
+            startIcon={<ArrowLeft size={18} strokeWidth={2} />}
+            onClick={() => router.back()}
+            sx={{ background: 'none', border: 'none', color: t.txtDim, fontSize: 14, fontWeight: 600, p: 0, minWidth: 0 }}
+          >
+            Back
+          </Button>
+          <Button
+            startIcon={saved ? <BookmarkCheck size={15} strokeWidth={2} /> : <Bookmark size={15} strokeWidth={1.8} />}
+            onClick={handleSave}
+            sx={{
+              background: saved ? `${t.accent}18` : t.card,
+              border: `1px solid ${saved ? t.accent : t.border}`,
+              borderRadius: '12px',
+              color: saved ? t.accent : t.txtDim,
+              fontSize: 13,
+              fontWeight: 600,
+              px: 1.75,
+            }}
+          >
+            {saved ? 'Saved' : 'Save'}
+          </Button>
+        </Stack>
 
-          {/* back + actions */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '52px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
-            <button onClick={() => router.back()} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(5,8,22,.7)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <ArrowLeft size={17} strokeWidth={2} style={{ color: TXT }} />
-            </button>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setSaved(!saved)} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(5,8,22,.7)', backdropFilter: 'blur(12px)', border: `1px solid ${saved ? ACCENT + '40' : 'rgba(255,255,255,.12)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <Bookmark size={15} strokeWidth={2} style={{ color: saved ? ACCENT : DIM, fill: saved ? ACCENT : 'none' }} />
-              </button>
-              <button style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(5,8,22,.7)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <Share2 size={15} strokeWidth={2} style={{ color: DIM }} />
-              </button>
-            </div>
-          </div>
+        <Box sx={{ maxWidth: 1100, margin: '0 auto', width: '100%', boxSizing: 'border-box', padding: '0 20px 100px' }}>
 
-          {/* hero content */}
-          <div style={{ padding: '110px 20px 28px' }}>
-            {/* mission type + category badges */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 14 }}>
-              {mtype && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: `${mtype.color}18`, border: `1px solid ${mtype.color}30`, borderRadius: 999, padding: '4px 12px' }}>
-                  <span style={{ fontSize: 13 }}>{mtype.emoji}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: mtype.color, textTransform: 'uppercase', letterSpacing: '.07em' }}>{mtype.label}</span>
-                </div>
-              )}
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: `${cat.color}18`, border: `1px solid ${cat.color}30`, borderRadius: 999, padding: '4px 12px' }}>
-                <span style={{ fontSize: 13 }}>{cat.emoji}</span>
-                <span style={{ fontSize: 10, fontWeight: 700, color: cat.color, textTransform: 'uppercase', letterSpacing: '.07em' }}>{cat.label}</span>
-              </div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: `${diff.color}18`, border: `1px solid ${diff.color}30`, borderRadius: 999, padding: '4px 12px' }}>
-                <Zap size={10} strokeWidth={2.5} style={{ color: diff.color }} />
-                <span style={{ fontSize: 10, fontWeight: 700, color: diff.color, textTransform: 'uppercase', letterSpacing: '.07em' }}>{diff.label}</span>
-              </div>
-            </div>
+          {/* Category accent bar */}
+          <Box sx={{ height: 3, borderRadius: '2px', background: `linear-gradient(90deg, ${category.color}, ${category.color}44)`, mb: 2 }} />
 
-            <h1 style={{ margin: '0 0 10px', fontSize: 24, fontWeight: 900, lineHeight: 1.2, letterSpacing: '-.03em' }}>
-              {hunt.title}
-            </h1>
+          {/* Title */}
+          <Typography variant="h5" sx={{ mb: 1.75, fontSize: 'clamp(20px, 4vw, 26px)', fontWeight: 900, color: t.txt, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            {hunt.title}
+          </Typography>
 
-            {/* org row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {hunt.tenantLogo ? (
-                <img src={hunt.tenantLogo} alt={hunt.tenantName} style={{ width: 22, height: 22, borderRadius: 6, objectFit: 'cover' }} />
-              ) : (
-                <div style={{ width: 22, height: 22, borderRadius: 6, background: 'rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {orgType ? <span style={{ fontSize: 11 }}>{orgType.emoji}</span> : <Building2 size={11} strokeWidth={2} style={{ color: FAINT }} />}
-                </div>
-              )}
-              <span style={{ fontSize: 12, color: DIM }}>{hunt.tenantName ?? 'X-Hunt Community'}</span>
-              {hunt.isVerified && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <ShieldCheck size={11} strokeWidth={2.5} style={{ color: ACCENT }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: ACCENT }}>Verified</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+          {/* Org row */}
+          <Stack direction="row" spacing={1.25} sx={{ mb: 2.5, alignItems: 'center' }}>
+            <Box sx={{ width: 36, height: 36, borderRadius: '10px', background: `${category.color}18`, border: `1px solid ${category.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+              {hunt.tenantLogo ? <img src={hunt.tenantLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} /> : category.emoji}
+            </Box>
+            <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: t.txtDim }}>
+                {hunt.tenantName ?? 'Organization'}
+              </Typography>
+              {hunt.isVerified && <Shield size={11} strokeWidth={2} style={{ color: t.info }} />}
+            </Stack>
+          </Stack>
 
-        {/* ── BODY ── */}
-        <div style={{ padding: '20px 20px 140px' }}>
+          {/* Mobile: reward pills + meta inline */}
+          <Box className="lg:hidden">
+            <RewardPills />
+            <MetaBadges />
+          </Box>
 
-          {/* ── URGENCY ROW ── */}
-          {(dlLabel || spLabel || demand) && (
-            <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
-              {dlLabel && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: `${dlLabel.color}12`, border: `1px solid ${dlLabel.color}22`, borderRadius: 10, padding: '5px 11px' }}>
-                  <Calendar size={11} strokeWidth={2} style={{ color: dlLabel.color }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: dlLabel.color }}>{dlLabel.label}</span>
-                </div>
-              )}
-              {spLabel && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: `${spLabel.color}12`, border: `1px solid ${spLabel.color}22`, borderRadius: 10, padding: '5px 11px' }}>
-                  <Users size={11} strokeWidth={2} style={{ color: spLabel.color }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: spLabel.color }}>{spLabel.label}</span>
-                </div>
-              )}
-              {demand && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10, padding: '5px 11px' }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: DIM }}>{demand}</span>
-                </div>
-              )}
-            </div>
+          {/* Progress bar if started */}
+          {isStarted && (
+            <Surface variant="inset" padding="12px 16px" style={{ marginBottom: 20 }}>
+              <Typography sx={{ mb: 1, fontSize: 12, fontWeight: 600, color: t.accent }}>In Progress</Typography>
+              <ProgressBar value={stepProgress} label={`Step ${(progress?.completedSteps.length ?? 0) + 1} of ${hunt.steps.length}`} showPercent color={t.accent} />
+            </Surface>
           )}
 
-          {/* ── REWARD BREAKDOWN ── */}
-          <section style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <Trophy size={13} strokeWidth={2} style={{ color: WARN }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Reward Breakdown</span>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <RewardPill
-                icon={<DollarSign size={12} strokeWidth={2.5} style={{ color: ACCENT }} />}
-                label="Cash" value={`$${cash}`} color={ACCENT} bg={`${ACCENT}08`}
-              />
-              <RewardPill
-                icon={<Star size={12} strokeWidth={2.5} style={{ color: AI_CLR }} />}
-                label="XP" value={`+${xp}`} color={AI_CLR} bg={`${AI_CLR}08`}
-              />
-              {hunt.certificationReward && (
-                <RewardPill
-                  icon={<Award size={12} strokeWidth={2.5} style={{ color: WARN }} />}
-                  label="Cert" value="Certificate" color={WARN} bg={`${WARN}08`}
-                />
-              )}
-              {(hunt.portfolioCredits ?? 0) > 0 && (
-                <RewardPill
-                  icon={<BookOpen size={12} strokeWidth={2.5} style={{ color: '#a78bfa' }} />}
-                  label="Credits" value={`${hunt.portfolioCredits}pt`} color="#a78bfa" bg="rgba(167,139,250,.08)"
-                />
-              )}
-            </div>
-          </section>
+          {/* Desktop two-column body */}
+          <Box sx={{ display: { xs: 'block', lg: 'flex' }, gap: 4, alignItems: 'flex-start' }}>
 
-          {/* ── AI MATCH (if profile) ── */}
-          {matchScore != null && (
-            <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              style={{ marginBottom: 20, padding: '14px 16px', borderRadius: 18, background: `linear-gradient(135deg, ${matchColor}08, ${AI_CLR}05)`, border: `1px solid ${matchColor}18`, display: 'flex', alignItems: 'center', gap: 16 }}>
-              <MatchRing score={matchScore} color={matchColor} />
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                  <Brain size={12} strokeWidth={2} style={{ color: AI_CLR }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: AI_CLR, textTransform: 'uppercase', letterSpacing: '.08em' }}>AI Match Score</span>
-                </div>
-                <p style={{ margin: 0, fontSize: 12.5, color: DIM, lineHeight: 1.5 }}>
-                  {matchScore >= 80
-                    ? 'Excellent fit with your Impact DNA — highly recommended.'
-                    : matchScore >= 65
-                    ? 'Good alignment with your skills and causes.'
-                    : 'This mission will help you grow into new areas.'}
-                </p>
-                {profile?.archetype && (
-                  <p style={{ margin: '4px 0 0', fontSize: 11, color: FAINT }}>
-                    Matched to your <span style={{ color: matchColor, fontWeight: 700 }}>{profile.archetype}</span> archetype
-                  </p>
-                )}
-              </div>
-            </motion.section>
-          )}
+            {/* Left: main content */}
+            <Box sx={{ flex: 1, minWidth: 0 }}>
 
-          {/* ── MISSION BRIEF ── */}
-          <section style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <FileText size={13} strokeWidth={2} style={{ color: FAINT }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Mission Brief</span>
-            </div>
-            <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.7, color: DIM }}>
-              {hunt.story_context}
-            </p>
-          </section>
+              {/* Overview */}
+              <Box component="section" sx={{ mb: 3 }}>
+                <SectionHeader title="Mission Overview" />
+                <Surface variant="inset" padding="16px">
+                  <Typography sx={{ fontSize: 14, color: t.txtDim, lineHeight: 1.7 }}>{hunt.story_context}</Typography>
+                </Surface>
+              </Box>
 
-          {/* ── QUICK STATS ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 20 }}>
-            {[
-              { icon: <Clock size={14} strokeWidth={2} style={{ color: DIM }} />,  label: 'Duration',  value: hunt.estimated_time },
-              { icon: <Target size={14} strokeWidth={2} style={{ color: diff.color }} />, label: 'Level', value: diff.label },
-              { icon: <Briefcase size={14} strokeWidth={2} style={{ color: AI_CLR }} />, label: 'Steps', value: `${hunt.steps.length} tasks` },
-            ].map((s) => (
-              <div key={s.label} className="liquid-glass" style={{ ...XGLASS, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>{s.icon}</div>
-                <p style={{ margin: '0 0 2px', fontSize: 13.5, fontWeight: 800, color: TXT, letterSpacing: '-.01em' }}>{s.value}</p>
-                <p style={{ margin: 0, fontSize: 9.5, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '.07em' }}>{s.label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* ── LOCATION + TEAM ── */}
-          {(hunt.locationType || hunt.teamSize) && (
-            <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-              {hunt.locationType && (
-                <div className="liquid-glass" style={{ flex: 1, ...XGLASS, borderRadius: 14, padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <MapPin size={13} strokeWidth={2} style={{ color: ACCENT }} />
-                  <div>
-                    <p style={{ margin: 0, fontSize: 9, color: FAINT, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Location</p>
-                    <p style={{ margin: 0, fontSize: 12.5, color: TXT, fontWeight: 700, textTransform: 'capitalize' }}>{hunt.locationType}</p>
-                  </div>
-                </div>
-              )}
-              {hunt.teamSize && (
-                <div className="liquid-glass" style={{ flex: 1, ...XGLASS, borderRadius: 14, padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Users size={13} strokeWidth={2} style={{ color: AI_CLR }} />
-                  <div>
-                    <p style={{ margin: 0, fontSize: 9, color: FAINT, textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Team Size</p>
-                    <p style={{ margin: 0, fontSize: 12.5, color: TXT, fontWeight: 700 }}>{hunt.teamSize}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── REQUIRED SKILLS ── */}
-          <section style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <TrendingUp size={13} strokeWidth={2} style={{ color: FAINT }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>Skills You&apos;ll Use</span>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-              {skills.map((s, i) => (
-                <SkillChip key={s} skill={s} color={i % 3 === 0 ? ACCENT : i % 3 === 1 ? AI_CLR : WARN} />
-              ))}
-            </div>
-          </section>
-
-          {/* ── SDG IMPACT ── */}
-          {(hunt.sdgGoals?.length ?? 0) > 0 && (
-            <section style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <Target size={13} strokeWidth={2} style={{ color: FAINT }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>UN SDG Alignment</span>
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-                {(hunt.sdgGoals ?? []).map((g) => <SDGBadge key={g} goal={g} />)}
-              </div>
-            </section>
-          )}
-
-          {/* ── DELIVERABLES ── */}
-          <section style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <Upload size={13} strokeWidth={2} style={{ color: FAINT }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>What You Submit</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {deliverables.map((d, i) => <Deliverable key={i} text={d} index={i} />)}
-            </div>
-          </section>
-
-          {/* ── ORGANISATION CARD ── */}
-          {(hunt.tenantName || hunt.organizationAbout) && (
-            <section style={{ marginBottom: 20 }}>
-              <div className="liquid-glass" style={{ ...XGLASS, borderRadius: 20, padding: '16px 18px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                  {hunt.tenantLogo ? (
-                    <img src={hunt.tenantLogo} alt={hunt.tenantName} style={{ width: 40, height: 40, borderRadius: 12, objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: `${AI_CLR}18`, border: `1px solid ${AI_CLR}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {orgType ? <span style={{ fontSize: 18 }}>{orgType.emoji}</span> : <Building2 size={18} strokeWidth={1.8} style={{ color: AI_CLR }} />}
-                    </div>
-                  )}
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: '0 0 2px', fontSize: 9, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>
-                      {orgType?.label ?? 'Organisation'}
-                    </p>
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: TXT }}>{hunt.tenantName ?? 'X-Hunt Partner'}</p>
-                  </div>
-                  {hunt.isVerified && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: `${ACCENT}10`, border: `1px solid ${ACCENT}20`, borderRadius: 999, padding: '3px 10px' }}>
-                      <ShieldCheck size={11} strokeWidth={2.5} style={{ color: ACCENT }} />
-                      <span style={{ fontSize: 10, fontWeight: 700, color: ACCENT }}>Verified</span>
-                    </div>
-                  )}
-                </div>
-                {hunt.organizationAbout && (
-                  <p style={{ margin: 0, fontSize: 13, color: DIM, lineHeight: 1.6 }}>{hunt.organizationAbout}</p>
-                )}
-                {hunt.tenantSlug && (
-                  <Link href={`/workspace/${hunt.tenantSlug}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, fontSize: 12, fontWeight: 700, color: ACCENT, textDecoration: 'none' }}>
-                    View organisation <ExternalLink size={11} strokeWidth={2.5} />
-                  </Link>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* ── JOURNEY / STEPS ── */}
-          <section style={{ marginBottom: 20 }}>
-            <button onClick={() => setStepsOpen(!stepsOpen)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 12px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Briefcase size={13} strokeWidth={2} style={{ color: FAINT }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '.08em' }}>
-                  Your Journey · {hunt.steps.length} Steps
-                </span>
-              </div>
-              {stepsOpen
-                ? <ChevronUp size={16} style={{ color: FAINT }} />
-                : <ChevronDown size={16} style={{ color: FAINT }} />}
-            </button>
-
-            <AnimatePresence>
-              {stepsOpen && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                  style={{ overflow: 'hidden', paddingTop: 12 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {hunt.steps.map((step, i) => {
-                      const TYPE_CFG: Record<string, { color: string; bg: string; label: string; emoji: string }> = {
-                        action:        { color: WARN,   bg: `${WARN}0A`,   label: 'Action',        emoji: '⚡' },
-                        reflection:    { color: AI_CLR, bg: `${AI_CLR}0A`, label: 'Reflection',    emoji: '💭' },
-                        discovery:     { color: ACCENT, bg: `${ACCENT}0A`, label: 'Discovery',     emoji: '🔍' },
-                        research:      { color: '#60A5FA', bg: 'rgba(96,165,250,.08)', label: 'Research', emoji: '🔬' },
-                        submission:    { color: ACCENT, bg: `${ACCENT}0A`, label: 'Submission',    emoji: '📤' },
-                        collaboration: { color: '#a78bfa', bg: 'rgba(167,139,250,.08)', label: 'Collaborate', emoji: '🤝' },
-                      };
-                      const tc = TYPE_CFG[step.type] ?? TYPE_CFG.action;
+              {/* Steps */}
+              {hunt.steps?.length > 0 && (
+                <Box component="section" sx={{ mb: 3 }}>
+                  <SectionHeader title="Participation Steps" count={hunt.steps.length} />
+                  <Stack spacing={1}>
+                    {hunt.steps.map((step, idx) => {
+                      const exp = expandedSteps.has(idx);
+                      const STEP_EMOJI: Record<string, string> = { action: '⚡', reflection: '💭', discovery: '🔍', research: '🔬', submission: '📤', collaboration: '🤝' };
                       return (
-                        <div key={step.id} style={{ display: 'flex', gap: 12, padding: '12px 14px', borderRadius: 14, background: tc.bg, border: `1px solid ${tc.color}18` }}>
-                          <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, background: `${tc.color}18`, border: `1px solid ${tc.color}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
-                            <span style={{ fontSize: 10, fontWeight: 800, color: tc.color }}>{i + 1}</span>
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
-                              <span style={{ fontSize: 13 }}>{tc.emoji}</span>
-                              <span style={{ fontSize: 10, fontWeight: 700, color: tc.color, textTransform: 'uppercase', letterSpacing: '.07em' }}>{tc.label}</span>
-                            </div>
-                            <p style={{ margin: '0 0 6px', fontSize: 13.5, lineHeight: 1.5, color: TXT, fontWeight: 600 }}>{step.instruction}</p>
-                            <p style={{ margin: 0, fontSize: 11.5, color: DIM, lineHeight: 1.5 }}>
-                              <span style={{ color: FAINT, fontWeight: 700 }}>Done when: </span>{step.success_criteria}
-                            </p>
-                          </div>
-                        </div>
+                        <Surface key={step.id} variant="card" padding="0" style={{ overflow: 'hidden' }}>
+                          <Box
+                            component="button"
+                            onClick={() => toggleStep(idx)}
+                            sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: 1.5, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                          >
+                            <Box sx={{ width: 32, height: 32, borderRadius: '10px', background: `${t.accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{STEP_EMOJI[step.type] ?? '📌'}</Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography sx={{ fontSize: 10, fontWeight: 600, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Step {idx + 1} · {step.type}</Typography>
+                              <Typography sx={{ fontSize: 13, fontWeight: 600, color: t.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: exp ? 'normal' : 'nowrap' }}>{step.instruction}</Typography>
+                            </Box>
+                            {exp ? <ChevronUp size={16} style={{ color: t.txtFaint, flexShrink: 0 }} /> : <ChevronDown size={16} style={{ color: t.txtFaint, flexShrink: 0 }} />}
+                          </Box>
+                          {exp && (
+                            <Box sx={{ padding: '0 16px 14px 60px' }}>
+                              <Typography sx={{ mb: 1, fontSize: 13, color: t.txtDim, lineHeight: 1.6 }}>{step.instruction}</Typography>
+                              <Typography sx={{ fontSize: 12, color: t.txtFaint }}>
+                                <Box component="strong" sx={{ color: t.accent }}>Success: </Box>{step.success_criteria}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Surface>
                       );
                     })}
-                  </div>
-                </motion.div>
+                  </Stack>
+                </Box>
               )}
-            </AnimatePresence>
 
-            {!stepsOpen && (
-              <div style={{ display: 'flex', gap: 5, paddingTop: 12 }}>
-                {hunt.steps.slice(0, 5).map((_, i) => (
-                  <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: `${ACCENT}25` }} />
-                ))}
-                {hunt.steps.length > 5 && (
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 10, color: FAINT, marginLeft: 4 }}>+{hunt.steps.length - 5}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
+              {/* Verification Requirements */}
+              <Box component="section" sx={{ mb: 3 }}>
+                <SectionHeader title="Verification Requirements" />
+                <Surface variant="inset" padding="16px">
+                  <Stack spacing={1.25}>
+                    {['Written response or explanation', 'Photo or video proof', 'GPS location check-in (if local)', 'Source citations or references'].map((req, i) => (
+                      <Stack key={i} direction="row" spacing={1.25} sx={{ alignItems: 'center' }}>
+                        <Box sx={{ width: 20, height: 20, borderRadius: '6px', border: `1.5px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Typography sx={{ fontSize: 10, color: t.txtFaint }}>{i + 1}</Typography>
+                        </Box>
+                        <Typography sx={{ fontSize: 13, color: t.txtDim }}>{req}</Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </Surface>
+              </Box>
 
-          {/* ── DISCUSSION TEASER ── */}
-          <section style={{ marginBottom: 20 }}>
-            <div style={{ ...XGLASS, borderRadius: 18, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: `${AI_CLR}14`, border: `1px solid ${AI_CLR}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <MessageSquare size={16} strokeWidth={2} style={{ color: AI_CLR }} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ margin: '0 0 1px', fontSize: 13, fontWeight: 700, color: TXT }}>Ask Xeno AI</p>
-                <p style={{ margin: 0, fontSize: 11.5, color: FAINT }}>Get clarification or tips before you start</p>
-              </div>
-              <button style={{ fontSize: 11, fontWeight: 700, color: AI_CLR, background: `${AI_CLR}10`, border: `1px solid ${AI_CLR}20`, borderRadius: 999, padding: '5px 12px', cursor: 'pointer', flexShrink: 0 }}>
-                Ask
-              </button>
-            </div>
-          </section>
+              {/* Reputation Impact */}
+              <Box component="section" sx={{ mb: 3 }}>
+                <SectionHeader title="Reputation Impact" />
+                <Stack direction="row" spacing={1.25}>
+                  <Surface variant="inset" padding="14px 16px" style={{ flex: 1 }}>
+                    <Typography sx={{ mb: 0.5, fontSize: 11, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>XP Reward</Typography>
+                    <Typography sx={{ fontSize: 20, fontWeight: 800, color: t.ai }}>+{xp}</Typography>
+                  </Surface>
+                  <Surface variant="inset" padding="14px 16px" style={{ flex: 1 }}>
+                    <Typography sx={{ mb: 0.5, fontSize: 11, color: t.txtFaint, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Trust Score</Typography>
+                    <Typography sx={{ fontSize: 20, fontWeight: 800, color: t.accent }}>+{hunt.difficulty === 'hard' ? '15' : hunt.difficulty === 'medium' ? '8' : '3'}</Typography>
+                  </Surface>
+                </Stack>
+              </Box>
 
-          {/* ── IMPACT DISCLAIMER ── */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)' }}>
-            <AlertCircle size={12} strokeWidth={2} style={{ color: FAINT, flexShrink: 0, marginTop: 1 }} />
-            <p style={{ margin: 0, fontSize: 11, color: FAINT, lineHeight: 1.6 }}>
-              Completing this mission earns you XP, portfolio credits, and builds your Impact DNA profile. Cash rewards are processed within 7 days of submission approval.
-            </p>
-          </div>
-        </div>
-
-        {/* ── STICKY CTA ── */}
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, padding: '12px 20px 28px', background: 'rgba(5,8,22,.92)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,255,255,.07)' }}>
-          <div style={{ maxWidth: 480, margin: '0 auto' }}>
-
-            {/* earnings preview */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 10 }}>
-              <span style={{ fontSize: 12, color: FAINT }}>Earn</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: ACCENT }}>${cash}</span>
-              <div style={{ width: 3, height: 3, borderRadius: '50%', background: FAINT }} />
-              <span style={{ fontSize: 14, fontWeight: 800, color: AI_CLR }}>+{xp} XP</span>
-              {hunt.certificationReward && (
-                <>
-                  <div style={{ width: 3, height: 3, borderRadius: '50%', background: FAINT }} />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: WARN }}>+ Cert</span>
-                </>
+              {/* Org info */}
+              {(hunt.tenantName || hunt.organizationAbout) && (
+                <Box component="section" sx={{ mb: 3 }}>
+                  <SectionHeader title="About the Organization" />
+                  <Surface variant="inset" padding="16px">
+                    <Stack direction="row" spacing={1.25} sx={{ mb: 1.25, alignItems: 'center' }}>
+                      <Box sx={{ width: 36, height: 36, borderRadius: '10px', background: `${category.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{category.emoji}</Box>
+                      <Box>
+                        <Typography sx={{ fontSize: 14, fontWeight: 700, color: t.txt }}>{hunt.tenantName ?? 'Organization'}</Typography>
+                        {hunt.organizationType && <Typography sx={{ fontSize: 11, color: t.txtFaint, textTransform: 'capitalize' }}>{hunt.organizationType.replace('-', ' ')}</Typography>}
+                      </Box>
+                    </Stack>
+                    {hunt.organizationAbout && <Typography sx={{ fontSize: 13, color: t.txtDim, lineHeight: 1.6 }}>{hunt.organizationAbout}</Typography>}
+                  </Surface>
+                </Box>
               )}
-            </div>
 
-            {isCompleted ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, height: 56, borderRadius: 18, background: `${ACCENT}10`, border: `1px solid ${ACCENT}22` }}>
-                <CheckCircle2 size={18} strokeWidth={2.5} style={{ color: ACCENT }} />
-                <span style={{ fontSize: 15, fontWeight: 800, color: ACCENT }}>Mission Completed</span>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: 10 }}>
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => router.push(`/active/${hunt.id}`)}
-                  style={{ flex: 1, height: 56, borderRadius: 18, border: 'none', cursor: 'pointer', background: ACCENT, color: BG, fontWeight: 900, fontSize: 15.5, boxShadow: `0 0 28px ${ACCENT}40`, fontFamily: 'inherit', letterSpacing: '-.01em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                  <Sparkles size={16} strokeWidth={2.5} />
-                  Start Mission
-                </motion.button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+              {/* Similar missions */}
+              {similar.length > 0 && (
+                <Box component="section" sx={{ mb: 3 }}>
+                  <SectionHeader title="Similar Missions" />
+                  <Stack spacing={1.5}>
+                    {similar.map(h => <MissionCard key={h.id} hunt={h} compact />)}
+                  </Stack>
+                </Box>
+              )}
+            </Box>
+
+            {/* Right: sticky sidebar (desktop only) */}
+            <Box className="hidden lg:block" sx={{ width: 300, flexShrink: 0 }}>
+              <Box sx={{ position: 'sticky', top: 80 }}>
+                <Surface variant="card" style={{ marginBottom: 12 }}>
+                  <Box sx={{ padding: '16px 16px 12px' }}>
+                    <RewardPills />
+                    <MetaBadges />
+                    <CtaButtons compact />
+                  </Box>
+                </Surface>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Mobile sticky bottom CTA */}
+      <Box className="lg:hidden" sx={{
+        position: 'fixed', bottom: 'calc(72px + max(env(safe-area-inset-bottom, 0px), 8px))', left: 0, right: 0,
+        padding: '12px 20px', background: `${t.bg}F5`, backdropFilter: 'blur(16px)',
+        borderTop: `1px solid ${t.border}`, zIndex: 40,
+      }}>
+        <CtaButtons />
+      </Box>
+
+      <CopilotFab context={{ huntTitle: hunt.title, huntStory: hunt.story_context }} />
+      <BottomNav />
+    </Box>
   );
 }

@@ -1,17 +1,16 @@
 export type MaturityTier = 'starter' | 'growth' | 'enterprise';
 
+// Only flags consumed by the workspace sidebar live here. (Removed dead flags
+// knowledgeGraph/audience/rewards/developers — no nav item read them.)
 export interface NavFlags {
   outcomes: boolean;
   analytics: boolean;
   agents: boolean;
-  knowledgeGraph: boolean;
   xilHub: boolean;
   economy: boolean;
-  audience: boolean;
-  rewards: boolean;
   marketplace: boolean;
   governance: boolean;
-  developers: boolean;
+  community: boolean;
 }
 
 export interface FeatureToggles {
@@ -44,44 +43,35 @@ export interface TenantFeatureConfig {
 
 const STARTER_NAV: NavFlags = {
   outcomes: true,
-  analytics: false,
-  agents: false,
-  knowledgeGraph: false,
+  analytics: true,
+  agents: true,
   xilHub: false,
   economy: false,
-  audience: false,
-  rewards: false,
   marketplace: false,
   governance: false,
-  developers: false,
+  community: true,
 };
 
 const GROWTH_NAV: NavFlags = {
   outcomes: true,
   analytics: true,
   agents: true,
-  knowledgeGraph: false,
   xilHub: false,
   economy: false,
-  audience: true,
-  rewards: true,
   marketplace: true,
   governance: false,
-  developers: false,
+  community: true,
 };
 
 const ENTERPRISE_NAV: NavFlags = {
   outcomes: true,
   analytics: true,
   agents: true,
-  knowledgeGraph: true,
   xilHub: true,
   economy: true,
-  audience: true,
-  rewards: true,
   marketplace: true,
   governance: true,
-  developers: true,
+  community: true,
 };
 
 const STARTER_FEATURES: FeatureToggles = {

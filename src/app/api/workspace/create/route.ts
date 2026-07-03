@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getSessionUser } from '@/lib/auth/session';
 
 // POST /api/workspace/create
 // Creates a tenant + updates the user's profile in one transaction.
 // Uses the admin client to bypass RLS (handles the case where migration 018
 // hasn't been applied to the live DB yet).
 
-export async function POST(req: Request) {
-  const sb = await createClient();
-  const { data: { user } } = await sb.auth.getUser();
+export async function POST(req: NextRequest) {
+  const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { name, slug, org_type } = await req.json() as {
@@ -39,15 +38,17 @@ export async function POST(req: Request) {
     );
   }
 
-  // Update user profile
+  // Update user profile — use update (not upsert) to avoid FK violation on auth.users
+  // when the session comes from preview mode (user.id won't exist in auth.users).
   const { error: profileErr } = await admin
     .from('user_profiles')
-    .upsert({
-      id: user.id,
+    .update({
       tenant_id: tenant.id,
       role: 'tenant_admin',
       onboarding_complete: true,
-    });
+      default_surface: 'workspace',
+    })
+    .eq('id', user.id);
 
   if (profileErr) {
     // Roll back tenant creation

@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionUser } from '@/lib/auth/session';
 
-export async function POST(req: Request) {
-  const sb = await createClient();
-  const { data: { user } } = await sb.auth.getUser();
+export async function POST(req: NextRequest) {
+  const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const sb = await createClient();
 
   const { following_id } = await req.json() as { following_id?: string };
   if (!following_id) return NextResponse.json({ error: 'following_id required' }, { status: 400 });
@@ -22,10 +23,10 @@ export async function POST(req: Request) {
   return NextResponse.json({ following: true });
 }
 
-export async function DELETE(req: Request) {
-  const sb = await createClient();
-  const { data: { user } } = await sb.auth.getUser();
+export async function DELETE(req: NextRequest) {
+  const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const sb = await createClient();
 
   const { following_id } = await req.json() as { following_id?: string };
   if (!following_id) return NextResponse.json({ error: 'following_id required' }, { status: 400 });

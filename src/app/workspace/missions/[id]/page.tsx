@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/lib/auth/context';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, Users, CheckCircle2, BarChart3, Sparkles,
@@ -12,6 +13,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
 import type { DbMission, DbMissionScore, DbStep } from '@/lib/supabase/types';
+import { t } from '@/theme/colors';
 
 interface MissionDetail extends DbMission {
   score?: DbMissionScore;
@@ -54,6 +56,7 @@ const EDIT_STEP_TYPES = [
 export default function MissionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { user, isLoaded } = useAuth();
   const supabase = createClient();
 
   const [mission, setMission]     = useState<MissionDetail | null>(null);
@@ -70,8 +73,7 @@ export default function MissionDetailPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!isLoaded || !user) return;
 
       const [missionRes, scoreRes, progressRes] = await Promise.all([
         supabase.from('missions').select('*').eq('id', id).single(),
@@ -94,7 +96,7 @@ export default function MissionDetailPage() {
       setLoading(false);
     }
     load();
-  }, [id, supabase, router]);
+  }, [id, supabase, router, user, isLoaded]);
 
   async function updateStatus(status: string) {
     if (!mission) return;
@@ -462,10 +464,10 @@ export default function MissionDetailPage() {
             <div className="bg-[#0A1226] border border-[#0F1D35] rounded-2xl p-4">
               <p className="text-[11px] font-bold text-[#4A5578] uppercase tracking-wider mb-3">MEI Breakdown</p>
               {[
-                { label: 'Completion', value: mission.score.completion_score, color: '#22FFAA' },
-                { label: 'Engagement', value: mission.score.engagement_score, color: '#6D5DFD' },
-                { label: 'Retention',  value: mission.score.retention_score,  color: '#FFB84D' },
-                { label: 'Outcome',    value: mission.score.outcome_score,    color: '#F0F4FF' },
+                { label: 'Completion', value: mission.score.completion_score, color: t.accent },
+                { label: 'Engagement', value: mission.score.engagement_score, color: t.ai },
+                { label: 'Retention',  value: mission.score.retention_score,  color: t.warning },
+                { label: 'Outcome',    value: mission.score.outcome_score,    color: t.txt },
               ].map(({ label, value, color }) => (
                 <div key={label} className="mb-2.5">
                   <div className="flex justify-between text-[11px] mb-1">

@@ -62,6 +62,7 @@
   --t-ai:      #6D5DFD;
   --t-warn:    #FFB84D;
   --t-err:     #FF5C7A;
+  --t-info:    #60A5FA;
   --t-live:    #ff3b30;
 }
 
@@ -91,6 +92,7 @@
   --t-ai:      #5448D9;
   --t-warn:    #D97706;
   --t-err:     #DC2626;
+  --t-info:    #3B82F6;
   --t-live:    #DC2626;
 }
 
@@ -143,63 +145,25 @@ body {
  */
 .liquid-glass,
 .xglass {
-  position: relative !important;
-  isolation: isolate;
-  overflow: hidden;
-  backdrop-filter: blur(20px) saturate(1.8);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  background: var(--xglass-bg);
-  border: 1px solid var(--xglass-border);
+  background: #0A1226;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 6px 6px rgba(0, 0, 0, 0.22),
-    0 0 20px rgba(0, 0, 0, 0.12),
-    var(--xglass-shadow),
-    inset 2px 2px 1px rgba(255, 255, 255, 0.12),
-    inset -1px -1px 1px rgba(255, 255, 255, 0.05);
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.2);
   transition:
-    transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 2.2),
-    box-shadow 0.6s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-/* Distortion + refraction layer — blurs the backdrop and applies SVG warp */
-.liquid-glass::before,
-.xglass::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  z-index: 0;
-  pointer-events: none;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  filter: url(#glass-distortion);
-  isolation: isolate;
-}
 
-/* Inner highlight — simulates specular light on glass rim */
-.liquid-glass::after,
-.xglass::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  z-index: 1;
-  pointer-events: none;
-  box-shadow:
-    inset 2px 2px 1px rgba(255, 255, 255, 0.20),
-    inset -1px -1px 1px rgba(255, 255, 255, 0.07),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-}
 
 /* Hover lift */
 .liquid-glass:hover,
 .xglass:hover {
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.32),
-    0 0 40px rgba(34, 255, 170, 0.10),
-    inset 2px 2px 1.5px rgba(255, 255, 255, 0.22),
-    inset -1px -1px 1px rgba(255, 255, 255, 0.08);
-  transform: translateY(-1px) scale(1.004);
+    0 2px 8px rgba(0, 0, 0, 0.5),
+    0 8px 24px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
 }
 
 /* Active press */
@@ -216,40 +180,12 @@ body {
   overflow: hidden;
   cursor: pointer;
   font-family: inherit;
-  backdrop-filter: blur(12px) saturate(1.6);
-  -webkit-backdrop-filter: blur(12px) saturate(1.6);
   transition:
-    transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 2.2),
-    box-shadow 0.5s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.liquid-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  z-index: 0;
-  pointer-events: none;
-  filter: url(#glass-distortion);
-  isolation: isolate;
-}
 
-.liquid-btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  z-index: 1;
-  pointer-events: none;
-  box-shadow:
-    inset 1.5px 1.5px 1px rgba(255, 255, 255, 0.25),
-    inset -1px -1px 1px rgba(255, 255, 255, 0.08);
-}
-
-.liquid-btn > * {
-  position: relative;
-  z-index: 2;
-}
 
 .liquid-btn:hover {
   transform: translateY(-1px) scale(1.01);
@@ -639,11 +575,10 @@ body {
 }
 
 .glass-card {
-  background: var(--xglass-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--xglass-border);
+  background: #0A1226;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* ─── Focus visible only (keyboard) ─── */

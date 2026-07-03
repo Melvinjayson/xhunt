@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { AuthUser, AuthState } from './types';
-import { apiMe, apiLogout } from './api';
+import { apiMe, apiLogout, apiRefresh } from './api';
 
 interface AuthContextValue extends AuthState {
   setUser: (user: AuthUser | null) => void;
@@ -33,6 +33,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoaded(true);
     });
   }, []);
+
+  // Keep the session warm: while signed in, renew the access token periodically so
+  // a short-lived token doesn't expire mid-session and silently log the user out.
+  useEffect(() => {
+    if (!user) return;
+    const id = setInterval(() => { void apiRefresh(); }, 10 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [user]);
 
   const signOut = useCallback(async ({ redirectUrl = '/' }: { redirectUrl?: string } = {}) => {
     await apiLogout();
